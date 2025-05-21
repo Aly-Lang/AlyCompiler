@@ -8,11 +8,11 @@ if [ ! -d "build" ]; then
     mkdir build
 fi
 
-# Run CMake to configure the project
-cmake -S . -B build
+# Run CMake to configure the project for Visual Studio 2022
+cmake -S . -B build -G "Visual Studio 17 2022"
 
-# Build the project using the generated Makefiles
-cmake --build build
+# Build the project in Debug mode
+cmake --build build --config Debug
 
 # Optionally, print a message when done
 echo "Build complete."
