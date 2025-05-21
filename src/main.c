@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 void print_usage(char** argv) {
 	printf("USAGE: %s <path_to_file_to_compile>\n", argv[0]);
