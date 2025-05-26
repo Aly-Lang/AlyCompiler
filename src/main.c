@@ -101,7 +101,7 @@ void print_error(Error err) {
 	(n).msg = (message);            
 
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n";
+const char* delimiters = " \r\n,():";
 
 /// Lex the next token from SOURCE, and point to it with BEG and END.
 Error lex(char* source, char** beg, char** end) {
@@ -113,7 +113,11 @@ Error lex(char* source, char** beg, char** end) {
     *beg = source;
     *beg += strspn(*beg, whitespace); // Skip all the whitespace at the beginning.
     *end = *beg;
+    if (**end == '\0') { return err; }
     *end += strcspn(*beg, delimiters); // Skip everything not in delimiters.
+    if (*end == *beg) {
+        *end += 1;
+    }
     return err;
 }
 
