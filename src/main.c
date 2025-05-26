@@ -170,14 +170,14 @@ void enviornment_set() {
 }
 
 Error parse_expr(char* source, Node* result) {
-    Token token;
-    token.next = NULL;
-    token.beginning = source;
-    token.end = source;
+    Token current_token;
+    current_token.next = NULL;
+    current_token.beginning = source;
+    current_token.end = source;
     Error err = ok;
-    while ((err = lex(token.end, &token)).type == ERROR_NONE) {
-        if (token.end - token.beginning == 0) { break; }
-        printf("lexed: %.*s\n", token.end - token.beginning, token.beginning);
+    while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
+        if (current_token.end - current_token.beginning == 0) { break; }
+        printf("lexed: %.*s\n", current_token.end - current_token.beginning, current_token.beginning);
     }
     return err;
 }
