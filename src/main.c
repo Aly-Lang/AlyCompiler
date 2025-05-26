@@ -199,6 +199,20 @@ void enviornment_set() {
     // Do this later with better env structure.
 }
 
+/// @return Boolean-like value; 1 for success, 0 for failure.
+int token_string_equalp(char* string, Token* token) {
+    if (!string || !token) { return 0; }
+    char* beg = token->beginning;
+    while (*string && token->beginning < token->end) {
+        if (*string != *beg) {
+            return 0;
+        }
+        string++;
+        beg++;
+    }
+    return 1;
+}
+
 Error parse_expr(char* source, Node* result) {
     Token* tokens = NULL;
     Token* token_it = tokens;
@@ -230,11 +244,13 @@ Error parse_expr(char* source, Node* result) {
     token_it = tokens;
     while (token_it) {
         // TODO: Map constructs from the language and attempt to create nodes.
-        size_t token_length = token_it->end - token_it->beginning;
-        char* token_contents = malloc(token_length + 1);
-        assert(token_contents && "Could not allocate string for token contents while parsing");
-        memcpy(token_contents, token_it->beginning, token_length);
-        token_contents[token_length] = '\0';
+
+        if (token_string_equalp(":", token_it)) {
+            printf("Found `:` at token\n");
+            if (token_it->next && token_string_equalp("=", token_it)) {
+
+            }
+        }
         token_it = token_it->next;
     }
 
