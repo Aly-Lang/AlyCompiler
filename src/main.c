@@ -225,7 +225,18 @@ Error parse_expr(char* source, Node* result) {
 
     print_tokens(tokens);
 
-    //token_it = tokens;
+    Node* root = calloc(1, sizeof(Node));
+    assert(root && "Could not allocate memory for AST Node");
+    token_it = tokens;
+    while (token_it) {
+        // TODO: Map constructs from the language and attempt to create nodes.
+        size_t token_length = token_it->end - token_it->beginning;
+        char* token_contents = malloc(token_length + 1);
+        assert(token_contents && "Could not allocate string for token contents while parsing");
+        memcpy(token_contents, token_it->beginning, token_length);
+        token_contents[token_length] = '\0';
+        token_it = token_it->next;
+    }
 
     free_tokens(tokens);
 
