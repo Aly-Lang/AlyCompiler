@@ -111,6 +111,13 @@ typedef struct Token {
     struct Token* next;
 } Token;
 
+Token* token_create() {
+    Token* token = malloc(sizeof(Token));
+    assert(token && "Could not allocate memory for token");
+    memset(token, 0, sizeof(Token));
+    return token;
+}
+
 /// Lex the next token from SOURCE, and point to it with BEG and END.
 Error lex(char* source, Token* token) {
     Error err = ok;
