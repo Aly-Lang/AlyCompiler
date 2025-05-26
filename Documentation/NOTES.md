@@ -8,3 +8,43 @@
 ```plaintext
 [  [  ID -> TYPE  ], [  "a" -> integer ]  ]
 ```
+
+## Example AST Tree Representation
+
+This tree below shows how Aly will the AST with variable definitions, reassignments, type definitions, unary, and ternary operators.
+
+```plaintext
+================================
+        ROOT
+         │
+         ├── /
+         │    ├── integer
+         │    │     └── 34
+         │    │
+         │    ├── +
+         │    │
+         │    └── integer
+         │          └── 35
+
+        ROOT-x
+         │
+         ├── /
+         │    └── +
+         │         ├── integer
+         │         │     └── 34
+         │         │
+         │         └── integer
+         │               └── 35
+
+        ROOT-x
+         │
+         ├── ?
+         │    ├── condition
+         │    │
+         │    ├── integer
+         │    │     └── 69
+         │    │
+         │    └── integer
+         │          └── 420
+================================
+```
