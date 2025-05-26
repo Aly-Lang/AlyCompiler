@@ -123,18 +123,26 @@ Error lex(char* source, char** beg, char** end) {
     return err;
 }
 
+// TODO:
+// |-- API to create new node.
+// `-- API to add node as child.
 typedef long long integer_t;
 typedef struct Node {
     enum NodeType {
         NODE_TYPE_NONE,
         NODE_TYPE_INTEGER,
+        NODE_TYPE_PROGRAM,
         NODE_TYPE_MAX,
     } type;
     union NodeValue {
         integer_t integer;
     } value;
-    struct Node* children[3];
+    struct Node** children;
 } Node;
+
+// Predicates
+#define nonep(node) ((node).type == NODE_TYPE_NONE)
+#define integerp(node) ((node).type == NODE_TYPE_INTEGER)
 
 // TODO: 
 // |-- API to create a new Binding.
@@ -155,7 +163,7 @@ void enviornment_set() {
     // Do this later with better env structure.
 }
 
-Error parse_expr(char* source) {
+Error parse_expr(char* source, Node* result) {
     char* beg = source;
     char* end = source;
     Error err = ok;
@@ -177,7 +185,8 @@ int main(int argc, char** argv) {
     if (contents) {
         //printf("Contents of %s:\n---\n\"%s\"\n---\n", path, contents);
 
-        Error err = parse_expr(contents);
+        Node expression;
+        Error err = parse_expr(contents, &expression);
         print_error(err);
 
         free(contents);
