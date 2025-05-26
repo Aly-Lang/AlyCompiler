@@ -5,7 +5,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux-blue)
 ![Architecture](https://img.shields.io/badge/Arch-x86--64%20|%20x64-green)
 
-![Aly-Lang LOGO](/Resources/LOGO.png)
+![Aly-Lang LOGO](/Resources/Branding/LOGO.png)
 
 I don't really have a plan, I just want to make a compiler; it sounds fun. There's an example of some code that should be valid and able to be compile in [`example`](example.aly) file.
 
@@ -31,4 +31,3 @@ Finally, build an executable from the build tree.
 ```bash
 cmake --build bld
 ```
-
