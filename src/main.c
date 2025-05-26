@@ -116,7 +116,7 @@ Error lex(char* source, char** beg, char** end) {
     if (**end == '\0') { return err; }
     *end += strcspn(*beg, delimiters); // Skip everything not in delimiters.
     if (*end == *beg) {
-        *end += 1;
+        *end += 1; // One byte if tokens are singular length.
     }
     return err;
 }
