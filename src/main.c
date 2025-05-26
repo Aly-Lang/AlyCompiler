@@ -118,6 +118,20 @@ Token* token_create() {
     return token;
 }
 
+void print_tokens(Token* root) {
+    size_t count = 1;
+    while (root) {
+        if (count > 10000) { break; } // FIXME: Remove this limit.
+        printf("Token %zu: ", count);
+        if (root->beginning && root->end) {
+            printf("%.*s", root->end - root->beginning, root->beginning);
+        }
+        putchar('\n');
+        root = root->next;
+        count++;
+    }
+}
+
 /// Lex the next token from SOURCE, and point to it with BEG and END.
 Error lex(char* source, Token* token) {
     Error err = ok;
@@ -193,6 +207,9 @@ Error parse_expr(char* source, Node* result) {
 
         printf("lexed: %.*s\n", current_token.end - current_token.beginning, current_token.beginning);
     }
+
+    print_tokens(tokens);
+
     return err;
 }
 
