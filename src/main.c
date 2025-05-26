@@ -100,8 +100,8 @@ void print_error(Error err) {
 	(n).type = (t);					 \
 	(n).msg = (message);            
 
-const char* whitespace = " \r";
-const char* delimiters = " \r:\n";
+const char* whitespace = " \r\n";
+const char* delimiters = " \r\n";
 
 /// Lex the next token from SOURCE, and point to it with BEG and END.
 Error lex(char* source, char** beg, char** end) {
@@ -112,16 +112,19 @@ Error lex(char* source, char** beg, char** end) {
     }
     *beg = source;
     *beg += strspn(*beg, whitespace); // Skip all the whitespace at the beginning.
-    *end = source;
+    *end = *beg;
     *end += strcspn(*beg, delimiters); // Skip everything not in delimiters.
-    printf("lexed: %.*s", *end - *beg, *beg);
     return err;
 }
 
 Error parse_expr(char* source) {
     char* beg = source;
     char* end = source;
-    Error err = lex(source, &beg, &end);
+    Error err = ok;
+    while ((err = lex(end, &beg, &end)).type == ERROR_NONE) {
+        if (end - beg == 0) { break; }
+        printf("lexed: %.*s\n", end - beg, beg);
+    }
     return err;
 }
 
