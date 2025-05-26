@@ -4,8 +4,9 @@
 
 - [ ] Parse tokens or something into AST -- Just a tree containing data about the program.
 
-- [ ] Compile AST into assembly, let's start with `86_64?` We could also transpile into another language that then gets compiled, like C or something.
+- [ ] Compile AST into assembly, let's start with `x86_64?` We could also transpile into another language that then gets compiled, like C or something.
 
-## Potential Ideas
+## Miscellaneous
 
-1. [ ] Make a runtime evaluator, so that way to get compile time code.
+1. Unnamed Variable:
+    - It would be cool if an assignment and/or variable declaration could have no identifier, and work on a singular unnamed variable in environment.
