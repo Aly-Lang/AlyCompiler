@@ -192,6 +192,7 @@ void enviornment_set() {
 
 Error parse_expr(char* source, Node* result) {
     Token* tokens = NULL;
+    Token* token_it = tokens;
     Token current_token;
     current_token.next = NULL;
     current_token.beginning = source;
@@ -200,10 +201,17 @@ Error parse_expr(char* source, Node* result) {
     while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
         if (current_token.end - current_token.beginning == 0) { break; }
 
-        Token* rest_of_tokens = tokens;
-        tokens = token_create();
-        memcpy(tokens, &current_token, sizeof(Token));
-        tokens->next = rest_of_tokens;
+        if (tokens) {
+            // Overwrite tokens->next
+            token_it->next = token_create();
+            memcpy(token_it->next, &current_token, sizeof(Token));
+            token_it = token_it->next;
+        } else {
+            // Overwrite tokens
+            tokens = token_create();
+            memcpy(tokens, &current_token, sizeof(Token));
+            token_it = tokens;
+        }
 
         printf("lexed: %.*s\n", current_token.end - current_token.beginning, current_token.beginning);
     }
