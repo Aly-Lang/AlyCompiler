@@ -212,8 +212,6 @@ Error parse_expr(char* source, Node* result) {
             memcpy(tokens, &current_token, sizeof(Token));
             token_it = tokens;
         }
-
-        printf("lexed: %.*s\n", current_token.end - current_token.beginning, current_token.beginning);
     }
 
     print_tokens(tokens);
