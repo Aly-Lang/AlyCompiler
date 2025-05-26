@@ -53,9 +53,10 @@ typedef struct Error {
         ERROR_NONE = 0,
         ERROR_ARGUMENTS,
         ERROR_TYPE,
-        ERROR_TODO,
-        ERROR_SYNTAX,
         ERROR_GENERIC,
+        ERROR_SYNTAX,
+        ERROR_TODO,
+        ERROR_MAX,
     } type;
     char* msg;
 } Error;
@@ -67,6 +68,7 @@ void print_error(Error err) {
         return;
     }
     printf("ERROR: ");
+    assert(ERROR_MAX == 6);
     switch (err.type) {
     default:
         printf("Unknown error type...");
@@ -119,6 +121,38 @@ Error lex(char* source, char** beg, char** end) {
         *end += 1; // One byte if tokens are singular length.
     }
     return err;
+}
+
+typedef long long integer_t;
+typedef struct Node {
+    enum NodeType {
+        NODE_TYPE_NONE,
+        NODE_TYPE_INTEGER,
+        NODE_TYPE_MAX,
+    } type;
+    union NodeValue {
+        integer_t integer;
+    } value;
+    struct Node* children[3];
+} Node;
+
+// TODO: 
+// |-- API to create a new Binding.
+// `-- API to add Binding to enviornment.
+typedef struct Binding {
+    char* id;
+    Node* value;
+    struct Binding* next;
+} Binding;
+
+// TODO: API to create new Environment.
+typedef struct Environment {
+    struct Environment* parent;
+    Binding* bind;
+} Environment;
+
+void enviornment_set() {
+    // Do this later with better env structure.
 }
 
 Error parse_expr(char* source) {
