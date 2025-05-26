@@ -65,12 +65,43 @@ typedef struct Error {
 
 Error ok = { ERROR_NONE,NULL };
 
+void print_error(Error err) {
+	if (err.type == ERROR_NONE) {
+		return;
+	}
+	printf("ERROR: ");
+	switch (err.type) {
+	default:
+		printf("Unknown error type...");
+	case ERROR_TODO:
+		printf("TODO (not implemented)");
+		break;
+	case ERROR_SYNTAX:
+		printf("Invalid syntax");
+		break;
+	case ERROR_TYPE:
+		printf("Mismatched types");
+		break;
+	case ERROR_ARGUMENTS:
+		printf("Invalid arguments");
+		break;
+	case ERROR_NONE:
+		break;
+	case ERROR_GENERIC:
+		break;
+	}
+	putchar('\n');
+	if (err.msg) {
+		printf("     : %s\n", err.msg);
+	}
+}
+
 #define ERROR_CREATE(n, t, msg) \
 	Error (n) = { (t), (msg) }
 
-#define ERROR_PREP(n, t, message) \
-	(n).type = (t);                \
-	(n).msg = (message);
+#define ERROR_PREP(n, t, message)	\
+	(n).type = (t);					 \
+	(n).msg = (message);            
 
 Error lex(char* source, char* beg, char** end) {
 	Error err = ok;
@@ -93,6 +124,9 @@ int main(int argc, char** argv) {
 		printf("Contents of %s:\n---\n\"%s\"\n---\n", path, contents);
 		free(contents);
 	}
+
+	Error err = lex(NULL, NULL, NULL);
+	print_error(err);
 
 	return 0;
 }
