@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//================================================================ BEG FILE IO
-
 long file_size(FILE* file) {
 	if (!file) { return 0; }
 	fpos_t original = 0;
@@ -44,8 +42,6 @@ char* file_contents(char* path) {
 	contents[bytes_read] = '\0';
 	return contents;
 }
-
-//================================================================ END FILE IO
 
 void print_usage(char** argv) {
 	printf("USAGE: %s <path_to_file_to_compile>\n", argv[0]);
@@ -112,6 +108,13 @@ Error lex(char* source, char* beg, char** end) {
 	return err;
 }
 
+Error parse_expr(char* source) {
+	char* beg = source;
+	char* end = source;
+	Error err = lex(source, &beg, &end);
+	return err;
+}
+
 int main(int argc, char** argv) {
 	if (argc < 2) {
 		print_usage(argv);
@@ -125,7 +128,7 @@ int main(int argc, char** argv) {
 		free(contents);
 	}
 
-	Error err = lex(NULL, NULL, NULL);
+	Error err = parse_expr(contents);
 	print_error(err);
 
 	return 0;
