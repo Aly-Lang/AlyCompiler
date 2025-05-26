@@ -246,7 +246,7 @@ Error parse_expr(char* source, Node* result) {
         // TODO: Map constructs from the language and attempt to create nodes.
 
         if (token_string_equalp(":", token_it)) {
-            if (token_it->next && token_string_equalp("=", token_it)) {
+            if (token_it->next && token_string_equalp("=", token_it->next)) {
                 printf("Found assignment\n");
             } else if (token_string_equalp("integer", token_it->next)) {
                 // TODO: Make helper to check if string is type name.
