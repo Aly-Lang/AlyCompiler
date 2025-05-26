@@ -118,6 +118,14 @@ Token* token_create() {
     return token;
 }
 
+void free_tokens(Token* root) {
+    while (root) {
+        Token* token_to_free = root;
+        root = root->next;
+        free(token_to_free);
+    }
+}
+
 void print_tokens(Token* root) {
     size_t count = 1;
     while (root) {
@@ -131,6 +139,7 @@ void print_tokens(Token* root) {
         count++;
     }
 }
+
 
 /// Lex the next token from SOURCE, and point to it with BEG and END.
 Error lex(char* source, Token* token) {
@@ -200,7 +209,7 @@ Error parse_expr(char* source, Node* result) {
     Error err = ok;
     while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
         if (current_token.end - current_token.beginning == 0) { break; }
-
+        // FIXME: This conditional branch could be removed from the loop.
         if (tokens) {
             // Overwrite tokens->next
             token_it->next = token_create();
@@ -215,6 +224,10 @@ Error parse_expr(char* source, Node* result) {
     }
 
     print_tokens(tokens);
+
+    //token_it = tokens;
+
+    free_tokens(tokens);
 
     return err;
 }
