@@ -51,6 +51,17 @@ void print_usage(char** argv) {
 	printf("USAGE: %s <path_to_file_to_compile>\n", argv[0]);
 }
 
+typedef struct Error {
+	enum ErrorType {
+		ERROR_NONE = 0,
+		ERROR_TYPE,
+		ERROR_TODO,
+		ERROR_GENERIC,
+	};
+	char* msg;
+} Error;
+
+
 int main(int argc, char** argv) {
 	if (argc < 2) {
 		print_usage(argv);
