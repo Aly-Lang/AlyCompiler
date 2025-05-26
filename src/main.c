@@ -54,13 +54,32 @@ void print_usage(char** argv) {
 typedef struct Error {
 	enum ErrorType {
 		ERROR_NONE = 0,
+		ERROR_ARGUMENTS,
 		ERROR_TYPE,
 		ERROR_TODO,
+		ERROR_SYNTAX,
 		ERROR_GENERIC,
-	};
+	} type;
 	char* msg;
 } Error;
 
+Error ok = { ERROR_NONE,NULL };
+
+#define ERROR_CREATE(n, t, msg) \
+	Error (n) = { (t), (msg) }
+
+#define ERROR_PREP(n, t, message) \
+	(n).type = (t);                \
+	(n).msg = (message);
+
+Error lex(char* source, char* beg, char** end) {
+	Error err = ok;
+	if (!source) {
+		ERROR_PREP(err, ERROR_ARGUMENTS, "Can not lex empty source.");
+		return err;
+	}
+	return err;
+}
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
