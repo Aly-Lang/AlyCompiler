@@ -118,7 +118,7 @@ Token* token_create() {
     return token;
 }
 
-void free_tokens(Token* root) {
+void tokens_free(Token* root) {
     while (root) {
         Token* token_to_free = root;
         root = root->next;
@@ -159,6 +159,16 @@ Error lex(char* source, Token* token) {
     return err;
 }
 
+//      Node-
+//     /  |  \
+//    0   1   2
+//   / \
+//  3   4
+//
+// Node
+// `-- 0 -> 1 -> 2
+//     `-- 3 -> 4
+
 // TODO:
 // |-- API to create new node.
 // `-- API to add node as child.
@@ -173,12 +183,28 @@ typedef struct Node {
     union NodeValue {
         integer_t integer;
     } value;
-    struct Node** children;
+    // Possible TODO: Parent?
+    struct Node* children;
+    struct Node* next_child;
 } Node;
 
 // Predicates
 #define nonep(node) ((node).type == NODE_TYPE_NONE)
 #define integerp(node) ((node).type == NODE_TYPE_INTEGER)
+
+// TODO: Make more efficient, possible way to do this is to keep track
+// of allocated pointers and then freeing them all in one go.
+void node_free(Node* root) {
+    if (!root) { return; }
+    Node* child = root->children;
+    Node* next_child = NULL;
+    while (child) {
+        next_child = child->next_child;
+        node_free(child);
+        child = next_child;
+    }
+    free(root);
+}
 
 // TODO: 
 // |-- API to create a new Binding.
@@ -256,7 +282,9 @@ Error parse_expr(char* source, Node* result) {
         token_it = token_it->next;
     }
 
-    free_tokens(tokens);
+    tokens_free(tokens);
+
+    node_free(root);
 
     return err;
 }
