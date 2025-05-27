@@ -311,7 +311,8 @@ Error parse_expr(char* source, Node* result) {
         if (token_length == 0) { break; }
         if (parse_integer(&current_token, &working_node)) {
             // Look ahead for binary operators that include integers.
-            Token operator;
+            Token integer;
+            memcpy(&integer, &current_token, sizeof(Token));
             err = lex(current_token.end, &current_token);
             if (err.type != ERROR_NONE) {
                 return err;
@@ -320,6 +321,10 @@ Error parse_expr(char* source, Node* result) {
             printf("Unrecognized token: ");
             print_token(current_token);
             putchar('\n');
+
+            // TODO: Check if valid symbol for environment, then attempt
+            // to pattern match variable access, assignment, decalaration or
+            // declaration with initialization.
         }
         printf("Found node: ");
         print_node(&working_node, 0);
