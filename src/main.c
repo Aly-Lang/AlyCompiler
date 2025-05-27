@@ -191,8 +191,46 @@ typedef struct Node {
     struct Node* next_child;
 } Node;
 
-void print_node_impl(Node* node) {
+// Predicates
+#define nonep(node) ((node).type == NODE_TYPE_NONE)
+#define integerp(node) ((node).type == NODE_TYPE_INTEGER)
+
+/// @return Boolean-like value; 1 for success, 0 for failure.
+int node_compare(Node* a, Node* b) {
+    if (!a && !b) {
+        if (!a || !b) {
+            return 1;
+        }
+        return 0;
+    }
+    assert(NODE_TYPE_MAX == 3 && "node_compare() must handle all node types");
+    if (a->type != b->type) { return 0; }
+    switch (a->type) {
+    case NODE_TYPE_NONE:
+        if (nonep(*b)) {
+            return 1;
+        }
+        return 0;
+        break;
+    case NODE_TYPE_INTEGER:
+        if (a->value.integer == b->value.integer) {
+            return 1;
+        }
+        return 0;
+        break;
+    case NODE_TYPE_PROGRAM:
+        printf("TODO: Compare two programs");
+        break;
+    }
+    return 0;
+}
+
+void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
+    // Print indent.
+    for (size_t i = 0; i < indent_level; ++i) {
+        putchar(' ');
+    }
     assert(NODE_TYPE_MAX == 3 && "print_node() must handle all node types");
     // Print type + value.
     switch (node->type) {
@@ -208,15 +246,6 @@ void print_node_impl(Node* node) {
         printf("PROGRAM");
         break;
     }
-}
-
-void print_node(Node* node, size_t indent_level) {
-    if (!node) { return; }
-    // Print indent.
-    for (size_t i = 0; i < indent_level; ++i) {
-        putchar(' ');
-    }
-    print_node_impl(node);
     putchar('\n');
     // Print children.
     Node* child = node->children;
@@ -225,10 +254,6 @@ void print_node(Node* node, size_t indent_level) {
         child = child->next_child;
     }
 }
-
-// Predicates
-#define nonep(node) ((node).type == NODE_TYPE_NONE)
-#define integerp(node) ((node).type == NODE_TYPE_INTEGER)
 
 // TODO: Make more efficient, possible way to do this is to keep track
 // of allocated pointers and then freeing them all in one go.
@@ -248,8 +273,8 @@ void node_free(Node* root) {
 // |-- API to create a new Binding.
 // `-- API to add Binding to enviornment.
 typedef struct Binding {
-    char* id;
-    Node* value;
+    Node id;
+    Node value;
     struct Binding* next;
 } Binding;
 
@@ -259,8 +284,37 @@ typedef struct Environment {
     Binding* bind;
 } Environment;
 
-void enviornment_set() {
-    // Do this later with better env structure.
+Environment* environment_create(Environment* parent) {
+    Environment* env = malloc(sizeof(Environment));
+    assert(env && "Could not allocate memory for new environment");
+    env->parent = parent;
+    env->bind = NULL;
+    return env;
+}
+
+void enviornment_set(Environment env, Node id, Node value) {
+    Binding* binding = malloc(sizeof(Binding));
+    assert(binding && "Could not allocate new binding for environment");
+    binding->id = id;
+    binding->value = value;
+    binding->next = env.bind;
+    env.bind = binding;
+}
+
+Node enviornment_get(Environment env, Node id) {
+    Binding* binding_it = env.bind;
+    while (binding_it) {
+        if (node_compare(&binding_it->id, &id)) {
+            return binding_it->value;
+        }
+        binding_it = binding_it->next;
+    }
+    Node value;
+    value.type = NODE_TYPE_NONE;
+    value.children = NULL;
+    value.next_child = NULL;
+    value.value.integer = 0;
+    return value;
 }
 
 /// @return Boolean-like value; 1 for success, 0 for failure.
@@ -317,14 +371,18 @@ Error parse_expr(char* source, Node* result) {
             if (err.type != ERROR_NONE) {
                 return err;
             }
+            // TODO: Check for valid integer operator.
+            // It would be cool to use an operator environment to look
+            // up operators instead of hard-coding them. This would eventually,
+            // allow for user-defined operators, or stuff like that.
         } else {
             printf("Unrecognized token: ");
             print_token(current_token);
             putchar('\n');
 
-            // TODO: Check if valid symbol for environment, then attempt
-            // to pattern match variable access, assignment, decalaration or
-            // declaration with initialization.
+            // TODO: Check if valid symbol for variable environment, then
+            // attemtpt to pattern match variable access, assignment, 
+            // decalaration or declaration with initialization.
         }
         printf("Found node: ");
         print_node(&working_node, 0);
