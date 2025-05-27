@@ -126,6 +126,10 @@ void tokens_free(Token* root) {
     }
 }
 
+void print_token(Token t) {
+    printf("%.*s", t.end - t.beginning, t.beginning);
+}
+
 void print_tokens(Token* root) {
     size_t count = 1;
     while (root) {
@@ -139,7 +143,6 @@ void print_tokens(Token* root) {
         count++;
     }
 }
-
 
 /// Lex the next token from SOURCE, and point to it with BEG and END.
 Error lex(char* source, Token* token) {
@@ -308,6 +311,15 @@ Error parse_expr(char* source, Node* result) {
         if (token_length == 0) { break; }
         if (parse_integer(&current_token, &working_node)) {
             // Look ahead for binary operators that include integers.
+            Token operator;
+            err = lex(current_token.end, &current_token);
+            if (err.type != ERROR_NONE) {
+                return err;
+            }
+        } else {
+            printf("Unrecognized token: ");
+            print_token(current_token);
+            putchar('\n');
         }
         printf("Found node: ");
         print_node(&working_node, 0);
