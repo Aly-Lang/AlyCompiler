@@ -299,21 +299,19 @@ Error parse_expr(char* source, Node* result) {
     root->type = NODE_TYPE_PROGRAM;
 
     Node working_node;
-    working_node.children = NULL;
-    working_node.next_child = NULL;
-    working_node.type = NODE_TYPE_NONE;
-    working_node.value.integer = 0;
     while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
+        working_node.children = NULL;
+        working_node.next_child = NULL;
+        working_node.type = NODE_TYPE_NONE;
+        working_node.value.integer = 0;
         size_t token_length = current_token.end - current_token.beginning;
         if (token_length == 0) { break; }
         if (parse_integer(&current_token, &working_node)) {
-            printf("Found integer: ");
-            print_node(&working_node, 0);
-            putchar('\n');
+            // Look ahead for binary operators that include integers.
         }
-        if (token_string_equalp(":", &current_token)) {
-            Token equals;
-        }
+        printf("Found node: ");
+        print_node(&working_node, 0);
+        putchar('\n');
     }
     return err;
 }
