@@ -1,4 +1,4 @@
-#include <assert.h>
+﻿#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +61,7 @@ typedef struct Error {
     char* msg;
 } Error;
 
-Error ok = { ERROR_NONE,NULL };
+Error ok = { ERROR_NONE, NULL };
 
 void print_error(Error err) {
     if (err.type == ERROR_NONE) {
@@ -100,7 +100,7 @@ void print_error(Error err) {
 
 #define ERROR_PREP(n, t, message)	\
 	(n).type = (t);					 \
-	(n).msg = (message);            
+	(n).msg = (message);
 
 const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,():";
@@ -162,15 +162,20 @@ Error lex(char* source, Token* token) {
     return err;
 }
 
-//      Node-
-//     /  |  \
-//    0   1   2
-//   / \
-//  3   4
-//
+// AST Structure:
+//        Node
+//       /  |  \
+//      0   1   2
+//     / \
+//    3   4
+
+// Tree Representation (with parent-child and sibling order):
 // Node
-// `-- 0 -> 1 -> 2
-//     `-- 3 -> 4
+// ├── 0
+// │   ├── 3
+// │   └── 4
+// ├── 1
+// └── 2
 
 // TODO:
 // |-- API to create new node.
@@ -197,10 +202,8 @@ typedef struct Node {
 
 /// @return Boolean-like value; 1 for success, 0 for failure.
 int node_compare(Node* a, Node* b) {
-    if (!a && !b) {
-        if (!a || !b) {
-            return 1;
-        }
+    if (!a || !b) {
+        if (!a && !b) { return 1; }
         return 0;
     }
     assert(NODE_TYPE_MAX == 3 && "node_compare() must handle all node types");
@@ -255,8 +258,8 @@ void print_node(Node* node, size_t indent_level) {
     }
 }
 
-// TODO: Make more efficient, possible way to do this is to keep track
-// of allocated pointers and then freeing them all in one go.
+// TODO: Make more efficient! We could potentially keep 
+// track of all nodes and free them all in one go.
 void node_free(Node* root) {
     if (!root) { return; }
     Node* child = root->children;
@@ -381,7 +384,7 @@ Error parse_expr(char* source, Node* result) {
             putchar('\n');
 
             // TODO: Check if valid symbol for variable environment, then
-            // attemtpt to pattern match variable access, assignment, 
+            // attemtpt to pattern match variable access, assignment,
             // decalaration or declaration with initialization.
         }
         printf("Found node: ");
