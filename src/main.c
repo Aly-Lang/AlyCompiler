@@ -222,8 +222,8 @@ void print_node(Node* node, size_t indent_level) {
     for (size_t i = 0; i < indent_level; ++i) {
         putchar(' ');
     }
-    assert(NODE_TYPE_MAX == 7 && "print_node() must handle all node types");
     // Print type + value.
+    assert(NODE_TYPE_MAX == 7 && "print_node() must handle all node types");
     switch (node->type) {
     default:
         printf("UNKNOWN");
@@ -233,6 +233,21 @@ void print_node(Node* node, size_t indent_level) {
         break;
     case NODE_TYPE_INTEGER:
         printf("INT:%lld", node->value.integer);
+        break;
+    case NODE_TYPE_SYMBOL:
+        printf("SYM");
+        if (node->value.symbol) {
+            printf(":%s", node->value.symbol);
+        }
+        break;
+    case NODE_TYPE_BINARY_OPERATOR:
+        printf("TODO: print_node() BINARY OPERATOR");
+        break;
+    case NODE_TYPE_VARIABLE_DECLARATION:
+        printf("TODO: print_node() VAR DECL");
+        break;
+    case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
+        printf("TODO: print_node() VAR DECL INIT");
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
