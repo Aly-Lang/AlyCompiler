@@ -26,6 +26,7 @@ char* file_contents(char* path) {
     }
     long size = file_size(file);
     char* contents = malloc(size + 1);
+    assert(contents && "Could not allocate buffer for file contents");
     char* write_it = contents;
     size_t bytes_read = 0;
     while (bytes_read < size) {

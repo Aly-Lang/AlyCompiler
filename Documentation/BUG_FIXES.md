@@ -1,6 +1,6 @@
 # AlyCompiler BUG FIXES
 
-- [] `file_contents()` does not check for NULL malloc return values.
+- [x] `file_contents()` does not check for NULL malloc return values.
 
 - [ ] Tokens do not need to be linked lists, or have `create/free` functions.
 
