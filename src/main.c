@@ -370,9 +370,6 @@ Error parse_expr(char* source, char** end, Node* result) {
             // allow for user-defined operators, or stuff like that.
         } else {
             // TODO: Check for unary prefix operators.
-            printf("Unrecognized token: ");
-            print_token(current_token);
-            putchar('\n');
 
             // TODO: Check tht it isn't a binary operator (we should encounter left
             // side first and peek forward, rather than encounter it at top level).
@@ -385,7 +382,11 @@ Error parse_expr(char* source, char** end, Node* result) {
             symbol.type = NODE_TYPE_SYMBOL;
             symbol.children = NULL;
             symbol.next_child = NULL;
-            symbol.value.integer = 0;
+            symbol.value.symbol = NULL;
+        
+            printf("Unrecognized token: ");
+            print_token(current_token);
+            putchar('\n');
         }
 
         printf("Intermediate node: ");
