@@ -250,7 +250,7 @@ void print_node(Node* node, size_t indent_level) {
         printf("TODO: print_node() VAR DECL INIT");
         break;
     case NODE_TYPE_PROGRAM:
-        printf("PROGRAM");
+        printf("TODO: print_node() PROGRAM");
         break;
     }
     putchar('\n');
@@ -408,6 +408,8 @@ Error parse_expr(char* source, char** end, Node* result) {
             symbol_string[token_length] = '\0';
             symbol.value.symbol = symbol_string;
 
+            *result = symbol;
+
             // TODO: Check if valid symbol for variable environment, 
             // then attempt to pattern match variable access, assignment,
             // declaration or declaration with initialization.
@@ -441,6 +443,7 @@ int main(int argc, char** argv) {
         // TODO: Create API to heap allocate a program node, as well as add 
         // expressions as children.
         Node expression;
+        memset(&expression, 0, sizeof(Node));
         char* contents_it = contents;
         Error err = parse_expr(contents, &contents_it, &expression);
         print_node(&expression, 0);
