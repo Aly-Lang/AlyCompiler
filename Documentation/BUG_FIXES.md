@@ -2,9 +2,9 @@
 
 - [x] `file_contents()` does not check for NULL malloc return values.
 
-- [ ] Tokens do not need to be linked lists, or have `create/free` functions.
+- [x] Tokens do not need to be linked lists, or have `create/free` functions.
 
-  - We can also get rid of `print_tokens()`, while we are at it.
+  - [x] We can also get rid of `print_tokens()`, while we are at it.
 
 - [ ] When lexing, zero out given token pointer using memset().
 

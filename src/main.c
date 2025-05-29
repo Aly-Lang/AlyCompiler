@@ -109,40 +109,10 @@ const char* delimiters = " \r\n,():";
 typedef struct Token {
     char* beginning;
     char* end;
-    struct Token* next;
 } Token;
-
-Token* token_create() {
-    Token* token = malloc(sizeof(Token));
-    assert(token && "Could not allocate memory for token");
-    memset(token, 0, sizeof(Token));
-    return token;
-}
-
-void tokens_free(Token* root) {
-    while (root) {
-        Token* token_to_free = root;
-        root = root->next;
-        free(token_to_free);
-    }
-}
 
 void print_token(Token t) {
     printf("%.*s", t.end - t.beginning, t.beginning);
-}
-
-void print_tokens(Token* root) {
-    size_t count = 1;
-    while (root) {
-        if (count > 10000) { break; } // FIXME: Remove this limit.
-        printf("Token %zu: ", count);
-        if (root->beginning && root->end) {
-            printf("%.*s", root->end - root->beginning, root->beginning);
-        }
-        putchar('\n');
-        root = root->next;
-        count++;
-    }
 }
 
 /// Lex the next token from SOURCE, and point to it with BEG and END.
@@ -350,7 +320,6 @@ int parse_integer(Token* token, Node* node) {
 Error parse_expr(char* source, Node* result) {
     size_t token_count = 0;
     Token current_token;
-    current_token.next = NULL;
     current_token.beginning = source;
     current_token.end = source;
     Error err = ok;
