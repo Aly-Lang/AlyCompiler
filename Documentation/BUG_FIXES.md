@@ -6,7 +6,7 @@
 
   - [x] We can also get rid of `print_tokens()`, while we are at it.
 
-- [ ] Get rid of `integer_t`, just use long long and get on with it.
+- [x] Get rid of `integer_t`, just use long long and get on with it.
 
 - [x] Completely change `parse_expr(...)`. Accept `char* source, char** end, Node* result`. Get rid of working_node completely, use result. Get rid of root node allocation, that will be handled at a handled at a higher level, just use result.
 
