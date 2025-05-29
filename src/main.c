@@ -171,11 +171,11 @@ Error lex(char* source, Token* token) {
 
 // Tree Representation (with parent-child and sibling order):
 // Node
-// ├── 0
-// │   ├── 3
-// │   └── 4
-// ├── 1
-// └── 2
+// ├──> 0
+// │   ├──> 3
+// │   └──> 4
+// ├──> 1
+// └──> 2
 
 // TODO:
 // |-- API to create new node.
@@ -384,8 +384,8 @@ Error parse_expr(char* source, Node* result) {
             putchar('\n');
 
             // TODO: Check if valid symbol for variable environment, then
-            // attemtpt to pattern match variable access, assignment,
-            // decalaration or declaration with initialization.
+            // attempt to pattern match variable access, assignment,
+            // declaration or declaration with initialization.
         }
         printf("Found node: ");
         print_node(&working_node, 0);

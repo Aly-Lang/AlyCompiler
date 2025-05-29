@@ -1,52 +1,25 @@
-# BUG FIXES
+# AlyCompiler BUG FIXES
 
-## Assertions & Debugging
+- [] `file_contents()` does not check for NULL malloc return values.
 
-- **[ ]  Investigated and resolved assertion failure for `NODE_TYPE_MAX`:**
-  - The issue stemmed from `NODE_TYPE_MAX` being moved within the `enum`, causing unexpected behavior in `cassert`.
-  - Identified and accounted for the differences between C and C++ assertion behavior.
+- [ ] Tokens do not need to be linked lists, or have `create/free` functions.
 
-## Memory Management
+  - We can also get rid of `print_tokens()`, while we are at it.
 
-- **[ ]  Fixed `file_contents()` to check for `NULL` return value from `malloc()`.**
+- [ ] When lexing, zero out given token pointer using memset().
 
-## Token Handling
+- [ ] Get rid of `integer_t`, just use long long and get on with it.
 
-- **[ ]  Refactored token handling:**
-  - Removed unnecessary linked lists and `create/free` functions.
-  - Removed `print_tokens()` as it was no longer needed.
+- [ ] Completely change `parse_expr(...)`. Accept `char* source, char** end, Node* result`. Get rid of working_node completely, use result. Get rid of root node allocation, that will be handled at a handled at a higher level, just use result.
 
-## Lexing
+- [ ] Parse in a while loop, instead of just parsing a single expression.
 
-- **_TODO:_** Add lexing-specific bug fixes here.
+- Think about how parser could parse within and into a given parsing context.
 
-## Data Types
+  - Maybe a parsing context contains multiple environments for types, defined variables, etc. This would allow the parser to look up variable access symbols to ensure that they are defined and of the proper type.
 
-- **[ ]  Removed `integer_t` in favor of `long long`.**
+  - This is also where the operator environment could live, with mappings of operators to functions that apply them somehow, right?
 
-## Parsing
+  - They would also need to contain what type of operator they are, right?
 
-- **[ ]  Refactored `parse_expr()` to:**
-  - Accept `char* source`, `char** end`, and `Node* result`.
-  - Eliminate `working_node` and use `result` directly.
-  - Remove root node allocation (handled at a higher level).
-  - **Implemented parsing using a `while` loop** instead of handling a single expression.
-
----
-
-# Other Considerations
-
-## Parsing Context
-
-- Explored how the parser could parse **within and into a given parsing context**.
-- Implemented a **parsing context** to manage multiple environments:
-  - **Type & Variable Definitions** → Ensures symbols are properly defined and typed.
-  - **Operator Environment** → Maps operators to their respective functions.
-
-## Operator Handling
-
-- Operators were classified into categories such as:
-  - Prefix unary, postfix unary
-  - Prefix binary, infix binary, postfix binary
-  - Additional classifications where necessary
-- **Implemented a clean and maintainable way to define new operators programmatically.**
+  - So, for example, there are prefix unary operators, postfix unary operators, prefix binary operators, infix binary operators, postfix binary operators, and more... How do we programmatically define a new operator in a way that doesn't suck?
