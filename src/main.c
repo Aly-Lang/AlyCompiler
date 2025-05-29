@@ -148,14 +148,25 @@ Error lex(char* source, Token* token) {
 // ├──> 1
 // └──> 2
 
+// A : integer = 420
+//
+// PROGRAM
+// `-- VARIABLE_DECLARATION_INITIALIZED
+//     `-- DECLARATION_INITIALIZED -> INTEGER (420)
+//         `-- INTEGER -> SYMBOL (A)
+
 // TODO:
 // |-- API to create new node.
 // `-- API to add node as child.
 typedef struct Node {
+    // TODO: Think about how to document node types and how they fit in the AST.
     enum NodeType {
         NODE_TYPE_NONE,
         NODE_TYPE_INTEGER,
+        NODE_TYPE_VARIABLE_DECLARATION,
+        NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED,
         NODE_TYPE_PROGRAM,
+        NODE_TYPE_BINARY_OPERATOR,
         NODE_TYPE_MAX,
     } type;
     union NodeValue {
