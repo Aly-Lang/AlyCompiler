@@ -307,6 +307,7 @@ int token_string_equalp(char* string, Token* token) {
 /// @return Boolean-like value; 1 upon success, 0 for failure.
 int parse_integer(Token* token, Node* node) {
     if (!token || !node) { return 0; }
+    char* end = NULL;
     if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
