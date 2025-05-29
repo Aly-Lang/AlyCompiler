@@ -227,6 +227,7 @@ void print_node(Node* node, size_t indent_level) {
     switch (node->type) {
     default:
         printf("UNKNOWN");
+        break;
     case NODE_TYPE_NONE:
         printf("NONE");
         break;
