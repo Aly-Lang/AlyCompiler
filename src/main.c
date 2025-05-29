@@ -265,7 +265,17 @@ Environment* environment_create(Environment* parent) {
     return env;
 }
 
-void enviornment_set(Environment env, Node id, Node value) {
+void environment_set(Environment env, Node id, Node value) {
+    // Over-write existing value if ID is already bound in environment.
+    Binding* binding_it = env.bind;
+    while (binding_it) {
+        if (node_compare(&binding_it, &id)) {
+            binding_it->value = value;
+            return;
+        }
+        binding_it = binding_it->next;
+    }
+    // Create new binding.
     Binding* binding = malloc(sizeof(Binding));
     assert(binding && "Could not allocate new binding for environment");
     binding->id = id;
@@ -274,7 +284,7 @@ void enviornment_set(Environment env, Node id, Node value) {
     env.bind = binding;
 }
 
-Node enviornment_get(Environment env, Node id) {
+Node environment_get(Environment env, Node id) {
     Binding* binding_it = env.bind;
     while (binding_it) {
         if (node_compare(&binding_it->id, &id)) {
@@ -351,6 +361,7 @@ Error parse_expr(char* source, char** end, Node* result) {
             // then attempt to pattern match variable access, assignment,
             // declaration or declaration with initialization.
         }
+
         printf("Intermediate node: ");
         print_node(result, 0);
         putchar('\n');
