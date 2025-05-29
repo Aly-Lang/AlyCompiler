@@ -10,7 +10,7 @@
 
 - [x] Completely change `parse_expr(...)`. Accept `char* source, char** end, Node* result`. Get rid of working_node completely, use result. Get rid of root node allocation, that will be handled at a handled at a higher level, just use result.
 
-- [ ] Parse in a while loop, instead of just parsing a single expression.
+- [x] Parse in a while loop, instead of just parsing a single expression.
 
 - Think about how parser could parse within and into a given parsing context.
 
