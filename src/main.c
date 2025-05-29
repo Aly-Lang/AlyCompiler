@@ -359,9 +359,9 @@ Error parse_expr(char* source, char** end, Node* result) {
     Error err = ok;
 
     while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
+        *end = current_token.end;
         size_t token_length = current_token.end - current_token.beginning;
         if (token_length == 0) { break; }
-        *end = current_token.end;
         if (parse_integer(&current_token, result)) {
             // Look ahead for binary operators that include integers.
             Node lhs_integer = *result;
@@ -369,6 +369,7 @@ Error parse_expr(char* source, char** end, Node* result) {
             if (err.type != ERROR_NONE) {
                 return err;
             }
+            *end = current_token.end;
             // TODO: Check for valid integer operator.
             // It would be cool to use an operator environment to look
             // up operators instead of hard-coding them. This would eventually,
@@ -378,10 +379,6 @@ Error parse_expr(char* source, char** end, Node* result) {
 
             // TODO: Check tht it isn't a binary operator (we should encounter left
             // side first and peek forward, rather than encounter it at top level).
-
-            // TODO: Check if valid symbol for variable environment, 
-            // then attempt to pattern match variable access, assignment,
-            // declaration or declaration with initialization.
 
             Node symbol;
             symbol.type = NODE_TYPE_SYMBOL;
@@ -394,6 +391,10 @@ Error parse_expr(char* source, char** end, Node* result) {
             memcpy(symbol_string, current_token.beginning, token_length);
             symbol_string[token_length] = '\0';
             symbol.value.symbol = symbol_string;
+
+            // TODO: Check if valid symbol for variable environment, 
+            // then attempt to pattern match variable access, assignment,
+            // declaration or declaration with initialization.
 
             printf("Unrecognized token: ");
             print_token(current_token);
@@ -421,18 +422,13 @@ int main(int argc, char** argv) {
     if (contents) {
         //printf("Contents of %s:\n---\n\"%s\"\n---\n", path, contents);
 
+        // TODO: Create API to heap allocate a program node, as well as add 
+        // expressions as children.
         Node expression;
         char* contents_it = contents;
-        char* last_contents_it = NULL;
-        Error err = ok;
-        long max = 1;
-        while ((err = parse_expr(contents, &contents_it, &expression)).type == ERROR_NONE && max-- > 0) {
-            if (contents_it == last_contents_it) { break; }
-            print_node(&expression, 0);
-            last_contents_it = contents_it;
-        }
+        Error err = parse_expr(contents, &contents_it, &expression);
+        print_node(&expression, 0);
 
-        printf("max: %ld\n", max);
         print_error(err);
 
         free(contents);
