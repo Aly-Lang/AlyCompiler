@@ -162,7 +162,7 @@ typedef struct Node {
     // TODO: Think about how to document node types and how they fit in the AST.
     enum NodeType {
         NODE_TYPE_NONE,
-        
+
         /// Just an integer.
         NODE_TYPE_INTEGER,
 
@@ -170,12 +170,13 @@ typedef struct Node {
         NODE_TYPE_SYMBOL,
         NODE_TYPE_VARIABLE_DECLARATION,
         NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED,
-        NODE_TYPE_PROGRAM,
         NODE_TYPE_BINARY_OPERATOR,
+        NODE_TYPE_PROGRAM,
         NODE_TYPE_MAX,
     } type;
     union NodeValue {
         long long integer;
+        char* symbol;
     } value;
     // Possible TODO: Parent?
     struct Node* children;
@@ -373,9 +374,18 @@ Error parse_expr(char* source, char** end, Node* result) {
             print_token(current_token);
             putchar('\n');
 
+            // TODO: Check tht it isn't a binary operator (we should encounter left
+            // side first and peek forward, rather than encounter it at top level).
+
             // TODO: Check if valid symbol for variable environment, 
             // then attempt to pattern match variable access, assignment,
             // declaration or declaration with initialization.
+
+            Node symbol;
+            symbol.type = NODE_TYPE_SYMBOL;
+            symbol.children = NULL;
+            symbol.next_child = NULL;
+            symbol.value.integer = 0;
         }
 
         printf("Intermediate node: ");
