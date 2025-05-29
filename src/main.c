@@ -186,6 +186,7 @@ typedef struct Node {
 // Predicates
 #define nonep(node) ((node).type == NODE_TYPE_NONE)
 #define integerp(node) ((node).type == NODE_TYPE_INTEGER)
+#define symbolp(node) ((node).type == NODE_TYPE_SYMBOL)
 
 /// @return Boolean-like value; 1 for success, 0 for failure.
 int node_compare(Node* a, Node* b) {
@@ -255,6 +256,9 @@ void node_free(Node* root) {
         next_child = child->next_child;
         node_free(child);
         child = next_child;
+    }
+    if (symbolp(*root) && root->value.symbol) {
+        free(root->value.symbol);
     }
     free(root);
 }
