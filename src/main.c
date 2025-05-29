@@ -311,7 +311,10 @@ int parse_integer(Token* token, Node* node) {
     if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
-    } else if ((node->value.integer = strtoll(token->beginning, NULL, 10)) != 0) {
+    } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
+        if (end != token->end) {
+            return 0;
+        }
         node->type = NODE_TYPE_INTEGER;
     } else { return 0; }
     return 1;
@@ -330,7 +333,6 @@ Error parse_expr(char* source, char** end, Node* result) {
         if (parse_integer(&current_token, result)) {
             // Look ahead for binary operators that include integers.
             Node lhs_integer = *result;
-            memcpy(&lhs_integer, &current_token, sizeof(Node));
             err = lex(current_token.end, &current_token);
             if (err.type != ERROR_NONE) {
                 return err;
@@ -374,6 +376,7 @@ int main(int argc, char** argv) {
         Error err = ok;
         while ((err = parse_expr(contents, &contents_it, &expression)).type == ERROR_NONE) {
             if (contents_it == last_contents_it) { break; }
+            print_node(&expression, 0);
             last_contents_it = contents_it;
         }
         print_error(err);
