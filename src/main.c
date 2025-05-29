@@ -162,7 +162,12 @@ typedef struct Node {
     // TODO: Think about how to document node types and how they fit in the AST.
     enum NodeType {
         NODE_TYPE_NONE,
+        
+        /// Just an integer.
         NODE_TYPE_INTEGER,
+
+        /// Anything that isn't another literal type becomes a symbol.
+        NODE_TYPE_SYMBOL,
         NODE_TYPE_VARIABLE_DECLARATION,
         NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED,
         NODE_TYPE_PROGRAM,
@@ -187,7 +192,7 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
-    assert(NODE_TYPE_MAX == 3 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 7 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
@@ -215,7 +220,7 @@ void print_node(Node* node, size_t indent_level) {
     for (size_t i = 0; i < indent_level; ++i) {
         putchar(' ');
     }
-    assert(NODE_TYPE_MAX == 3 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 7 && "print_node() must handle all node types");
     // Print type + value.
     switch (node->type) {
     default:
