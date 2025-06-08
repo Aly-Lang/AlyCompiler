@@ -149,11 +149,10 @@ Error lex(char* source, Token* token) {
 // └──> 2
 
 // A : integer = 420
-//
+// 
 // PROGRAM
 // `-- VARIABLE_DECLARATION_INITIALIZED
-//     `-- DECLARATION_INITIALIZED -> INTEGER (420)
-//         `-- INTEGER -> SYMBOL (A)
+//     `-- INTEGER (420) -> SYMBOL (A)
 
 // TODO:
 // |-- API to create new node.
@@ -161,17 +160,30 @@ Error lex(char* source, Token* token) {
 typedef struct Node {
     // TODO: Think about how to document node types and how they fit in the AST.
     enum NodeType {
+        // BEG LITERALS
         NODE_TYPE_NONE,
 
         /// Just an integer.
         NODE_TYPE_INTEGER,
 
-        /// Anything that isn't another literal type becomes a symbol.
+        /// When a literal is expected but no other literal is valid, it
+        /// becomes a symbol.
         NODE_TYPE_SYMBOL,
+
+        // END LITERALS
+    
+        /// Contains two children. The first determines type (and value),
+        /// while the second contains the symbolic name of the variable.
         NODE_TYPE_VARIABLE_DECLARATION,
         NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED,
+
+        /// Contains two children that determine left and right acceptable
+        /// types.
         NODE_TYPE_BINARY_OPERATOR,
+
+        /// Contains a liust of expressions to execute in sequence.
         NODE_TYPE_PROGRAM,
+
         NODE_TYPE_MAX,
     } type;
     union NodeValue {
@@ -199,6 +211,7 @@ void node_add_child(Node* parent, Node* new_child) {
             child = child->next_child;
         }
         child->next_child = allocated_child;
+    } else {
     } else {
         parent->children = allocated_child;
     }
@@ -257,17 +270,17 @@ void print_node(Node* node, size_t indent_level) {
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("TODO: print_node() BINARY OPERATOR");
+        printf("BINARY OPERATOR");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
         // TODO: Print first child (ID symbol), then type of second child.
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: print_node() VAR DECL INIT");
+        printf("VARIABLE DECLARATION INITIALIZATION");
         break;
     case NODE_TYPE_PROGRAM:
-        printf("TODO: print_node() PROGRAM");
+        printf("PROGRAM");
         break;
     }
     putchar('\n');
@@ -495,7 +508,7 @@ int main(int argc, char** argv) {
     if (contents) {
         //printf("Contents of %s:\n---\n\"%s\"\n---\n", path, contents);
 
-        // TODO: Create API to heap allocate a program node, as well as add 
+        // TODO: Create API to heap allocate a program node, as well as add
         // expressions as children.
         Node expression;
         memset(&expression, 0, sizeof(Node));
