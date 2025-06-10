@@ -171,7 +171,7 @@ typedef struct Node {
         NODE_TYPE_SYMBOL,
 
         // END LITERALS
-    
+
         /// Contains two children. The first determines type (and value),
         /// while the second contains the symbolic name of the variable.
         NODE_TYPE_VARIABLE_DECLARATION,
@@ -195,15 +195,21 @@ typedef struct Node {
     struct Node* next_child;
 } Node;
 
+Node* node_allocate() {
+    Node* node = calloc(1, sizeof(Node));
+    assert(node && "Could not allocate memory for new AST node");
+    return node;
+}
+
 // Predicates
 #define nonep(node) ((node).type == NODE_TYPE_NONE)
 #define integerp(node) ((node).type == NODE_TYPE_INTEGER)
 #define symbolp(node) ((node).type == NODE_TYPE_SYMBOL)
 
+/// PARENT is modified, NEW_CHILD is shallow copied.
 void node_add_child(Node* parent, Node* new_child) {
     if (!parent || !new_child) { return; }
-    Node* allocated_child = malloc(sizeof(Node));
-    assert(allocated_child && "Could not allocate new child Node for AST");
+    Node* allocated_child = node_allocate();
     *allocated_child = *new_child;
     if (parent->children) {
         Node* child = parent->children;
@@ -211,7 +217,6 @@ void node_add_child(Node* parent, Node* new_child) {
             child = child->next_child;
         }
         child->next_child = allocated_child;
-    } else {
     } else {
         parent->children = allocated_child;
     }
@@ -245,8 +250,18 @@ int node_compare(Node* a, Node* b) {
     return 0;
 }
 
+Node* node_symbol(char* symbol_string) {
+    Node* symbol = node_allocate();
+    symbol->type = NODE_TYPE_SYMBOL;
+    symbol->value.symbol = strdup(symbol_string);
+    symbol->children = NULL;
+    symbol->next_child = NULL;
+    return symbol;
+}
+
 void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
+
     // Print indent.
     for (size_t i = 0; i < indent_level; ++i) {
         putchar(' ');
@@ -274,7 +289,6 @@ void print_node(Node* node, size_t indent_level) {
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
-        // TODO: Print first child (ID symbol), then type of second child.
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
         printf("VARIABLE DECLARATION INITIALIZATION");
@@ -389,15 +403,27 @@ int parse_integer(Token* token, Node* node) {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
     } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
-        if (end != token->end) {
-            return 0;
-        }
+        if (end != token->end) { return 0; }
         node->type = NODE_TYPE_INTEGER;
     } else { return 0; }
     return 1;
 }
 
-Error parse_expr(char* source, char** end, Node* result) {
+typedef struct ParsingContext {
+    // FIXME: "struct ParsingContext* parent;" ???
+    Environment* types;
+    Environment* variables;
+} ParsingContext;
+
+ParsingContext* parse_context_create() {
+    ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
+    assert(ctx && "Could not allocate memory for parsing context");
+    ctx->types = environment_create(NULL);
+    ctx->variables = environment_create(NULL);
+    return ctx;
+}
+
+Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) {
     size_t token_count = 0;
     Token current_token;
     current_token.beginning = source;
@@ -432,6 +458,8 @@ Error parse_expr(char* source, char** end, Node* result) {
             symbol.next_child = NULL;
             symbol.value.symbol = NULL;
 
+            // NOTE: This basically gets the string data after allocating 
+            // a new node.
             char* symbol_string = malloc(token_length + 1);
             assert(symbol_string && "Could not allocate memory for symbol");
             memcpy(symbol_string, current_token.beginning, token_length);
@@ -510,10 +538,12 @@ int main(int argc, char** argv) {
 
         // TODO: Create API to heap allocate a program node, as well as add
         // expressions as children.
+        ParsingContext* context = parse_context_create();
+        Environment* environment = environment_create(NULL);
         Node expression;
         memset(&expression, 0, sizeof(Node));
         char* contents_it = contents;
-        Error err = parse_expr(contents, &contents_it, &expression);
+        Error err = parse_expr(context, contents_it, &contents_it, &expression);
         print_node(&expression, 0);
         putchar('\n');
 
