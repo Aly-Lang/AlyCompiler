@@ -419,6 +419,7 @@ ParsingContext* parse_context_create() {
     ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
     assert(ctx && "Could not allocate memory for parsing context");
     ctx->types = environment_create(NULL);
+    // TODO: Add builtin types (integer, etc).
     ctx->variables = environment_create(NULL);
     return ctx;
 }
@@ -539,16 +540,16 @@ int main(int argc, char** argv) {
         // TODO: Create API to heap allocate a program node, as well as add
         // expressions as children.
         ParsingContext* context = parse_context_create();
-        Environment* environment = environment_create(NULL);
-        Node expression;
-        memset(&expression, 0, sizeof(Node));
+        Node* expression = node_allocate();
+        memset(expression, 0, sizeof(Node));
         char* contents_it = contents;
-        Error err = parse_expr(context, contents_it, &contents_it, &expression);
-        print_node(&expression, 0);
+        Error err = parse_expr(context, contents_it, &contents_it, expression);
+        print_node(expression, 0);
         putchar('\n');
 
         print_error(err);
 
+        node_free(expression);
         free(contents);
     }
 

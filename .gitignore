@@ -57,3 +57,12 @@ dkms.conf
 build/
 bld/
 x64/
+
+# MinGW-specific build files
+Makefile
+CMakeCache.txt
+CMakeFiles/
+mingw32/
+mingw64/
+msys/
+/MinGW Makefiles/
