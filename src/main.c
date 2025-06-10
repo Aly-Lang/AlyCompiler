@@ -24,6 +24,7 @@ char* file_contents(char* path) {
         printf("Could not open file at %s\n", path);
         return NULL;
     }
+    // Otherwise, if you find file get the size.
     fseek(file, 0, SEEK_SET);
     long size = file_size(file);
     char* contents = malloc(size + 1);
@@ -103,7 +104,7 @@ void print_error(Error err) {
 	(n).msg = (message);
 
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n,():";
+const char* delimiters = " \r\n,():"; // NOTE: Delimiters just end a token and begin a new one.
 
 typedef struct Token {
     char* beginning;
@@ -200,7 +201,7 @@ Node* node_allocate() {
 #define integerp(node) ((node).type == NODE_TYPE_INTEGER)
 #define symbolp(node) ((node).type == NODE_TYPE_SYMBOL)
 
-/// PARENT is modified, NEW_CHILD pointer is used verbatim.
+/// PARENT is modified, NEW_CHILD pointer is verbatim.
 void node_add_child(Node* parent, Node* new_child) {
     if (!parent || !new_child) { return; }
     if (parent->children) {
@@ -220,7 +221,7 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
-    // TODO : This assert doesn't work, I don't know why :^(.
+    // TODO: This assert doesn't work, I don't know why :^(.
     assert(NODE_TYPE_MAX == 7 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
@@ -252,7 +253,7 @@ int node_compare(Node* a, Node* b) {
         printf("TODO: node_compare() VARIABLE DECLARATION\n");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: node_compare() VARIABLE DECLARATION INITIALIZED\n");
+        printf("TODO: node_compare() VARIABLE DECLARATION INITALIZED\n");
         break;
     case NODE_TYPE_PROGRAM:
         // TODO: Compare two programs.
@@ -273,6 +274,7 @@ Node* node_integer(long long value) {
 
 // TODO: Think about caching used symbols and not creating duplicates!
 Node* node_symbol(char* symbol_string) {
+    // NOTE: 'strdup' is deprecated on Window's MSVC for safety, in Clang still exists.
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
     symbol->value.symbol = strdup(symbol_string);
@@ -299,7 +301,6 @@ void print_node(Node* node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
-    // TODO : This assert doesn't work, I don't know why :^(.
     assert(NODE_TYPE_MAX == 7 && "print_node() must handle all node types");
     switch (node->type) {
     default:
@@ -318,13 +319,15 @@ void print_node(Node* node, size_t indent_level) {
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("BINARY_OPERATOR");
+        printf("TODO: print_node() BINARY_OPERATOR");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
+        //printf("VAR_DECL:");
+        // TODO: Print first child (ID symbol), then type of second child.
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("VARIABLE DECLARATION INITIALIZED");
+        printf("TODO: print_node() VAR DECL INIT");
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
@@ -420,7 +423,7 @@ int environment_get(Environment env, Node* id, Node* result) {
     return 0;
 }
 
-int environment_get_by_symbol(Environment env, char* symbol, Node* result) {
+int enviornment_get_by_symbol(Environment env, char* symbol, Node* result) {
     Node* symbol_node = node_symbol(symbol);
     int status = environment_get(env, symbol_node, result);
     free(symbol_node);
@@ -502,16 +505,14 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
 
-            *result = *symbol;
+            // *result = *symbol;
 
             // TODO: Check if valid symbol for environment, then attempt to 
             // pattern match variable access, assignment, declaration, or
             // declaration with initialization.
 
             err = lex(current_token.end, &current_token);
-            if (err.type != ERROR_NONE) {
-                return err;
-            }
+            if (err.type != ERROR_NONE) { return err; }
             *end = current_token.end;
             size_t token_length = current_token.end - current_token.beginning;
             if (token_length == 0) { break; }
@@ -532,9 +533,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                     return err;
                 } else {
-                    //printf("Found valid type: ");
-                    //print_node(expected_type_symbol, 0);
-                    //putchar('\n');
+                    // printf("Found valid type: ");
+                    // print_node(expected_type_symbol, 0);
+                    // putchar('\n');
 
                     Node* var_decl = node_allocate();
                     var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
@@ -548,10 +549,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     *result = *var_decl;
                     // Node contents transfer ownership, var_decl is now hollow shell.
                     free(var_decl);
-
                     return ok;
                 }
+
+
             }
+
             printf("Unrecognized token: ");
             print_token(current_token);
             putchar('\n');
