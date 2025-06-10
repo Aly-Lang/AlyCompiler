@@ -199,19 +199,18 @@ Node* node_allocate() {
 #define integerp(node) ((node).type == NODE_TYPE_INTEGER)
 #define symbolp(node) ((node).type == NODE_TYPE_SYMBOL)
 
-/// PARENT is modified, NEW_CHILD is shallow copied.
+/// PARENT is modified, NEW_CHILD pointer is used verbatim.
 void node_add_child(Node* parent, Node* new_child) {
     if (!parent || !new_child) { return; }
-    Node* allocated_child = node_allocate();
-    *allocated_child = *new_child;
+
     if (parent->children) {
         Node* child = parent->children;
         while (child->next_child) {
             child = child->next_child;
         }
-        child->next_child = allocated_child;
+        child->next_child = new_child;
     } else {
-        parent->children = allocated_child;
+        parent->children = new_child;
     }
 }
 
@@ -289,7 +288,7 @@ Node* node_symbol_from_buffer(char* buffer, size_t length) {
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
     symbol->value.symbol = symbol_string;
-    //return symbol;
+    return symbol;
 }
 
 void print_node(Node* node, size_t indent_level) {
@@ -528,21 +527,19 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 // TODO: Look up type in types environment from parsing context.
                 if (token_string_equalp("integer", &current_token)) {
-                    Node var_decl;
-                    var_decl.children = NULL;
-                    var_decl.next_child = NULL;
-                    var_decl.type = NODE_TYPE_VARIABLE_DECLARATION;
+                    Node* var_decl = node_allocate();
+                    var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
 
-                    Node type_node;
-                    memset(&type_node, 0, sizeof(Node));
-                    type_node.type = NODE_TYPE_INTEGER;
+                    Node* type_node = node_allocate();
+                    type_node->type = NODE_TYPE_INTEGER;
 
-                    node_add_child(&var_decl, &type_node);
-                    node_add_child(&var_decl, symbol);
+                    node_add_child(var_decl, type_node);
+                    node_add_child(var_decl, symbol);
 
-                    *result = var_decl;
+                    *result = *var_decl;
 
                     // TODO: Look ahead for "=" assignment operator.
+
                     return ok;
                 }
             }
