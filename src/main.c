@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-long file_size(FILE* file) {
+long file_size(FILE * file) {
     if (!file) { return 0; }
     fpos_t original = 0;
     if (fgetpos(file, &original) != 0) {
@@ -24,6 +24,8 @@ char* file_contents(char* path) {
         printf("Could not open file at %s\n", path);
         return NULL;
     }
+    // Otherwise, if you find file get the size.
+    fseek(file, 0, SEEK_SET);
     long size = file_size(file);
     char* contents = malloc(size + 1);
     assert(contents && "Could not allocate buffer for file contents");
@@ -32,13 +34,12 @@ char* file_contents(char* path) {
     while (bytes_read < size) {
         size_t bytes_read_this_iteration = fread(write_it, 1, size - bytes_read, file);
         if (ferror(file)) {
-            printf("Error while reading: %i\n", errno);
+            printf("Error when reading: %i\n", errno);
             free(contents);
             return NULL;
         }
         bytes_read += bytes_read_this_iteration;
         write_it += bytes_read_this_iteration;
-
         if (feof(file)) { break; }
     }
     contents[bytes_read] = '\0';
@@ -65,19 +66,18 @@ typedef struct Error {
 Error ok = { ERROR_NONE, NULL };
 
 void print_error(Error err) {
-    if (err.type == ERROR_NONE) {
-        return;
-    }
+    if (err.type == ERROR_NONE) { return; }
     printf("ERROR: ");
     assert(ERROR_MAX == 6);
     switch (err.type) {
     default:
         printf("Unknown error type...");
+        break;
     case ERROR_TODO:
         printf("TODO (not implemented)");
         break;
     case ERROR_SYNTAX:
-        printf("Invalid syntax");
+        printf("Invalid Syntax");
         break;
     case ERROR_TYPE:
         printf("Mismatched types");
@@ -95,16 +95,15 @@ void print_error(Error err) {
         printf("     : %s\n", err.msg);
     }
 }
+#define ERROR_CREATE(n, t, msg)   \
+	Error (n) = { (t), (msg) } 
 
-#define ERROR_CREATE(n, t, msg) \
-	Error (n) = { (t), (msg) }
-
-#define ERROR_PREP(n, t, message)	\
-	(n).type = (t);					 \
+#define ERROR_PREP(n, t, message)   \
+	(n).type = (t);                  \
 	(n).msg = (message);
 
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n,():";
+const char* delimiters = " \r\n,():"; // NOTE: Delimiters just end a token and begin a new one.
 
 typedef struct Token {
     char* beginning;
@@ -121,38 +120,33 @@ Error lex(char* source, Token* token) {
     if (!source || !token) {
         ERROR_PREP(err, ERROR_ARGUMENTS, "Can not lex empty source.");
         return err;
-    }
+    };
     token->beginning = source;
-    token->beginning += strspn(token->beginning, whitespace); // Skip all the whitespace at the beginning.
+    token->beginning += strspn(token->beginning, whitespace); // Skip the whitespace at the beginning.
     token->end = token->beginning;
     if (*(token->end) == '\0') { return err; }
-    token->end += strcspn(token->beginning, delimiters); // Skip everything not in delimiters.
+    token->end += strcspn(token->beginning, delimiters); // Skip everything that is not in delimiters.
     if (token->end == token->beginning) {
-        token->end += 1; // One byte if tokens are singular length.
+        token->end += 1;
     }
     return err;
 }
 
-// AST Structure:
-//        Node
+//        Node-
 //       /  |  \
 //      0   1   2
 //     / \
 //    3   4
-
-// Tree Representation (with parent-child and sibling order):
+//
 // Node
-// ├──> 0
-// │   ├──> 3
-// │   └──> 4
-// ├──> 1
-// └──> 2
+// ├── 0 ──► 1 ──► 2
+//	   └── 3 ──► 4
 
 // A : integer = 420
-// 
+//
 // PROGRAM
 // `-- VARIABLE_DECLARATION_INITIALIZED
-//     `-- INTEGER (420) -> SYMBOL (A)
+//	   `-- INTEGER (420) -> SYMBOL (A)
 
 // TODO:
 // |-- API to create new node.
@@ -160,14 +154,16 @@ Error lex(char* source, Token* token) {
 typedef struct Node {
     // TODO: Think about how to document node types and how they fit in the AST.
     enum NodeType {
-        // BEG LITERALS
+        // BEGIN LITERALS
+
+        /// The definition of nothing; false, etc.
         NODE_TYPE_NONE,
 
         /// Just an integer.
         NODE_TYPE_INTEGER,
 
-        /// When a literal is expected but no other literal is valid, it
-        /// becomes a symbol.
+        /// When a literal is expected but no other literal is valid,
+        /// it becomes a symbol.
         NODE_TYPE_SYMBOL,
 
         // END LITERALS
@@ -180,10 +176,9 @@ typedef struct Node {
         /// Contains two children that determine left and right acceptable
         /// types.
         NODE_TYPE_BINARY_OPERATOR,
-
-        /// Contains a list of expressions to execute in sequence.
         NODE_TYPE_PROGRAM,
 
+        /// Contains a list of expressions to execute in sequence.
         NODE_TYPE_MAX,
     } type;
     union NodeValue {
@@ -197,11 +192,10 @@ typedef struct Node {
 
 Node* node_allocate() {
     Node* node = calloc(1, sizeof(Node));
-    assert(node && "Could not allocate memory for new AST node");
+    assert(node && "Could not allocate memory for AST node");
     return node;
 }
 
-// Predicates
 #define nonep(node) ((node).type == NODE_TYPE_NONE)
 #define integerp(node) ((node).type == NODE_TYPE_INTEGER)
 #define symbolp(node) ((node).type == NODE_TYPE_SYMBOL)
@@ -228,13 +222,12 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
+    // TODO : This assert doesn't work, I don't know why :^(.
     assert(NODE_TYPE_MAX == 7 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
-        if (nonep(*b)) {
-            return 1;
-        }
+        if (nonep(*b)) { return 1; }
         return 0;
         break;
     case NODE_TYPE_INTEGER:
@@ -243,8 +236,29 @@ int node_compare(Node* a, Node* b) {
         }
         return 0;
         break;
+    case NODE_TYPE_SYMBOL:
+        if (a->value.symbol && b->value.symbol) {
+            if (strcmp(a->value.symbol, b->value.symbol) == 0) {
+                return 1;
+            }
+            return 0;
+        } else if (!a->value.symbol && !b->value.symbol) {
+            return 1;
+        }
+        return 0;
+        break;
+    case NODE_TYPE_BINARY_OPERATOR:
+        printf("TODO: node_compare() BINARY OPERATOR\n");
+        break;
+    case NODE_TYPE_VARIABLE_DECLARATION:
+        printf("TODO: node_compare() VARIABLE DECLARATION\n");
+        break;
+    case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
+        printf("TODO: node_compare() VARIABLE DECLARATION INITALIZED\n");
+        break;
     case NODE_TYPE_PROGRAM:
-        printf("TODO: Compare two programs");
+        // TODO: Compare two programs.
+        printf("TODO: Compare two programs.\n");
         break;
     }
     return 0;
@@ -252,15 +266,16 @@ int node_compare(Node* a, Node* b) {
 
 Node* node_integer(long long value) {
     Node* integer = node_allocate();
-    integer->type = NODE_TYPE_SYMBOL;
-    integer->value.symbol = value;
+    integer->type = NODE_TYPE_INTEGER;
+    integer->value.integer = value;
     integer->children = NULL;
     integer->next_child = NULL;
     return integer;
 }
 
-// TODO: Think about caching used symbols and not creating duplicates!#
+// TODO: Think about caching used symbols and not creating duplicates!
 Node* node_symbol(char* symbol_string) {
+    // NOTE: 'strdup' is deprecated on Window's MSVC for safety, in Clang still exists.
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
     symbol->value.symbol = strdup(symbol_string);
@@ -277,6 +292,7 @@ void print_node(Node* node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
+    // TODO : This assert doesn't work, I don't know why :^(.
     assert(NODE_TYPE_MAX == 7 && "print_node() must handle all node types");
     switch (node->type) {
     default:
@@ -289,19 +305,21 @@ void print_node(Node* node, size_t indent_level) {
         printf("INT:%lld", node->value.integer);
         break;
     case NODE_TYPE_SYMBOL:
-        printf("SYM");
+        printf("SYM:");
         if (node->value.symbol) {
-            printf(":%s", node->value.symbol);
+            printf("%s", node->value.symbol);
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("BINARY OPERATOR");
+        printf("TODO: print_node() BINARY_OPERATOR");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
+        //printf("VAR_DECL:");
+        // TODO: Print first child (ID symbol), then type of second child.
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("VARIABLE DECLARATION INITIALIZATION");
+        printf("TODO: print_node() VAR DECL INIT");
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
@@ -316,8 +334,8 @@ void print_node(Node* node, size_t indent_level) {
     }
 }
 
-// TODO: Make more efficient! We could potentially keep 
-// track of all nodes and free them all in one go.
+// TODO: Make more efficient! -- Maybe keep track of allocated ptr's
+// then free them all in one go?
 void node_free(Node* root) {
     if (!root) { return; }
     Node* child = root->children;
@@ -333,9 +351,10 @@ void node_free(Node* root) {
     free(root);
 }
 
-// TODO: 
-// |-- API to create a new Binding.
-// `-- API to add Binding to enviornment.
+// TODO:
+// |-- API to create new Binding.
+// |-- API to create new Binding.
+// `-- API to add Binding to environment.
 typedef struct Binding {
     Node* id;
     Node* value;
@@ -350,20 +369,26 @@ typedef struct Environment {
 
 Environment* environment_create(Environment* parent) {
     Environment* env = malloc(sizeof(Environment));
-    assert(env && "Could not allocate memory for new environment");
+    assert(env && "Could not allocate memory to new environment");
     env->parent = parent;
     env->bind = NULL;
     return env;
 }
 
-void environment_set(Environment env, Node* id, Node* value) {
+/**
+* @retval 0 Failure.
+* @retval 1 Creation of new binding.
+* @retval 2 Existing binding value overwrite (ID unused).
+*/
+int environment_set(Environment* env, Node* id, Node* value) {
     // Over-write existing value if ID is already bound in environment.
-    Binding* binding_it = env.bind;
+    if (!env || !id || !value) { return 0; }
+
+    Binding* binding_it = env->bind;
     while (binding_it) {
-        if (node_compare(binding_it, id)) {
+        if (node_compare(binding_it->id, id)) {
             binding_it->value = value;
-            node_free(id);
-            return;
+            return 2;
         }
         binding_it = binding_it->next;
     }
@@ -372,15 +397,16 @@ void environment_set(Environment env, Node* id, Node* value) {
     assert(binding && "Could not allocate new binding for environment");
     binding->id = id;
     binding->value = value;
-    binding->next = env.bind;
-    env.bind = binding;
+    binding->next = env->bind;
+    env->bind = binding;
+    return 1;
 }
 
 /// @return Boolean-like value; 1 for success, 0 for failure.
-Node* environment_get(Environment env, Node* id, Node* result) {
+int environment_get(Environment env, Node* id, Node* result) {
     Binding* binding_it = env.bind;
     while (binding_it) {
-        if (node_compare(binding_it->id, &id)) {
+        if (node_compare(binding_it->id, id)) {
             *result = *binding_it->value;
             return 1;
         }
@@ -394,9 +420,7 @@ int token_string_equalp(char* string, Token* token) {
     if (!string || !token) { return 0; }
     char* beg = token->beginning;
     while (*string && token->beginning < token->end) {
-        if (*string != *beg) {
-            return 0;
-        }
+        if (*string != *beg) { return 0; }
         string++;
         beg++;
     }
@@ -425,10 +449,11 @@ typedef struct ParsingContext {
 
 ParsingContext* parse_context_create() {
     ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
-    assert(ctx && "Could not allocate memory for parsing context");
+    assert(ctx && "Could not allocate memory for parsing context.");
     ctx->types = environment_create(NULL);
-    environment_set(*ctx->types, node_symbol("integer"), node_integer(0));
-    // TODO: Add builtin types (integer, etc).
+    if (environment_set(ctx->types, node_symbol("integer"), node_integer(0)) == 0) {
+        printf("ERROR: Failed to set builtin type in types environment.\n");
+    }
     ctx->variables = environment_create(NULL);
     return ctx;
 }
@@ -452,14 +477,15 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 return err;
             }
             *end = current_token.end;
+
             // TODO: Check for valid integer operator.
-            // It would be cool to use an operator environment to look
-            // up operators instead of hard-coding them. This would eventually,
-            // allow for user-defined operators, or stuff like that.
+            // It would be cool to use an operator environment to look up
+            // operators instead of hard-coding them. This would eventually
+            // allow for user-defined operators, or stuff like that!
         } else {
             // TODO: Check for unary prefix operators.
 
-            // TODO: Check tht it isn't a binary operator (we should encounter left
+            // TODO: Check that it isn't a binary operator (we should encounter left
             // side first and peek forward, rather than encounter it at top level).
 
             Node symbol;
@@ -468,8 +494,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             symbol.next_child = NULL;
             symbol.value.symbol = NULL;
 
-            // NOTE: This basically gets the string data after allocating 
-            // a new node.
             char* symbol_string = malloc(token_length + 1);
             assert(symbol_string && "Could not allocate memory for symbol");
             memcpy(symbol_string, current_token.beginning, token_length);
@@ -478,9 +502,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             *result = symbol;
 
-            // TODO: Check if valid symbol for variable environment, 
-            // then attempt to pattern match variable access, assignment,
-            // declaration or declaration with initialization.
+
+            // TODO: Check if valid symbol for environment, then attempt to 
+            // pattern match variable access, assignment, declaration, or
+            // declaration with initialization.
 
             err = lex(current_token.end, &current_token);
             if (err.type != ERROR_NONE) {
@@ -525,7 +550,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             putchar('\n');
             return err;
         }
-
         printf("Intermediate node: ");
         print_node(result, 0);
         putchar('\n');
@@ -544,17 +568,22 @@ int main(int argc, char** argv) {
     char* contents = file_contents(path);
 
     if (contents) {
-        //printf("Contents of %s:\n---\n\"%s\"\n---\n", path, contents);
+        // printf("Contents of %s:\n---\n\"%s\"\n---\n", path, contents);
 
-        // TODO: Create API to heap allocate a program node, as well as add
-        // expressions as children.
+        // TODO: Create API to heap allocate a program node, as well as add 
+        // expression as children.
         ParsingContext* context = parse_context_create();
+        Node* lookup_symbol = node_symbol("integer");
         Node* integer_type_hopefully = node_allocate();
-        int status = environment_get(*context->types, node_symbol("integer"), integer_type_hopefully);
+        int status = environment_get(*context->types, lookup_symbol, integer_type_hopefully);
         if (status == 0) {
-            printf("Failed to find node environment\n");
+            printf("Failed to find node within environment\n");
+        } else {
+            print_node(integer_type_hopefully, 0);
+            putchar('\n');
         }
-        print_node(integer_type_hopefully, 0);
+
+        node_free(lookup_symbol);
         node_free(integer_type_hopefully);
 
         Node* program = node_allocate();
@@ -564,13 +593,13 @@ int main(int argc, char** argv) {
         char* contents_it = contents;
         Error err = parse_expr(context, contents_it, &contents_it, expression);
         node_add_child(program, expression);
-        putchar('\n');
 
         print_error(err);
 
         print_node(program, 0);
+        putchar('\n');
 
-        node_free(expression);
+        node_free(program);
         free(contents);
     }
 
