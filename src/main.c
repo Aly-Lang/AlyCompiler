@@ -24,7 +24,6 @@ char* file_contents(char* path) {
         printf("Could not open file at %s\n", path);
         return NULL;
     }
-    // Otherwise, if you find file get the size.
     fseek(file, 0, SEEK_SET);
     long size = file_size(file);
     char* contents = malloc(size + 1);
@@ -104,7 +103,7 @@ void print_error(Error err) {
 	(n).msg = (message);
 
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n,():"; // NOTE: Delimiters just end a token and begin a new one.
+const char* delimiters = " \r\n,():";
 
 typedef struct Token {
     char* beginning;
@@ -274,7 +273,6 @@ Node* node_integer(long long value) {
 
 // TODO: Think about caching used symbols and not creating duplicates!
 Node* node_symbol(char* symbol_string) {
-    // NOTE: 'strdup' is deprecated on Window's MSVC for safety, in Clang still exists.
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
     symbol->value.symbol = strdup(symbol_string);
@@ -526,11 +524,11 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 size_t token_length = current_token.end - current_token.beginning;
                 if (token_length == 0) { break; }
 
-                // TODO: Look up type in types environment from parsing context.
                 Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
                 int status = environment_get(*context->types, expected_type_symbol, result);
                 if (status == 0) {
                     ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
+                    printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
                     return err;
                 } else {
                     // printf("Found valid type: ");
@@ -551,8 +549,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     free(var_decl);
                     return ok;
                 }
-
-
             }
 
             printf("Unrecognized token: ");
