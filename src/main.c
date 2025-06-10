@@ -531,25 +531,27 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 if (status == 0) {
                     ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                     return err;
-                }
-                if (token_string_equalp("integer", &current_token)) {
+                } else {
+                    //printf("Found valid type: ");
+                    //print_node(expected_type_symbol, 0);
+                    //putchar('\n');
+
                     Node* var_decl = node_allocate();
                     var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
 
                     Node* type_node = node_allocate();
-                    type_node->type = NODE_TYPE_INTEGER;
+                    type_node->type = result->type;
 
                     node_add_child(var_decl, type_node);
                     node_add_child(var_decl, symbol);
 
                     *result = *var_decl;
-
-                    // TODO: Look ahead for "=" assignment operator.
+                    // Node contents transfer ownership, var_decl is now hollow shell.
+                    free(var_decl);
 
                     return ok;
                 }
             }
-
             printf("Unrecognized token: ");
             print_token(current_token);
             putchar('\n');
