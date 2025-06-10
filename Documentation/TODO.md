@@ -6,6 +6,10 @@
 
 - [ ] Compile AST into assembly, let's start with x86_64? We could also transpile into another language that then gets compiled, like C or something.
 
+# Kind of Urgent
+
+- [ ] Lex past comments or something.
+
 # Dumb ideas that we could implement
 
 - Compile to brain-fuck XD? - This is just a perfect idea. I am not know if it's possible.

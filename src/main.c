@@ -277,9 +277,19 @@ Node* node_symbol(char* symbol_string) {
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
     symbol->value.symbol = strdup(symbol_string);
-    symbol->children = NULL;
-    symbol->next_child = NULL;
     return symbol;
+}
+
+Node* node_symbol_from_buffer(char* buffer, size_t length) {
+    assert(buffer && "Could not create AST symbol node from NULL buffer");
+    char* symbol_string = malloc(length + 1);
+    assert(symbol_string && "Could not allocate memory for symbol string");
+    memcpy(symbol_string, buffer, length);
+    symbol_string[length] = '\0';
+    Node* symbol = node_allocate();
+    symbol->type = NODE_TYPE_SYMBOL;
+    symbol->value.symbol = symbol_string;
+    //return symbol;
 }
 
 void print_node(Node* node, size_t indent_level) {
@@ -491,20 +501,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // TODO: Check that it isn't a binary operator (we should encounter left
             // side first and peek forward, rather than encounter it at top level).
 
-            Node symbol;
-            symbol.type = NODE_TYPE_SYMBOL;
-            symbol.children = NULL;
-            symbol.next_child = NULL;
-            symbol.value.symbol = NULL;
+            Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
 
-            // NOTE: This basically gets the string data.
-            char* symbol_string = malloc(token_length + 1);
-            assert(symbol_string && "Could not allocate memory for symbol");
-            memcpy(symbol_string, current_token.beginning, token_length);
-            symbol_string[token_length] = '\0';
-            symbol.value.symbol = symbol_string;
-
-            *result = symbol;
+            *result = *symbol;
 
             // TODO: Check if valid symbol for environment, then attempt to 
             // pattern match variable access, assignment, declaration, or
@@ -539,7 +538,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     type_node.type = NODE_TYPE_INTEGER;
 
                     node_add_child(&var_decl, &type_node);
-                    node_add_child(&var_decl, &symbol);
+                    node_add_child(&var_decl, symbol);
 
                     *result = var_decl;
 
