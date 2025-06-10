@@ -250,6 +250,15 @@ int node_compare(Node* a, Node* b) {
     return 0;
 }
 
+Node* node_integer(long long value) {
+    Node* integer = node_allocate();
+    integer->type = NODE_TYPE_SYMBOL;
+    integer->value.symbol = value;
+    integer->children = NULL;
+    integer->next_child = NULL;
+    return integer;
+}
+
 Node* node_symbol(char* symbol_string) {
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
@@ -327,8 +336,8 @@ void node_free(Node* root) {
 // |-- API to create a new Binding.
 // `-- API to add Binding to enviornment.
 typedef struct Binding {
-    Node id;
-    Node value;
+    Node* id;
+    Node* value;
     struct Binding* next;
 } Binding;
 
@@ -346,12 +355,13 @@ Environment* environment_create(Environment* parent) {
     return env;
 }
 
-void environment_set(Environment env, Node id, Node value) {
+void environment_set(Environment env, Node* id, Node* value) {
     // Over-write existing value if ID is already bound in environment.
     Binding* binding_it = env.bind;
     while (binding_it) {
-        if (node_compare(&binding_it, &id)) {
+        if (node_compare(binding_it, id)) {
             binding_it->value = value;
+            node_free(id);
             return;
         }
         binding_it = binding_it->next;
@@ -365,20 +375,17 @@ void environment_set(Environment env, Node id, Node value) {
     env.bind = binding;
 }
 
-Node environment_get(Environment env, Node id) {
+/// @return Boolean-like value; 1 for success, 0 for failure.
+Node* environment_get(Environment env, Node* id, Node* result) {
     Binding* binding_it = env.bind;
     while (binding_it) {
-        if (node_compare(&binding_it->id, &id)) {
-            return binding_it->value;
+        if (node_compare(binding_it->id, &id)) {
+            result = binding_it->value;
+            return 1;
         }
         binding_it = binding_it->next;
     }
-    Node value;
-    value.type = NODE_TYPE_NONE;
-    value.children = NULL;
-    value.next_child = NULL;
-    value.value.integer = 0;
-    return value;
+    return 0;
 }
 
 /// @return Boolean-like value; 1 for success, 0 for failure.
@@ -419,6 +426,7 @@ ParsingContext* parse_context_create() {
     ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
     assert(ctx && "Could not allocate memory for parsing context");
     ctx->types = environment_create(NULL);
+    environment_set(*ctx->types, node_symbol("integer"), node_integer(0));
     // TODO: Add builtin types (integer, etc).
     ctx->variables = environment_create(NULL);
     return ctx;
