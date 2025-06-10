@@ -49,6 +49,7 @@ void print_usage(char** argv) {
     printf("USAGE: %s <path_to_file_to_compile>\n", argv[0]);
 }
 
+// TODO: Add file path, byte offset, etc.
 typedef struct Error {
     enum ErrorType {
         ERROR_NONE = 0,
@@ -525,6 +526,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 if (token_length == 0) { break; }
 
                 // TODO: Look up type in types environment from parsing context.
+                Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+                int status = environment_get(*context->types, expected_type_symbol, result);
+                if (status == 0) {
+                    ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
+                    return err;
+                }
                 if (token_string_equalp("integer", &current_token)) {
                     Node* var_decl = node_allocate();
                     var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
