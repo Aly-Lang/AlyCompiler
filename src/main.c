@@ -411,7 +411,7 @@ int environment_get(Environment env, Node* id, Node* result) {
     return 0;
 }
 
-int enviornment_get_by_symbol(Environment env, char* symbol, Node* result) {
+int environment_get_by_symbol(Environment env, char* symbol, Node* result) {
     Node* symbol_node = node_symbol(symbol);
     int status = environment_get(env, symbol_node, result);
     free(symbol_node);
@@ -577,7 +577,7 @@ int main(int argc, char** argv) {
         // expression as children.
         ParsingContext* context = parse_context_create();
         Node* integer_type_hopefully = node_allocate();
-        int status = enviornment_get_by_symbol(*context->types, "integer", integer_type_hopefully);
+        int status = environment_get_by_symbol(*context->types, "integer", integer_type_hopefully);
         if (status == 0) {
             printf("Failed to find node within environment\n");
         } else {
