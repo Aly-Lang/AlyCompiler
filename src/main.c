@@ -181,7 +181,7 @@ typedef struct Node {
         /// types.
         NODE_TYPE_BINARY_OPERATOR,
 
-        /// Contains a liust of expressions to execute in sequence.
+        /// Contains a list of expressions to execute in sequence.
         NODE_TYPE_PROGRAM,
 
         NODE_TYPE_MAX,
@@ -540,14 +540,18 @@ int main(int argc, char** argv) {
         // TODO: Create API to heap allocate a program node, as well as add
         // expressions as children.
         ParsingContext* context = parse_context_create();
+        Node* program = node_allocate();
+        program->type = NODE_TYPE_PROGRAM;
         Node* expression = node_allocate();
         memset(expression, 0, sizeof(Node));
         char* contents_it = contents;
         Error err = parse_expr(context, contents_it, &contents_it, expression);
-        print_node(expression, 0);
+        node_add_child(program, expression);
         putchar('\n');
 
         print_error(err);
+
+        print_node(program, 0);
 
         node_free(expression);
         free(contents);
