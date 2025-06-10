@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-long file_size(FILE * file) {
+long file_size(FILE* file) {
     if (!file) { return 0; }
     fpos_t original = 0;
     if (fgetpos(file, &original) != 0) {
@@ -24,7 +24,6 @@ char* file_contents(char* path) {
         printf("Could not open file at %s\n", path);
         return NULL;
     }
-    // Otherwise, if you find file get the size.
     fseek(file, 0, SEEK_SET);
     long size = file_size(file);
     char* contents = malloc(size + 1);
@@ -103,7 +102,7 @@ void print_error(Error err) {
 	(n).msg = (message);
 
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n,():"; // NOTE: Delimiters just end a token and begin a new one.
+const char* delimiters = " \r\n,():";
 
 typedef struct Token {
     char* beginning;
@@ -254,7 +253,7 @@ int node_compare(Node* a, Node* b) {
         printf("TODO: node_compare() VARIABLE DECLARATION\n");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: node_compare() VARIABLE DECLARATION INITALIZED\n");
+        printf("TODO: node_compare() VARIABLE DECLARATION INITIALIZED\n");
         break;
     case NODE_TYPE_PROGRAM:
         // TODO: Compare two programs.
@@ -275,7 +274,6 @@ Node* node_integer(long long value) {
 
 // TODO: Think about caching used symbols and not creating duplicates!
 Node* node_symbol(char* symbol_string) {
-    // NOTE: 'strdup' is deprecated on Window's MSVC for safety, in Clang still exists.
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
     symbol->value.symbol = strdup(symbol_string);
@@ -311,15 +309,13 @@ void print_node(Node* node, size_t indent_level) {
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("TODO: print_node() BINARY_OPERATOR");
+        printf("BINARY_OPERATOR");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
-        //printf("VAR_DECL:");
-        // TODO: Print first child (ID symbol), then type of second child.
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: print_node() VAR DECL INIT");
+        printf("VARIABLE DECLARATION INITIALIZED");
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
@@ -415,6 +411,13 @@ int environment_get(Environment env, Node* id, Node* result) {
     return 0;
 }
 
+int enviornment_get_by_symbol(Environment env, char* symbol, Node* result) {
+    Node* symbol_node = node_symbol(symbol);
+    int status = environment_get(env, symbol_node, result);
+    free(symbol_node);
+    return status;
+}
+
 /// @return Boolean-like value; 1 for success, 0 for failure.
 int token_string_equalp(char* string, Token* token) {
     if (!string || !token) { return 0; }
@@ -494,6 +497,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             symbol.next_child = NULL;
             symbol.value.symbol = NULL;
 
+            // NOTE: This basically gets the string data.
             char* symbol_string = malloc(token_length + 1);
             assert(symbol_string && "Could not allocate memory for symbol");
             memcpy(symbol_string, current_token.beginning, token_length);
@@ -501,7 +505,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             symbol.value.symbol = symbol_string;
 
             *result = symbol;
-
 
             // TODO: Check if valid symbol for environment, then attempt to 
             // pattern match variable access, assignment, declaration, or
@@ -573,9 +576,8 @@ int main(int argc, char** argv) {
         // TODO: Create API to heap allocate a program node, as well as add 
         // expression as children.
         ParsingContext* context = parse_context_create();
-        Node* lookup_symbol = node_symbol("integer");
         Node* integer_type_hopefully = node_allocate();
-        int status = environment_get(*context->types, lookup_symbol, integer_type_hopefully);
+        int status = enviornment_get_by_symbol(*context->types, "integer", integer_type_hopefully);
         if (status == 0) {
             printf("Failed to find node within environment\n");
         } else {
@@ -583,7 +585,6 @@ int main(int argc, char** argv) {
             putchar('\n');
         }
 
-        node_free(lookup_symbol);
         node_free(integer_type_hopefully);
 
         Node* program = node_allocate();
