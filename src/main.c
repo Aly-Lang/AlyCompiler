@@ -259,6 +259,7 @@ Node* node_integer(long long value) {
     return integer;
 }
 
+// TODO: Think about caching used symbols and not creating duplicates!#
 Node* node_symbol(char* symbol_string) {
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
@@ -380,7 +381,7 @@ Node* environment_get(Environment env, Node* id, Node* result) {
     Binding* binding_it = env.bind;
     while (binding_it) {
         if (node_compare(binding_it->id, &id)) {
-            result = binding_it->value;
+            *result = *binding_it->value;
             return 1;
         }
         binding_it = binding_it->next;
@@ -548,6 +549,14 @@ int main(int argc, char** argv) {
         // TODO: Create API to heap allocate a program node, as well as add
         // expressions as children.
         ParsingContext* context = parse_context_create();
+        Node* integer_type_hopefully = node_allocate();
+        int status = environment_get(*context->types, node_symbol("integer"), integer_type_hopefully);
+        if (status == 0) {
+            printf("Failed to find node environment\n");
+        }
+        print_node(integer_type_hopefully, 0);
+        node_free(integer_type_hopefully);
+
         Node* program = node_allocate();
         program->type = NODE_TYPE_PROGRAM;
         Node* expression = node_allocate();
