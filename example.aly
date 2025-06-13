@@ -9,3 +9,4 @@ defun foo (a:integer, b:integer):integer {
 }
 
 foo(20, 34)
+

@@ -22,27 +22,29 @@ Error lex(char* source, Token* token) {
     if (!source || !token) {
         ERROR_PREP(err, ERROR_ARGUMENTS, "Can not lex empty source.");
         return err;
-    };
+    }
     token->beginning = source;
     token->beginning += strspn(token->beginning, whitespace); // Skip beginning whitespace.
     token->end = token->beginning;
     if (*(token->end) == '\0') { return err; }
     token->end += strcspn(token->beginning, delimiters); // Skip until delimiter or end of string.
     if (token->end == token->beginning) {
-        token->end += 1;
+        token->end += 1; // NOTE: This is basically lex protection if we lex over nothing.
     }
     return err;
 }
 
 int token_string_equalp(char* string, Token* token) {
-	if (!string || !token) { return 0; }
-	char* beg = token->beginning;
-	while (*string && token->beginning < token->end) {
-		if (*string != *beg) { return 0; }
-		string++;
-		beg++;
-	}
-	return 1;
+    if (!string || !token) { return 0; }
+    char* beg = token->beginning;
+    while (*string && token->beginning < token->end) {
+        if (*string != *beg) {
+            return 0;
+        }
+        string++;
+        beg++;
+    }
+    return 1;
 }
 
 //===================================================================== End lexer
@@ -204,114 +206,118 @@ void node_free(Node* root) {
 }
 
 int parse_integer(Token* token, Node* node) {
-	if (!token || !node) { return 0; }
-	char* end = NULL;
-	if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
-		node->type = NODE_TYPE_INTEGER;
-		node->value.integer = 0;
-	} else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
-		if (end != token->end) { return 0; }
-		node->type = NODE_TYPE_INTEGER;
-	} else { return 0; }
-	return 1;
+    if (!token || !node) { return 0; }
+    char* end = NULL;
+    if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
+        node->type = NODE_TYPE_INTEGER;
+        node->value.integer = 0;
+    } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
+        if (end != token->end) { return 0; }
+        node->type = NODE_TYPE_INTEGER;
+    } else { return 0; }
+    return 1;
 }
 
 ParsingContext* parse_context_create() {
-	ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
-	assert(ctx && "Could not allocate memory for parsing context.");
-	ctx->types = environment_create(NULL);
-	if (environment_set(ctx->types, node_symbol("integer"), node_integer(0)) == 0) {
-		printf("ERROR: Failed to set builtin type in types environment.\n");
-	}
-	ctx->variables = environment_create(NULL);
-	return ctx;
+    ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
+    assert(ctx && "Could not allocate memory for parsing context.");
+    ctx->types = environment_create(NULL);
+    if (environment_set(ctx->types, node_symbol("integer"), node_integer(0)) == 0) {
+        printf("ERROR: Failed to set builtin type in types environment.\n");
+    }
+    ctx->variables = environment_create(NULL);
+    return ctx;
 }
 
 Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) {
-	size_t token_count = 0;
-	Token current_token;
-	current_token.beginning = source;
-	current_token.end = source;
-	Error err = ok;
+    size_t token_count = 0;
+    Token current_token;
+    current_token.beginning = source;
+    current_token.end = source;
+    Error err = ok;
 
-	while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
-		*end = current_token.end;
-		size_t token_length = current_token.end - current_token.beginning;
-		if (token_length == 0) { break; }
-		if (parse_integer(&current_token, result)) {
-			// Look ahead for binary operators that include integers.
-			Node lhs_integer = *result;
-			err = lex(current_token.end, &current_token);
-			if (err.type != ERROR_NONE) { return err; }
-			*end = current_token.end;
+    while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
+        *end = current_token.end;
+        size_t token_length = current_token.end - current_token.beginning;
+        if (token_length == 0) { break; }
+        if (parse_integer(&current_token, result)) {
+            // Look ahead for binary operators that include integers.
+            Node lhs_integer = *result;
+            err = lex(current_token.end, &current_token);
+            *end = current_token.end;
+            if (err.type != ERROR_NONE) {
+                return err;
+            }
 
-			// TODO: Check for valid integer operator.
-			// It would be cool to use an operator environment to look up
-			// operators instead of hard-coding them. This would eventually
-			// allow for user-defined operators, or stuff like that!
-		} else {
-			// TODO: Check for unary prefix operators.
+            // TODO: Check for valid integer operator.
+            // It would be cool to use an operator environment to look up
+            // operators instead of hard-coding them. This would eventually
+            // allow for user-defined operators, or stuff like that!
+        } else {
+            // TODO: Check for unary prefix operators.
 
-			// TODO: Check that it isn't a binary operator (we should encounter left
-			// side first and peek forward, rather than encounter it at top level).
+            // TODO: Check that it isn't a binary operator (we should encounter left
+            // side first and peek forward, rather than encounter it at top level).
 
-			Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+            Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
 
-			// *result = *symbol;
+            // *result = *symbol;
 
-			// TODO: Check if valid symbol for environment, then attempt to 
-			// pattern match variable access, assignment, declaration, or
-			// declaration with initialization.
+            // TODO: Check if valid symbol for environment, then attempt to 
+            // pattern match variable access, assignment, declaration, or
+            // declaration with initialization.
 
-			err = lex(current_token.end, &current_token);
-			if (err.type != ERROR_NONE) { return err; }
-			*end = current_token.end;
-			size_t token_length = current_token.end - current_token.beginning;
-			if (token_length == 0) { break; }
+            err = lex(current_token.end, &current_token);
+            *end = current_token.end;
+            if (err.type != ERROR_NONE) { return err; }
+            size_t token_length = current_token.end - current_token.beginning;
+            if (token_length == 0) { break; }
 
-			if (token_string_equalp(":", &current_token)) {
-				err = lex(current_token.end, &current_token);
-				if (err.type != ERROR_NONE) { return err; }
-				*end = current_token.end;
-				size_t token_length = current_token.end - current_token.beginning;
-				if (token_length == 0) { break; }
+            if (token_string_equalp(":", &current_token)) {
+                err = lex(current_token.end, &current_token);
+                *end = current_token.end;
+                if (err.type != ERROR_NONE) { return err; }
+                size_t token_length = current_token.end - current_token.beginning;
+                if (token_length == 0) { break; }
 
-				Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-				if (environment_get(*context->types, expected_type_symbol, result) == 0) {
-					ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
-					printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
-					return err;
-				} else {
-					// printf("Found valid type: ");
-					// print_node(expected_type_symbol, 0);
-					// putchar('\n');
+                Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+                if (environment_get(*context->types, expected_type_symbol, result) == 0) {
+                    ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
+                    printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
+                    return err;
+                } else {
+                    // printf("Found valid type: ");
+                    // print_node(expected_type_symbol, 0);
+                    // putchar('\n');
 
-					Node* var_decl = node_allocate();
-					var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
+                    Node* var_decl = node_allocate();
+                    var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
 
-					Node* type_node = node_allocate();
-					type_node->type = result->type;
+                    Node* type_node = node_allocate();
+                    type_node->type = result->type;
 
-					node_add_child(var_decl, type_node);
-					node_add_child(var_decl, symbol);
+                    node_add_child(var_decl, type_node);
+                    node_add_child(var_decl, symbol);
 
-					*result = *var_decl;
-					// Node contents transfer ownership, var_decl is now hollow shell.
-					free(var_decl);
-					return ok;
-				}
-			}
+                    *result = *var_decl;
+                    // Node contents transfer ownership, var_decl is now hollow shell.
+                    free(var_decl);
+                    return ok;
+                }
+            }
 
-			printf("Unrecognized token: ");
-			print_token(current_token);
-			putchar('\n');
+            printf("Unrecognized token: ");
+            print_token(current_token);
+            putchar('\n');
 
-			return err;
-		}
-		printf("Intermediate node: ");
-		print_node(result, 0);
-		putchar('\n');
-	}
+            ERROR_PREP(err, ERROR_SYNTAX, "Unrecognized token reached during parsing");
+            return err;
+        }
 
-	return err;
+        printf("Intermediate node: ");
+        print_node(result, 0);
+        putchar('\n');
+    }
+
+    return err;
 }

@@ -32,10 +32,23 @@ int main(int argc, char** argv) {
         Node* expression = node_allocate();
         memset(expression, 0, sizeof(Node));
         char* contents_it = contents;
-        Error err = parse_expr(context, contents_it, &contents_it, expression);
-        node_add_child(program, expression);
+        for (;;) {
 
-        print_error(err);
+            Error err = parse_expr(context, contents_it, &contents_it, expression);
+            printf("contents_it: \"%s\"\n", contents_it);
+
+            if (!(*contents_it)) {
+                break;
+            }
+            if (err.type != ERROR_NONE) {
+                print_error(err);
+                break;
+            }
+            node_add_child(program, expression);
+        }
+
+        printf("Hi mom!\n");
+        exit(0);
 
         print_node(program, 0);
         putchar('\n');
@@ -43,6 +56,5 @@ int main(int argc, char** argv) {
         node_free(program);
         free(contents);
     }
-
     return 0;
 }
