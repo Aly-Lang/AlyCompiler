@@ -17,6 +17,7 @@ add_executable(
     alyc
     src/main.c
     src/error.c
+    src/file_io.c
 )
 
 # Include path setup
