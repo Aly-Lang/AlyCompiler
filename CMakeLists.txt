@@ -18,6 +18,7 @@ add_executable(
     src/main.c
     src/error.c
     src/file_io.c
+    src/parser.c
 )
 
 # Include path setup

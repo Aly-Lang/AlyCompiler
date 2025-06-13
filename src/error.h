@@ -1,8 +1,6 @@
 #ifndef ALY_COMPILER_ERROR_H
 #define ALY_COMPILER_ERROR_H
 
-#include <stddef.h>
-
 // TODO: Add file path, byte offset, etc.
 typedef struct Error {
 	enum ErrorType {
