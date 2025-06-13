@@ -3,7 +3,8 @@
 
 #include <stddef.h>
 #include <error.h>
-#include <environment.h>
+
+typedef struct Environment Environment;
 
 typedef struct Token {
     char* beginning;

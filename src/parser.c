@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <error.h>
+#include <environment.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -166,13 +167,13 @@ void print_node(Node* node, size_t indent_level) {
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("TODO: print_node() BINARY_OPERATOR");
+        printf("BINARY_OPERATOR");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: print_node() VAR DECL INIT");
+        printf("VARIABLE DECLARATION INITIALIZED");
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
