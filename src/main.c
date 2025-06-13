@@ -47,9 +47,6 @@ int main(int argc, char** argv) {
             node_add_child(program, expression);
         }
 
-        printf("Hi mom!\n");
-        exit(0);
-
         print_node(program, 0);
         putchar('\n');
 

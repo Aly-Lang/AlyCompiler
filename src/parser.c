@@ -299,9 +299,38 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     node_add_child(var_decl, type_node);
                     node_add_child(var_decl, symbol);
 
+                    // TODO: Check for "=" initialization operator.
+                    if (token_string_equalp("=", &current_token)) {
+                        err = lex(current_token.end, &current_token);
+                        *end = current_token.end;
+                        if (err.type != ERROR_NONE) { return err; }
+                        size_t token_length = current_token.end - current_token.beginning;
+                        if (token_length == 0) { break; }
+
+                        // TODO: Stack based continuation to parse assignment expression.
+
+                        // FIXME: This recursive call is kind of the worse :^)
+                        Node* assigned_expr = node_allocate();
+                        err = parse_expr(context, current_token.end, &current_token.end, assigned_expr);
+                        if (err.type != ERROR_NONE) { return err; }
+
+                        // TODO: FIXME: Proper type-checing (this only accepts literals)
+                        // We will have to figure out the return type of the expression.
+                        if (assigned_expr->type == type_node->type) {
+                            ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
+                            return err;
+                        }
+
+                        type_node->value = assigned_expr->value;
+
+                        // Node contents transfer ownership, assigned_expr is now hollow shell.
+                        free(assigned_expr);
+                    }
+
                     *result = *var_decl;
                     // Node contents transfer ownership, var_decl is now hollow shell.
                     free(var_decl);
+
                     return ok;
                 }
             }
