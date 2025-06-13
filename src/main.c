@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <error.h>
+
 long file_size(FILE* file) {
     if (!file) { return 0; }
     fpos_t original = 0;
@@ -48,59 +50,6 @@ char* file_contents(char* path) {
 void print_usage(char** argv) {
     printf("USAGE: %s <path_to_file_to_compile>\n", argv[0]);
 }
-
-// TODO: Add file path, byte offset, etc.
-typedef struct Error {
-    enum ErrorType {
-        ERROR_NONE = 0,
-        ERROR_ARGUMENTS,
-        ERROR_TYPE,
-        ERROR_GENERIC,
-        ERROR_SYNTAX,
-        ERROR_TODO,
-        ERROR_MAX,
-    } type;
-    char* msg;
-} Error;
-
-Error ok = { ERROR_NONE, NULL };
-
-void print_error(Error err) {
-    if (err.type == ERROR_NONE) { return; }
-    printf("ERROR: ");
-    assert(ERROR_MAX == 6);
-    switch (err.type) {
-    default:
-        printf("Unknown error type...");
-        break;
-    case ERROR_TODO:
-        printf("TODO (not implemented)");
-        break;
-    case ERROR_SYNTAX:
-        printf("Invalid Syntax");
-        break;
-    case ERROR_TYPE:
-        printf("Mismatched types");
-        break;
-    case ERROR_ARGUMENTS:
-        printf("Invalid arguments");
-        break;
-    case ERROR_NONE:
-        break;
-    case ERROR_GENERIC:
-        break;
-    }
-    putchar('\n');
-    if (err.msg) {
-        printf("     : %s\n", err.msg);
-    }
-}
-#define ERROR_CREATE(n, t, msg)   \
-	Error (n) = { (t), (msg) } 
-
-#define ERROR_PREP(n, t, message)   \
-	(n).type = (t);                  \
-	(n).msg = (message);
 
 const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,():";
@@ -321,8 +270,6 @@ void print_node(Node* node, size_t indent_level) {
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
-        //printf("VAR_DECL:");
-        // TODO: Print first child (ID symbol), then type of second child.
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
         printf("TODO: print_node() VAR DECL INIT");
@@ -486,9 +433,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // Look ahead for binary operators that include integers.
             Node lhs_integer = *result;
             err = lex(current_token.end, &current_token);
-            if (err.type != ERROR_NONE) {
-                return err;
-            }
+            if (err.type != ERROR_NONE) { return err; }
             *end = current_token.end;
 
             // TODO: Check for valid integer operator.
@@ -517,16 +462,13 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             if (token_string_equalp(":", &current_token)) {
                 err = lex(current_token.end, &current_token);
-                if (err.type != ERROR_NONE) {
-                    return err;
-                }
+                if (err.type != ERROR_NONE) { return err; }
                 *end = current_token.end;
                 size_t token_length = current_token.end - current_token.beginning;
                 if (token_length == 0) { break; }
 
                 Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-                int status = environment_get(*context->types, expected_type_symbol, result);
-                if (status == 0) {
+                if (environment_get(*context->types, expected_type_symbol, result) == 0) {
                     ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                     printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
                     return err;
@@ -554,6 +496,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             printf("Unrecognized token: ");
             print_token(current_token);
             putchar('\n');
+
             return err;
         }
         printf("Intermediate node: ");

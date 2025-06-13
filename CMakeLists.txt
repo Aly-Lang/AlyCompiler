@@ -9,13 +9,14 @@ endif()
 # Export compilation database for tooling support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Project definition
+# Project definition with Language
 project(AlyCompiler C)
 
 # Define the executable target
 add_executable(
     alyc
     src/main.c
+    src/error.c
 )
 
 # Include path setup
