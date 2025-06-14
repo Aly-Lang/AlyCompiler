@@ -1,4 +1,5 @@
 ; This is a comment. It will end at the newline.
+# This is also a comment.
 
 ; This is a variable declaration with initialization. 
 a : integer = 69

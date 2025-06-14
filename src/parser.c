@@ -406,6 +406,33 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         free(assigned_expr);
                     }
 
+                    /* VARIABLE DECLARATION
+                    * `-- TYPE (VALUE) -> SYMBOL (ID)
+                    * Add to parsing context variables environment.
+                    *
+                    * ENVIRONMENT
+                    * `-- Variables
+                    *     `-- Binding
+                    *         `-- SYMBOL (ID) -> TYPE (VALUE)
+                    *
+                    * During Codegen:
+                    * |-- Find somewhere to stick the length of bytes of the size of TYPE.
+                    * `-- Keep track of where we stick it :^)
+                    *
+                    *  We never actually need the symbol in the AST, I don't think.
+                    *  We just need to keep track of it in parsing context so that
+                    *  future accesses and re-assignments can refer to the same one.
+                    *
+                    * VARIABLE RE-ASSIGNMENT
+                    * `-- NEW VALUE EXPRESSION -> VARIABLE DECLARATION
+                    *                             `-- TYPE (VALUE) -> SYMBOL (ID)
+                    *
+                    * If we have a codegen context, then we can map symbols to
+                    * wherever we decide to stick them. Then we can just do an
+                    * environment lookup in the codegen context to update the
+                    * proper value.
+                    */
+
                     *result = *var_decl;
 
                     // TODO: Write node_copy() and node_deep_copy(), then deep copy
