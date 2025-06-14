@@ -9,14 +9,24 @@
 
 //===================================================================== BEG lexer
 
+const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,():";
 
-void print_token(Token t) {
-    printf("%.*s", t.end - t.beginning, t.beginning);
+/// @return Boolean-like value; 1 for success, 0 for failure.
+int comment_at_beginning(Token token) {
+    const char* comment_it = comment_delimiters;
+    while (*comment_it) {
+        if (*(token.beginning) == *comment_it) {
+            return 1;
+        }
+        comment_it++;
+    }
+    return 0;
 }
 
 /// Lex the next token from SOURCE, and point to it with BEG and END.
+/// If BEG and END of token are equal, there is nothing more to lex.
 Error lex(char* source, Token* token) {
     Error err = ok;
     if (!source || !token) {
@@ -27,9 +37,23 @@ Error lex(char* source, Token* token) {
     token->beginning += strspn(token->beginning, whitespace); // Skip beginning whitespace.
     token->end = token->beginning;
     if (*(token->end) == '\0') { return err; }
+    // Check if current line is a comment, and skip past it.
+    while (comment_at_beginning(*token)) {
+        // Skip to next newline.
+        token->beginning = strpbrk(token->beginning, "\n");
+        if (!token->beginning) {
+            // If last line of file is comment, we're done lexing.
+            token->end = token->beginning;
+            return err;
+        }
+        // Skip to beginning of next token after comment.
+        token->beginning += strspn(token->beginning, whitespace);
+        token->end = token->beginning;
+    }
+    if (*(token->end) == '\0') { return err; }
     token->end += strcspn(token->beginning, delimiters); // Skip until delimiter or end of string.
     if (token->end == token->beginning) {
-        token->end += 1; // NOTE: This is basically lex protection if we lex over nothing.
+        token->end += 1; // NOTE: This is basically lex protection, if we lex over nothing.
     }
     return err;
 }
@@ -46,6 +70,11 @@ int token_string_equalp(char* string, Token* token) {
     }
     return 1;
 }
+
+void print_token(Token t) {
+    printf("%.*s", t.end - t.beginning, t.beginning);
+}
+
 
 //===================================================================== End lexer
 
@@ -108,7 +137,6 @@ int node_compare(Node* a, Node* b) {
         printf("TODO: node_compare() VARIABLE DECLARATION INITALIZED\n");
         break;
     case NODE_TYPE_PROGRAM:
-        // TODO: Compare two programs.
         printf("TODO: Compare two programs.\n");
         break;
     }
@@ -261,7 +289,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
 
-            // *result = *symbol;
+            //*result = *symbol;
 
             // TODO: Check if valid symbol for environment, then attempt to 
             // pattern match variable access, assignment, declaration, or
