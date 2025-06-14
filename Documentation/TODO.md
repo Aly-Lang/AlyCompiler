@@ -18,9 +18,14 @@
 
 - Compile to brain-fuck XD? - This is just a perfect idea. I am not know if it's possible.
 
-- Write end-to-end tests in Agol? This gives me something new to learn?
+- Write end-to-end tests in Algol? This gives me something new to learn?
 
 # -- Miscellaneous
+
+- Decide what the syntax is for uninitialized variables -- Maybe we can do something like the example below.`
+Perhaps we could do so something like `a : integer !`
+
+We could could also have a specific value the parser recognizes as uninitialized, like `a : integer = None` or something.
 
 - It seems like `NODE_TYPE_MAX` assertions aren't working. Maybe I have to cast the enum value to an integer or something? I don't know. 
 
