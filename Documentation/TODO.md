@@ -10,6 +10,8 @@
 
 - [ ] Lex past comments or something.
 
+- [ ] Write a LISP runtime in the compiled language.
+
 # Dumb ideas that we could implement
 
 - Compile to brain-fuck XD? - This is just a perfect idea. I am not know if it's possible.

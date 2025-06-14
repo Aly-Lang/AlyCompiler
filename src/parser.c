@@ -280,12 +280,56 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 size_t token_length = current_token.end - current_token.beginning;
                 if (token_length == 0) { break; }
 
+                // TODO: Check for variable re-assigment...
+
+                // FIXME: Actually set variable declarations within environment so that 
+                // reassignments and redefintions can be properly parsed and handled.
+                Node* variable_binding = node_allocate();
+                if (environment_get(*context->variables, symbol, variable_binding)) {
+                    // Either re-assignment of existing varaible (look for =)
+
+                    if (token_string_equalp("=", &current_token)) {
+                        err = lex(current_token.end, &current_token);
+                        *end = current_token.end;
+                        if (err.type != ERROR_NONE) { return err; }
+                        size_t token_length = current_token.end - current_token.beginning;
+                        if (token_length == 0) { break; }
+
+                        // TODO: Stack based continuation to parse assignment expression.
+
+                        // FIXME: This recursive call is kind of the worse :^)
+                        Node* assigned_expr = node_allocate();
+                        err = parse_expr(context, current_token.end, &current_token.end, assigned_expr);
+                        if (err.type != ERROR_NONE) { return err; }
+
+                        // TODO: FIXME: Proper type-checing (this only accepts literals)
+                        // We will have to figure out the return type of the expression.
+                        if (assigned_expr->type == variable_binding->children->type) {
+                            ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
+                            return err;
+                        }
+
+                        variable_binding->children->value = assigned_expr->value;
+
+                        // Node contents transfer ownership, assigned_expr is now hollow shell.
+                        free(assigned_expr);
+                        return ok;
+                    } else {
+                        // TODO: Create new error type.
+                        printf("ID of redefined variable: \"%s\"\n", symbol->value.symbol);
+                        ERROR_PREP(err, ERROR_GENERIC, "Redefinition of variable!");
+                        return err;
+                    }
+                }
+
                 Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
                 if (environment_get(*context->types, expected_type_symbol, result) == 0) {
                     ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                     printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
                     return err;
                 } else {
+                    // TODO: Check for variable re-definition...
+
                     // printf("Found valid type: ");
                     // print_node(expected_type_symbol, 0);
                     // putchar('\n');
@@ -300,6 +344,13 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     node_add_child(var_decl, symbol);
 
                     // TODO: Check for "=" initialization operator.
+
+                    err = lex(current_token.end, &current_token);
+                    *end = current_token.end;
+                    if (err.type != ERROR_NONE) { return err; }
+                    size_t token_length = current_token.end - current_token.beginning;
+                    if (token_length == 0) { break; }
+
                     if (token_string_equalp("=", &current_token)) {
                         err = lex(current_token.end, &current_token);
                         *end = current_token.end;
@@ -328,6 +379,11 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     }
 
                     *result = *var_decl;
+
+                    // TODO: Write node_copy() and node_deep_copy(), then deep copy
+                    // var_decl into environment. Possibly copy symbol as well?
+                    // int status = environment_set(context->variables, symbol, result);
+
                     // Node contents transfer ownership, var_decl is now hollow shell.
                     free(var_decl);
 
