@@ -233,17 +233,37 @@ void node_free(Node* root) {
     free(root);
 }
 
-int parse_integer(Token* token, Node* node) {
-    if (!token || !node) { return 0; }
-    char* end = NULL;
-    if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
-        node->type = NODE_TYPE_INTEGER;
-        node->value.integer = 0;
-    } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
-        if (end != token->end) { return 0; }
-        node->type = NODE_TYPE_INTEGER;
-    } else { return 0; }
-    return 1;
+/// Copy A into B literally.
+void node_copy(Node* a, Node* b) {
+    if (!a || !b) { return; }
+    b->type = a->type;
+    // Handle all allocated values here.
+    switch (a->type) {
+    default:
+        b->value = a->value;
+        break;
+    case NODE_TYPE_SYMBOL:
+        b->value.symbol = strdup(a->value.symbol);
+        assert(b->value.symbol && "node_copy(): Could not allocate memory for new symbol");
+        break;
+    }
+    Node* child = a->children;
+    Node* child_it = b->children;
+    while (child) {
+        Node* new_child = node_allocate();
+
+        if (child_it) {
+            child_it->next_child = new_child;
+            child_it = child_it->next_child;
+        } else {
+            b->children = new_child;
+            child_it = new_child;
+        }
+
+        node_copy(child, child_it);
+
+        child = child->next_child;
+    }
 }
 
 ParsingContext* parse_context_create() {
@@ -255,6 +275,19 @@ ParsingContext* parse_context_create() {
     }
     ctx->variables = environment_create(NULL);
     return ctx;
+}
+
+int parse_integer(Token* token, Node* node) {
+    if (!token || !node) { return 0; }
+    char* end = NULL;
+    if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
+        node->type = NODE_TYPE_INTEGER;
+        node->value.integer = 0;
+    } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
+        if (end != token->end) { return 0; }
+        node->type = NODE_TYPE_INTEGER;
+    } else { return 0; }
+    return 1;
 }
 
 Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) {
@@ -368,7 +401,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     Node* type_node = node_allocate();
                     type_node->type = result->type;
 
-                    node_add_child(var_decl, type_node);
+                    // `symbol` is now owned by var_decl
                     node_add_child(var_decl, symbol);
 
                     // TODO: Check for "=" initialization operator.
@@ -404,10 +437,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                         // Node contents transfer ownership, assigned_expr is now hollow shell.
                         free(assigned_expr);
+                    } else {
+
                     }
 
                     /* VARIABLE DECLARATION
-                    * `-- TYPE (VALUE) -> SYMBOL (ID)
+                    * `-- SYMBOL (ID)
                     * Add to parsing context variables environment.
                     *
                     * ENVIRONMENT
@@ -433,11 +468,13 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     * proper value.
                     */
 
+                    // AST gains variable declaration node.
                     *result = *var_decl;
 
-                    // TODO: Write node_copy() and node_deep_copy(), then deep copy
-                    // var_decl into environment. Possibly copy symbol as well?
-                    // int status = environment_set(context->variables, symbol, result);
+                    // Context variables environment gains new binding. 
+                    Node* symbol_for_env = node_allocate();
+                    node_copy(symbol, symbol_for_env);
+                    int status = environment_set(context->variables, symbol, type_node);
 
                     // Node contents transfer ownership, var_decl is now hollow shell.
                     free(var_decl);
