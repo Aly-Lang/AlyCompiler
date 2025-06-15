@@ -8,13 +8,12 @@
 #include <string.h>
 
 // ============================================================ BEG lexer
-
-// TODO: Allow multi-byte comment delimiters.
+// TODO: Allow multy-byte comment delimiters.
 const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,():";
 
-/// @return Boolean-like value: 1 for success, 0 for failure.
+/// @return Boolean-like value; 1 for success, 0 for failure.
 int comment_at_beginning(Token token) {
     const char* comment_it = comment_delimiters;
     while (*comment_it) {
@@ -77,7 +76,6 @@ void print_token(Token t) {
         printf("%.*s", t.end - t.beginning, t.beginning);
     }
 }
-
 // ============================================================ END lexer
 
 Node* node_allocate() {
@@ -109,13 +107,11 @@ int node_compare(Node* a, Node* b) {
     switch (a->type) {
     case NODE_TYPE_NONE:
         if (nonep(*b)) { return 1; }
-        return 0;
         break;
     case NODE_TYPE_INTEGER:
         if (a->value.integer == b->value.integer) {
             return 1;
         }
-
         break;
     case NODE_TYPE_SYMBOL:
         if (a->value.symbol && b->value.symbol) {
@@ -126,21 +122,21 @@ int node_compare(Node* a, Node* b) {
         } else if (!a->value.symbol && !b->value.symbol) {
             return 1;
         }
-        return 0;
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         printf("TODO: node_compare() BINARY OPERATOR\n");
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
-        printf("TODO: node_compare VARIABLE REASSIGNMENT\n");
+        printf("TODO: node_compare() VARIABLE REASSIGNMENT\n");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("TODO: node_compare() VARIABLE DECLARATION\n");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: node_compare() VARIABLE DECLARATION INITIALIZED\n");
+        printf("TODO: node_compare() VARIABLE DECLARATION INITALIZED\n");
         break;
     case NODE_TYPE_PROGRAM:
+        // TODO: Compare two programs.
         printf("TODO: Compare two programs.\n");
         break;
     }
@@ -175,6 +171,7 @@ Node* node_symbol_from_buffer(char* buffer, size_t length) {
 
 void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
+
     // Print indent.
     for (size_t i = 0; i < indent_level; ++i) {
         putchar(' ');
@@ -198,7 +195,7 @@ void print_node(Node* node, size_t indent_level) {
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("BINARY_OPERATOR");
+        printf("TODO: print_node() BINARY_OPERATOR");
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         printf("VARIABLE REASSIGNMENT");
@@ -207,7 +204,7 @@ void print_node(Node* node, size_t indent_level) {
         printf("VARIABLE DECLARATION");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("VARIABLE DECLARATION INITIALIZED");
+        printf("TODO: print_node() VAR DECL INIT");
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
@@ -224,6 +221,7 @@ void print_node(Node* node, size_t indent_level) {
 
 void node_free(Node* root) {
     if (!root) { return; }
+
     Node* child = root->children;
     Node* next_child = NULL;
     while (child) {
@@ -254,6 +252,7 @@ void node_copy(Node* a, Node* b) {
     Node* child_it = NULL;
     while (child) {
         Node* new_child = node_allocate();
+
         if (child_it) {
             child_it->next_child = new_child;
             child_it = child_it->next_child;
@@ -263,6 +262,7 @@ void node_copy(Node* a, Node* b) {
         }
 
         node_copy(child, child_it);
+
         child = child->next_child;
     }
 }
@@ -278,9 +278,9 @@ ParsingContext* parse_context_create() {
     return ctx;
 }
 
-/// Update token, length length, and end of current token pointer.
+/// Update token, token length, and end of current token pointer.
 Error lex_advance(Token* token, size_t* token_length, char** end) {
-    if (!token || !token_length || !end) {
+    if (!token || !token_length || !token->end) {
         ERROR_CREATE(err, ERROR_ARGUMENTS, "lex_advance(): pointer arguments must not be NULL!");
         return err;
     }
@@ -288,7 +288,7 @@ Error lex_advance(Token* token, size_t* token_length, char** end) {
     *end = token->end;
     if (err.type != ERROR_NONE) { return err; }
     *token_length = token->end - token->beginning;
-    return err;
+    return ok;
 }
 
 typedef struct ExpectReturnValue {
@@ -302,8 +302,9 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
     out.done = 0;
     out.found = 0;
     out.err = ok;
+    Error err = ok;
     if (!expected || !current || !current_length || !end) {
-        ERROR_PREP(out.err, ERROR_ARGUMENTS, "lex_expect() must not be passed NULL pointers!");
+        ERROR_PREP(err, ERROR_ARGUMENTS, "lex_expect() must not be passed NULL pointers!");
         return out;
     }
     Token current_copy = *current;
@@ -324,13 +325,14 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
         *current_length = current_length_copy;
         return out;
     }
+
     return out;
 }
 
-#define EXPECT(expected, expected_string, current_token, current_length, end)  \
-    expected = lex_expect(expected_string, &current_token, &token_length, end); \
-    if (expected.err.type) { return expected.err; }                              \
-    if (expected.done) { return ok; }
+#define EXPECT(expected, expected_string, current_token, current_length, end)             \
+	expected = lex_expect(expected_string, &current_token, &current_length, end);          \
+	if (expected.err.type) { return expected.err; }                                         \
+	if (expected.done) { return ok; }
 
 int parse_integer(Token* token, Node* node) {
     if (!token || !node) { return 0; }
@@ -381,52 +383,45 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         // declaration, or declaration with initialization.
 
         EXPECT(expected, ":", current_token, token_length, end);
-        if (expected.found == 1) {
+        if (expected.found) {
+            // Re-assignment of existing variable (look for =)
+            EXPECT(expected, "=", current_token, token_length, end);
+            if (expected.found) {
+                Node* variable_binding = node_allocate();
+                if (environment_get(*context->variables, symbol, variable_binding) == 0) {
+                    // TODO: Add source location or something to the error.
+                    // TODO: Create new error type.
+                    printf("ID of undeclared variable: \"%s\"\n", symbol->value.symbol);
+                    ERROR_PREP(err, ERROR_GENERIC, "Reassignment of a variable that has not been declared!");
+                    return err;
+                }
+                free(variable_binding);
+
+                // TODO: Stack based continuation to parse assignment expression.
+
+                // FIXME: This recursive call is kind of the worse :^)
+                Node* reassign_expr = node_allocate();
+                err = parse_expr(context, current_token.end, end, reassign_expr);
+                if (err.type != ERROR_NONE) {
+                    free(variable_binding);
+                    return err;
+                }
+
+                Node* var_reassign = node_allocate();
+                var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
+
+                node_add_child(var_reassign, reassign_expr);
+                node_add_child(var_reassign, symbol);
+
+                *result = *var_reassign;
+                free(var_reassign);
+
+                return ok;
+            }
+
             err = lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
             if (token_length == 0) { break; }
-
-            Node* variable_binding = node_allocate();
-            if (environment_get(*context->variables, symbol, variable_binding)) {
-                // Re-assignment of existing variable (look for =)
-                if (token_string_equalp("=", &current_token)) {
-                    // TODO: Stack based continuation to parse assignment expression.
-
-                    // FIXME: This recursive call is kind of the worse :^)
-                    Node* reassign_expr = node_allocate();
-                    err = parse_expr(context, current_token.end, end, reassign_expr);
-                    if (err.type != ERROR_NONE) {
-                        free(variable_binding);
-                        return err;
-                    }
-
-                    // TODO: FIXME: Proper type-checking (this only accepts literals)
-                    // We will have to figure out the return value of the expression.
-                    if (reassign_expr->type != variable_binding->type) {
-                        free(variable_binding);
-                        ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
-                        return err;
-                    }
-
-                    Node* var_reassign = node_allocate();
-                    var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
-
-                    node_add_child(var_reassign, reassign_expr);
-                    node_add_child(var_reassign, symbol);
-
-                    *result = *var_reassign;
-                    free(var_reassign);
-
-                    return ok;
-                }
-                // TODO: Check that type is actually valid before redefinition error.
-                // TODO: Create new error type.
-                printf("ID of redefined variable: \"%s\"\n", symbol->value.symbol);
-                ERROR_PREP(err, ERROR_GENERIC, "Redefinition of variable!");
-                return err;
-            }
-
-            free(variable_binding);
 
             Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
             if (environment_get(*context->types, expected_type_symbol, result) == 0) {
@@ -434,6 +429,15 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
                 return err;
             }
+
+            Node* variable_binding = node_allocate();
+            if (environment_get(*context->variables, symbol, variable_binding)) {
+                // TODO: Create new error type.
+                printf("ID of redefined variable: \"%s\"\n", symbol->value.symbol);
+                ERROR_PREP(err, ERROR_GENERIC, "Redefinition of variable!");
+                return err;
+            }
+            free(variable_binding);
 
             Node* var_decl = node_allocate();
             var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
@@ -443,6 +447,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             // `symbol` is now owned by var_decl.
             node_add_child(var_decl, symbol);
+
+            // AST gains variable declaration node.
+            *result = *var_decl;
+
+            // Node contents transfer ownership, var_decl is now hollow shell.
+            free(var_decl);
 
             EXPECT(expected, "=", current_token, token_length, end);
             if (expected.found) {
@@ -461,21 +471,18 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     return err;
                 }
 
+                // This is also awful. We need to store value expression separate from type.
                 type_node->value = assigned_expr->value;
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
                 free(assigned_expr);
             }
-
-            // AST gains variable declaration node.
-            *result = *var_decl;
-            // Node contents transfer ownership, var_decl is now hollow shell.
-            free(var_decl);
 
             // Context variables environment gains new binding.
             Node* symbol_for_env = node_allocate();
             node_copy(symbol, symbol_for_env);
             int status = environment_set(context->variables, symbol_for_env, type_node);
             if (status != 1) {
+                printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
                 ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
                 return err;
             }

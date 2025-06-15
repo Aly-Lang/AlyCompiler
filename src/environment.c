@@ -14,12 +14,6 @@ Environment* environment_create(Environment* parent) {
     return env;
 }
 
-// TODO: Make return value an enum.
-/**
-* @retval 0 Failure.
-* @retval 1 Creation of new binding.
-* @retval 2 Existing binding value overwrite (ID unused).
-*/
 int environment_set(Environment* env, Node* id, Node* value) {
     // Over-write existing value if ID is already bound in environment.
     if (!env || !id || !value) { return 0; }
