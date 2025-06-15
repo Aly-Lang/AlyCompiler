@@ -344,7 +344,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // FIXME: Actually set variable declarations within environment so that
             // reassigments and redefinitions can be properly parsed and handled.
             Node* variable_binding = node_allocate();
-            printf("Looking for \"%s\" in variables environment\n", symbol->value.symbol);
             if (environment_get(*context->variables, symbol, variable_binding)) {
                 printf("Found existing symbol in environment: %s\n", symbol->value.symbol);
                 // Re-assignment of existing variable (look for =)
@@ -360,7 +359,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     print_node(reassign_expr, 0);
                     putchar('\n');
 
-                    exit(0); // FIXME: Why does this not work when removed? Strange?
+                    //exit(0); // FIXME: Why does this not work when removed? Strange?
 
                     // TODO: FIXME: Proper type-checking (this only accepts literals)
                     // We will have to figure out the return value of the expression.
@@ -390,8 +389,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
                 return err;
             }
-
-            printf("Valid type symbol: \"%s\"\n", expected_type_symbol->value.symbol);
 
             Node* var_decl = node_allocate();
             var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
@@ -494,6 +491,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             Node* symbol_for_env = node_allocate();
             node_copy(symbol, symbol_for_env);
             int status = environment_set(context->variables, symbol_for_env, type_node);
+            if (status != 1) {
+                ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
+                return err;
+            }
 
             return ok;
         }
