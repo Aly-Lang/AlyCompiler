@@ -18,12 +18,9 @@ int main(int argc, char** argv) {
         exit(0);
     }
 
-    char* path = argv[1];
-    char* contents = file_contents(path);
+    char* contents = file_contents(argv[1]);
 
     if (contents) {
-        // printf("Contents of %s:\n---\n\"%s\"\n---\n", path, contents);
-
         // TODO: Create API to heap allocate a program node, as well as add 
         // expression as children.
         ParsingContext* context = parse_context_create();
@@ -35,10 +32,7 @@ int main(int argc, char** argv) {
         for (;;) {
 
             Error err = parse_expr(context, contents_it, &contents_it, expression);
-
-            if (!(*contents_it)) {
-                break;
-            }
+            if (!(*contents_it)) { break; }
             if (err.type != ERROR_NONE) {
                 print_error(err);
                 break;

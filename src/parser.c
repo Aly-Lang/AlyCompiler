@@ -261,6 +261,7 @@ void node_copy(Node* a, Node* b) {
             child_it = new_child;
         }
         node_copy(child, child_it);
+
         child = child->next_child;
     }
 }
@@ -312,7 +313,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             return ok;
         }
 
-        // TODO: Parse strings nad other literal types.
+        // TODO: Parse strings and other literal types, yo.
 
         // TODO: Check for unary prefix operators.
 
@@ -359,7 +360,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     print_node(reassign_expr, 0);
                     putchar('\n');
 
-                    exit(0);
+                    exit(0); // FIXME: Why does this not work when removed? Strange?
 
                     // TODO: FIXME: Proper type-checking (this only accepts literals)
                     // We will have to figure out the return value of the expression.
@@ -380,6 +381,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 ERROR_PREP(err, ERROR_GENERIC, "Redefinition of variable!");
                 return err;
             }
+
             free(variable_binding);
 
             Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
@@ -411,6 +413,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 // FIXME: This recursive call is kind of the worse :^)
                 Node* assigned_expr = node_allocate();
+                // CURRENT TOKEN -> "="
+                // LOOK AFTER CURRENT TOKEN FOR NEXT TOKEN
+                // CURRENT TOKEN -> "= 69"
                 err = parse_expr(context, current_token.end, end, assigned_expr);
                 if (err.type != ERROR_NONE) { return err; }
 
@@ -437,8 +442,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
              * Add to parsing context variable enviornment
              *
              * ENVIRONMENT
-             * `-- variables
-             *	   `-- binding
+             * `-- Variables
+             *	   `-- Binding
              *		   `-- SYMBOL (ID) -> TYPE (VALUE)
              *
              * During codegen:
