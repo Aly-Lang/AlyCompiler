@@ -19,18 +19,13 @@ int main(int argc, char** argv) {
     }
 
     char* contents = file_contents(argv[1]);
-
     if (contents) {
-        // TODO: Create API to heap allocate a program node, as well as add 
-        // expression as children.
         ParsingContext* context = parse_context_create();
         Node* program = node_allocate();
         program->type = NODE_TYPE_PROGRAM;
         Node* expression = node_allocate();
-        memset(expression, 0, sizeof(Node));
         char* contents_it = contents;
         for (;;) {
-
             Error err = parse_expr(context, contents_it, &contents_it, expression);
             if (!(*contents_it)) { break; }
             if (err.type != ERROR_NONE) {
@@ -46,5 +41,6 @@ int main(int argc, char** argv) {
         node_free(program);
         free(contents);
     }
+
     return 0;
 }
