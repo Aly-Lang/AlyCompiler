@@ -313,7 +313,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             return ok;
         }
 
-        // TODO: Parse strings and other literal types, yo.
+        // TODO: Parse strings and other literal types.
 
         // TODO: Check for unary prefix operators.
 
@@ -432,7 +432,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 }
 
                 type_node->value = assigned_expr->value;
-
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
                 free(assigned_expr);
             }
@@ -461,11 +460,33 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
              * wherever we decide to stick them. Then we can just do a
              * environment lookup in the codegen context to update the
              * proper value.
+             *
+             * A codegen context must contain, for example in `x86_64` ASM,
+             * stack offsets of local variable declarations. Otherwise, how
+             * would we ever access them after creation, right?
+             *
+             * PROGRAM -> "a : integer  a := 420"
+             *   VARIABLE DECLARATION
+             *   `-- SYMBOL ("a")
+             *    VARIABLE REASSIGNMENT
+             *    `-- INTEGER (420) -> SYMBOL ("a")
+             *
+             * Codegen for each top-level VARIABLE DECLARATION (inherited from parsing context variables environment):
+             *   Look up symbol in variable environment <- should never fail if parsing works.
+             *   Get size of type in bytes
+             *   Generate variable space in .space or something.
+             *   Re-define binding in globals environment to store new symbol.
+             *
+             * ASM:
+             * .data
+             *   ga: .space <SIZEOF INTEGER>,0
+             * .code
+             *   movq ga, %rax
+             *   movq %rbx, (%rax)
             */
 
             // AST gains variable declaration node.
             *result = *var_decl;
-
             // Node contents transfer ownership, var_decl is now hollow shell.
             free(var_decl);
 
