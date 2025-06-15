@@ -8,9 +8,11 @@
 
 # Kind of Urgent
 
-- [ ] Lex past comments or something.
+- [x] Lex past comments or something.
 
 - [ ] Write a LISP runtime in the compiled language.
+
+- [ ] Add token member to AST node structure. This would allow for much better error messages that point to the source code that the error originates from. 
 
 # Dumb ideas that we could implement
 
