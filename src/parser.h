@@ -53,9 +53,10 @@ typedef struct Node {
 		/// Contains two children that determine left and right acceptable
 		/// types.
 		NODE_TYPE_BINARY_OPERATOR,
-		NODE_TYPE_PROGRAM,
 
 		/// Contains a list of expressions to execute in sequence.
+		NODE_TYPE_PROGRAM,
+
 		NODE_TYPE_MAX,
 	} type;
 	union NodeValue {

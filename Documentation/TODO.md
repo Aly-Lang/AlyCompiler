@@ -22,6 +22,8 @@
 
 # -- Miscellaneous
 
+- Allow automatic type deduction, as we already have the ability (or should have the ability) to deduce return type of an expression, why require type annotation explicitly in variable declarations? Maybe have custom `deduce` type or something.
+
 - Decide what the syntax is for uninitialized variables -- Maybe we can do something like the example below.`
 Perhaps we could do so something like `a : integer !`
 
