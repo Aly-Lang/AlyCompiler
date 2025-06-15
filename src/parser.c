@@ -345,7 +345,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             Node* variable_binding = node_allocate();
             printf("Looking for \"%s\" in variables environment\n", symbol->value.symbol);
             if (environment_get(*context->variables, symbol, variable_binding)) {
-                printf("Found existing symbol in environment %s\n", symbol->value.symbol);
+                printf("Found existing symbol in environment: %s\n", symbol->value.symbol);
                 // Re-assignment of existing variable (look for =)
                 if (token_string_equalp("=", &current_token)) {
                     // TODO: Stack based continuation to parse assignment expression.
