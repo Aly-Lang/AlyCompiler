@@ -8,6 +8,8 @@
 #include <string.h>
 
 // ============================================================ BEG lexer
+
+// TODO: Allow multi-byte comment delimiters.
 const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,():";
@@ -431,55 +433,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             } else {
                 *end = old_end;
             }
-
-            /* VARIABLE DECLARATION
-             * `-- SYMBOL (ID)
-             * Add to parsing context variable enviornment
-             *
-             * ENVIRONMENT
-             * `-- Variables
-             *	   `-- Binding
-             *		   `-- SYMBOL (ID) -> TYPE (VALUE)
-             *
-             * During codegen:
-             * |-- Find somewhere to stick the length of bytes of the size of TYPE.
-             * `-- Keep track of where we stick it :^)
-             *
-             * We never actually need the symbol in the AST, I don't think.
-             * We just need to keep track of it in parsing context so that
-             * future accesses and re-assignments can refer to the same one.
-             *
-             * VARIABLE RE-ASSIGNMENT
-             * `-- NEW VALUE EXPRESSION -> SYMBOL (ID)
-             *
-             * If we have a codegen context, then we can map symbols to
-             * wherever we decide to stick them. Then we can just do a
-             * environment lookup in the codegen context to update the
-             * proper value.
-             *
-             * A codegen context must contain, for example in `x86_64` ASM,
-             * stack offsets of local variable declarations. Otherwise, how
-             * would we ever access them after creation, right?
-             *
-             * PROGRAM -> "a : integer  a := 420"
-             *   VARIABLE DECLARATION
-             *   `-- SYMBOL ("a")
-             *    VARIABLE REASSIGNMENT
-             *    `-- INTEGER (420) -> SYMBOL ("a")
-             *
-             * Codegen for each top-level VARIABLE DECLARATION (inherited from parsing context variables environment):
-             *   Look up symbol in variable environment <- should never fail if parsing works.
-             *   Get size of type in bytes
-             *   Generate variable space in .space or something.
-             *   Re-define binding in globals environment to store new symbol.
-             *
-             * ASM:
-             * .data
-             *   ga: .space <SIZEOF INTEGER>,0
-             * .code
-             *   movq ga, %rax
-             *   movq %rbx, (%rax)
-            */
 
             // AST gains variable declaration node.
             *result = *var_decl;
