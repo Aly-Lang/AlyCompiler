@@ -8,7 +8,7 @@
 #include <string.h>
 
 // ============================================================ BEG lexer
-// TODO: Allow multy-byte comment delimiters.
+// TODO: Allow multi-byte comment delimiters.
 const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,():";
@@ -53,7 +53,7 @@ Error lex(char* source, Token* token) {
     if (*(token->end) == '\0') { return err; }
     token->end += strcspn(token->beginning, delimiters); // Skip everything not in delimiters.
     if (token->end == token->beginning) {
-        token->end += 1;
+        token->end += 1; // Lex protection.
     }
     return err;
 }
@@ -189,13 +189,13 @@ void print_node(Node* node, size_t indent_level) {
         printf("INT:%lld", node->value.integer);
         break;
     case NODE_TYPE_SYMBOL:
-        printf("SYM:");
+        printf("SYM");
         if (node->value.symbol) {
-            printf("%s", node->value.symbol);
+            printf(":%s", node->value.symbol);
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("TODO: print_node() BINARY_OPERATOR");
+        printf("BINARY_OPERATOR");
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         printf("VARIABLE REASSIGNMENT");
@@ -204,7 +204,7 @@ void print_node(Node* node, size_t indent_level) {
         printf("VARIABLE DECLARATION");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: print_node() VAR DECL INIT");
+        printf("VARIABLE DECLARATION INITIALIZED");
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
@@ -252,7 +252,6 @@ void node_copy(Node* a, Node* b) {
     Node* child_it = NULL;
     while (child) {
         Node* new_child = node_allocate();
-
         if (child_it) {
             child_it->next_child = new_child;
             child_it = child_it->next_child;
@@ -260,9 +259,7 @@ void node_copy(Node* a, Node* b) {
             b->children = new_child;
             child_it = new_child;
         }
-
         node_copy(child, child_it);
-
         child = child->next_child;
     }
 }
@@ -450,7 +447,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             // AST gains variable declaration node.
             *result = *var_decl;
-
             // Node contents transfer ownership, var_decl is now hollow shell.
             free(var_decl);
 
