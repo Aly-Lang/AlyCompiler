@@ -277,6 +277,19 @@ ParsingContext* parse_context_create() {
     return ctx;
 }
 
+/// Update token, length length, and end of current token pointer.
+Error lex_advance(Token* token, size_t* token_length, char** end) {
+    if (!token || !token_length || !end) {
+        ERROR_CREATE(err, ERROR_ARGUMENTS, "lex_advance(): pointer arguments must not be NULL!");
+        return err;
+    }
+    Error err = lex(token->end, token);
+    *end = token->end;
+    if (err.type != ERROR_NONE) { return err; }
+    *token_length = token->end - token->beginning;
+    return err;
+}
+
 int parse_integer(Token* token, Node* node) {
     if (!token || !node) { return 0; }
     char* end = NULL;
@@ -300,9 +313,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     current_token.end = source;
     Error err = ok;
 
-    while ((err = lex(current_token.end, &current_token)).type == ERROR_NONE) {
-        *end = current_token.end;
-        token_length = current_token.end - current_token.beginning;
+    while ((err = lex_advance(&current_token, &token_length, end)).type == ERROR_NONE) {
         if (token_length == 0) { break; }
         if (parse_integer(&current_token, result)) {
             // TODO: Look ahead for binary operators that include integers.
@@ -328,17 +339,18 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         // then attempt to pattern match variable access, assignment, 
         // declaration, or declaration with initialization.
 
-        err = lex(current_token.end, &current_token);
-        *end = current_token.end;
+        err = lex_advance(&current_token, &token_length, end);
         if (err.type != ERROR_NONE) { return err; }
-        token_length = current_token.end - current_token.beginning;
         if (token_length == 0) { break; }
+        //err = lex(current_token.end, &current_token);
+        //*end = current_token.end;
+        //if (err.type != ERROR_NONE) { return err; }
+        //token_length = current_token.end - current_token.beginning;
+        //if (token_length == 0) { break; }
 
         if (token_string_equalp(":", &current_token)) {
-            err = lex(current_token.end, &current_token);
-            *end = current_token.end;
+            err = lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
-            token_length = current_token.end - current_token.beginning;
             if (token_length == 0) { break; }
 
             // FIXME: Actually set variable declarations within environment so that
@@ -359,7 +371,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     print_node(reassign_expr, 0);
                     putchar('\n');
 
-                    //exit(0); // FIXME: Why does this not work when removed? Strange?
+                    exit(0); // FIXME: Why does this not work when removed? Strange?
 
                     // TODO: FIXME: Proper type-checking (this only accepts literals)
                     // We will have to figure out the return value of the expression.
@@ -399,10 +411,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // `symbol` is now owned by var_decl.
             node_add_child(var_decl, symbol);
 
-            err = lex(current_token.end, &current_token);
-            *end = current_token.end;
+            lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
-            token_length = current_token.end - current_token.beginning;
             if (token_length == 0) { break; }
 
             if (token_string_equalp("=", &current_token)) {
