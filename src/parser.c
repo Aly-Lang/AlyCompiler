@@ -348,10 +348,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // reassigments and redefinitions can be properly parsed and handled.
             Node* variable_binding = node_allocate();
             if (environment_get(*context->variables, symbol, variable_binding)) {
-                //printf("Found existing symbol in environment: %s\n", symbol->value.symbol);
-                //print_node(variable_binding, 2);
-                //putchar('\n');
-
                 // Re-assignment of existing variable (look for =)
                 if (token_string_equalp("=", &current_token)) {
                     // TODO: Stack based continuation to parse assignment expression.
@@ -363,12 +359,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         free(variable_binding);
                         return err;
                     }
-
-                    //printf("Reassigned expr: ");
-                    //print_node(reassign_expr, 0);
-                    //putchar('\n');
-
-                    //exit(0); // FIXME: Why does this not work when removed? Strange?
 
                     // TODO: FIXME: Proper type-checking (this only accepts literals)
                     // We will have to figure out the return value of the expression.
@@ -423,15 +413,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 // FIXME: This recursive call is kind of the worse :^)
                 Node* assigned_expr = node_allocate();
-                // CURRENT TOKEN -> "="
-                // LOOK AFTER CURRENT TOKEN FOR NEXT TOKEN
-                // CURRENT TOKEN -> "= 69"
                 err = parse_expr(context, current_token.end, end, assigned_expr);
                 if (err.type != ERROR_NONE) { return err; }
-
-                //printf("Assigned expr: ");
-                //print_node(assigned_expr, 0);
-                //putchar('\n');
 
                 // TODO: FIXME: Proper type-checking (this only accepts literals)
                 // We will have to figure out the return value of the expression.
