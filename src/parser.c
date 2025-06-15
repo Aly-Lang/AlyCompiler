@@ -311,9 +311,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     Error err = ok;
 
     while ((err = lex_advance(&current_token, &token_length, end)).type == ERROR_NONE) {
-        printf("lexed: ");
-        print_token(current_token);
-        putchar('\n');
         if (token_length == 0) { return ok; }
 
         if (parse_integer(&current_token, result)) {
@@ -351,9 +348,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // reassigments and redefinitions can be properly parsed and handled.
             Node* variable_binding = node_allocate();
             if (environment_get(*context->variables, symbol, variable_binding)) {
-                printf("Found existing symbol in environment: %s\n", symbol->value.symbol);
-                print_node(variable_binding, 2);
-                putchar('\n');
+                //printf("Found existing symbol in environment: %s\n", symbol->value.symbol);
+                //print_node(variable_binding, 2);
+                //putchar('\n');
 
                 // Re-assignment of existing variable (look for =)
                 if (token_string_equalp("=", &current_token)) {
@@ -367,9 +364,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         return err;
                     }
 
-                    printf("Reassigned expr: ");
-                    print_node(reassign_expr, 0);
-                    putchar('\n');
+                    //printf("Reassigned expr: ");
+                    //print_node(reassign_expr, 0);
+                    //putchar('\n');
 
                     //exit(0); // FIXME: Why does this not work when removed? Strange?
 
@@ -432,9 +429,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 err = parse_expr(context, current_token.end, end, assigned_expr);
                 if (err.type != ERROR_NONE) { return err; }
 
-                printf("Assigned expr: ");
-                print_node(assigned_expr, 0);
-                putchar('\n');
+                //printf("Assigned expr: ");
+                //print_node(assigned_expr, 0);
+                //putchar('\n');
 
                 // TODO: FIXME: Proper type-checking (this only accepts literals)
                 // We will have to figure out the return value of the expression.

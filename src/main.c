@@ -34,9 +34,9 @@ int main(int argc, char** argv) {
                 break;
             }
 
-            printf("Parsed expression:\n");
-            print_node(expression, 0);
-            putchar('\n');
+            //printf("Parsed expression:\n");
+            //print_node(expression, 0);
+            //putchar('\n');
 
             Node* child = node_allocate();
             node_copy(expression, child);
