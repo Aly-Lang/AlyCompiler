@@ -103,7 +103,7 @@ int node_compare(Node* a, Node* b) {
         return 0;
     }
     // TODO: This assert doesn't work, I don't know why :^(.
-    assert(NODE_TYPE_MAX == 7 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 8 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
@@ -114,14 +114,14 @@ int node_compare(Node* a, Node* b) {
         if (a->value.integer == b->value.integer) {
             return 1;
         }
-        return 0;
+
         break;
     case NODE_TYPE_SYMBOL:
         if (a->value.symbol && b->value.symbol) {
             if (strcmp(a->value.symbol, b->value.symbol) == 0) {
                 return 1;
             }
-            return 0;
+            break;
         } else if (!a->value.symbol && !b->value.symbol) {
             return 1;
         }
@@ -134,10 +134,9 @@ int node_compare(Node* a, Node* b) {
         printf("TODO: node_compare() VARIABLE DECLARATION\n");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: node_compare() VARIABLE DECLARATION INITALIZED\n");
+        printf("TODO: node_compare() VARIABLE DECLARATION INITIALIZED\n");
         break;
     case NODE_TYPE_PROGRAM:
-        // TODO: Compare two programs.
         printf("TODO: Compare two programs.\n");
         break;
     }
@@ -148,8 +147,6 @@ Node* node_integer(long long value) {
     Node* integer = node_allocate();
     integer->type = NODE_TYPE_INTEGER;
     integer->value.integer = value;
-    integer->children = NULL;
-    integer->next_child = NULL;
     return integer;
 }
 
@@ -174,13 +171,12 @@ Node* node_symbol_from_buffer(char* buffer, size_t length) {
 
 void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
-
     // Print indent.
     for (size_t i = 0; i < indent_level; ++i) {
         putchar(' ');
     }
     // Print type + value.
-    assert(NODE_TYPE_MAX == 7 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 8 && "print_node() must handle all node types");
     switch (node->type) {
     default:
         printf("UNKNOWN");
@@ -221,7 +217,6 @@ void print_node(Node* node, size_t indent_level) {
 
 void node_free(Node* root) {
     if (!root) { return; }
-
     Node* child = root->children;
     Node* next_child = NULL;
     while (child) {
@@ -235,7 +230,6 @@ void node_free(Node* root) {
     free(root);
 }
 
-/// Copy A into B.
 void node_copy(Node* a, Node* b) {
     if (!a || !b) { return; }
     b->type = a->type;
@@ -260,8 +254,8 @@ void node_copy(Node* a, Node* b) {
             b->children = new_child;
             child_it = new_child;
         }
-        node_copy(child, child_it);
 
+        node_copy(child, child_it);
         child = child->next_child;
     }
 }
@@ -297,9 +291,7 @@ int parse_integer(Token* token, Node* node) {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
     } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
-        if (end != token->end) {
-            return 0;
-        }
+        if (end != token->end) { return 0; }
         node->type = NODE_TYPE_INTEGER;
     } else { return 0; }
     return 1;
@@ -314,7 +306,11 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     Error err = ok;
 
     while ((err = lex_advance(&current_token, &token_length, end)).type == ERROR_NONE) {
-        if (token_length == 0) { break; }
+        printf("lexed: ");
+        print_token(current_token);
+        putchar('\n');
+        if (token_length == 0) { return ok; }
+
         if (parse_integer(&current_token, result)) {
             // TODO: Look ahead for binary operators that include integers.
             // It would be cool to use an operator environment to look up
@@ -333,8 +329,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
         Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
 
-        //*result = *symbol;
-
         // TODO: Check if valid symbol for variable environment, 
         // then attempt to pattern match variable access, assignment, 
         // declaration, or declaration with initialization.
@@ -342,11 +336,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         err = lex_advance(&current_token, &token_length, end);
         if (err.type != ERROR_NONE) { return err; }
         if (token_length == 0) { break; }
-        //err = lex(current_token.end, &current_token);
-        //*end = current_token.end;
-        //if (err.type != ERROR_NONE) { return err; }
-        //token_length = current_token.end - current_token.beginning;
-        //if (token_length == 0) { break; }
 
         if (token_string_equalp(":", &current_token)) {
             err = lex_advance(&current_token, &token_length, end);
@@ -358,6 +347,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             Node* variable_binding = node_allocate();
             if (environment_get(*context->variables, symbol, variable_binding)) {
                 printf("Found existing symbol in environment: %s\n", symbol->value.symbol);
+                print_node(variable_binding, 2);
+                putchar('\n');
+
                 // Re-assignment of existing variable (look for =)
                 if (token_string_equalp("=", &current_token)) {
                     // TODO: Stack based continuation to parse assignment expression.
@@ -365,25 +357,34 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     // FIXME: This recursive call is kind of the worse :^)
                     Node* reassign_expr = node_allocate();
                     err = parse_expr(context, current_token.end, end, reassign_expr);
-                    if (err.type != ERROR_NONE) { return err; }
+                    if (err.type != ERROR_NONE) {
+                        free(variable_binding);
+                        return err;
+                    }
 
                     printf("Reassigned expr: ");
                     print_node(reassign_expr, 0);
                     putchar('\n');
 
-                    exit(0); // FIXME: Why does this not work when removed? Strange?
+                    //exit(0); // FIXME: Why does this not work when removed? Strange?
 
                     // TODO: FIXME: Proper type-checking (this only accepts literals)
                     // We will have to figure out the return value of the expression.
-                    if (reassign_expr->type != variable_binding->children->type) {
+                    if (reassign_expr->type != variable_binding->type) {
+                        free(variable_binding);
                         ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
                         return err;
                     }
 
-                    variable_binding->children->value = reassign_expr->value;
+                    Node* var_reassign = node_allocate();
+                    var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
 
-                    // Node contents transfer ownership, assigned_expr is now hollow shell.
-                    free(reassign_expr);
+                    node_add_child(var_reassign, reassign_expr);
+                    node_add_child(var_reassign, symbol);
+
+                    *result = *var_reassign;
+                    free(var_reassign);
+
                     return ok;
                 }
                 // TODO: Check that type is actually valid before redefinition error.

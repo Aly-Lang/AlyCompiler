@@ -14,6 +14,7 @@ Environment* environment_create(Environment* parent) {
     return env;
 }
 
+// TODO: Make return value an enum.
 /**
 * @retval 0 Failure.
 * @retval 1 Creation of new binding.
