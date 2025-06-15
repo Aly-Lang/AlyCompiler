@@ -47,8 +47,6 @@ int main(int argc, char** argv) {
         print_node(program, 0);
         putchar('\n');
 
-        exit(0);
-
         node_free(program);
         free(contents);
     }

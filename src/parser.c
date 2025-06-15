@@ -311,6 +311,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     Error err = ok;
 
     while ((err = lex_advance(&current_token, &token_length, end)).type == ERROR_NONE) {
+        printf("lexed: "); print_token(current_token); putchar('\n');
         if (token_length == 0) { return ok; }
 
         if (parse_integer(&current_token, result)) {
@@ -335,17 +336,16 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         // then attempt to pattern match variable access, assignment, 
         // declaration, or declaration with initialization.
 
+        // TODO: Compact the next four lines into `expect()` helper.
         err = lex_advance(&current_token, &token_length, end);
         if (err.type != ERROR_NONE) { return err; }
         if (token_length == 0) { break; }
-
         if (token_string_equalp(":", &current_token)) {
+
             err = lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
             if (token_length == 0) { break; }
 
-            // FIXME: Actually set variable declarations within environment so that
-            // reassigments and redefinitions can be properly parsed and handled.
             Node* variable_binding = node_allocate();
             if (environment_get(*context->variables, symbol, variable_binding)) {
                 // Re-assignment of existing variable (look for =)
@@ -404,10 +404,11 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // `symbol` is now owned by var_decl.
             node_add_child(var_decl, symbol);
 
+            // FIXME: Use `expect()` helper once it exists.
+            char* old_end = *end;
             lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
             if (token_length == 0) { break; }
-
             if (token_string_equalp("=", &current_token)) {
                 // TODO: Stack based continuation to parse assignment expression.
 
@@ -427,6 +428,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 type_node->value = assigned_expr->value;
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
                 free(assigned_expr);
+            } else {
+                *end = old_end;
             }
 
             /* VARIABLE DECLARATION
