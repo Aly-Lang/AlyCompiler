@@ -102,7 +102,6 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
-    // TODO: This assert doesn't work, I don't know why :^(.
     assert(NODE_TYPE_MAX == 8 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
@@ -129,6 +128,9 @@ int node_compare(Node* a, Node* b) {
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         printf("TODO: node_compare() BINARY OPERATOR\n");
+        break;
+    case NODE_TYPE_VARIABLE_REASSIGNMENT:
+        printf("TODO: node_compare VARIABLE REASSIGNMENT\n");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("TODO: node_compare() VARIABLE DECLARATION\n");
@@ -194,7 +196,10 @@ void print_node(Node* node, size_t indent_level) {
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
-        printf("TODO: print_node() BINARY_OPERATOR");
+        printf("BINARY_OPERATOR");
+        break;
+    case NODE_TYPE_VARIABLE_REASSIGNMENT:
+        printf("VARIABLE REASSIGNMENT");
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("VARIABLE DECLARATION");
