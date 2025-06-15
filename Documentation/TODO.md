@@ -12,7 +12,8 @@
 
 - [ ] Write a LISP runtime in the compiled language.
 
-- [ ] Add token member to AST node structure. This would allow for much better error messages that point to the source code that the error originates from. 
+- [ ] Add token member to AST node structure. This would allow for much better error messages that point to the source code that the error originates from.  
+  - We should also think about line count or something like that; maybe node AST holds custom structure containing token span, as well as file path (if applicable), line number, column number, etc.
 
 # Dumb ideas that we could implement
 
@@ -26,8 +27,7 @@
 
 - Allow automatic type deduction, as we already have the ability (or should have the ability) to deduce return type of an expression, why require type annotation explicitly in variable declarations? Maybe have custom `deduce` type or something.
 
-- Decide what the syntax is for uninitialized variables -- Maybe we can do something like the example below.`
-Perhaps we could do so something like `a : integer !`
+- Decide what the syntax is for uninitialized variables -- Maybe we can do something like the example below.Perhaps we could do so something like `a : integer !`
 
 We could could also have a specific value the parser recognizes as uninitialized, like `a : integer = None` or something.
 
@@ -39,3 +39,8 @@ We could could also have a specific value the parser recognizes as uninitialized
 
 - Have a type that represents all the other types:
   - This would allow variables to be defined with a type of another type.
+
+- Compile to CHIP 8 ASM:
+ - Someone is working on a CHIP-8 virtual machine, assembler and disassembler, etc. in PHP, and it would be cool to collaborate on that with them. 
+
+ - No reason why Aly can't target CHIP-8.
