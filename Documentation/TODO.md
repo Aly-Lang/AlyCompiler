@@ -29,8 +29,6 @@ Perhaps we could do so something like `a : integer !`
 
 We could could also have a specific value the parser recognizes as uninitialized, like `a : integer = None` or something.
 
-- It seems like `NODE_TYPE_MAX` assertions aren't working. Maybe I have to cast the enum value to an integer or something? I don't know. 
-
 - Unnamed variable declarations
   - It would be cool if an assignment and/or variable declaration could have no identifier, and work on a singular unnamed variable in the environment.
 
