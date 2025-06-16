@@ -521,21 +521,16 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 ERROR_PREP(err, ERROR_GENERIC, "Redefinition of variable!");
                 return err;
             }
+            // Variable binding is shell-node for environment value contents.
             free(variable_binding);
 
-            Node* var_decl = node_allocate();
-            var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
+            working_result->type = NODE_TYPE_VARIABLE_DECLARATION;
 
             Node* value_expression = node_none();
 
             // `symbol` is now owned by var_decl.
-            node_add_child(var_decl, symbol);
-            node_add_child(var_decl, value_expression);
-
-            // AST gains variable declaration node.
-            *result = *var_decl;
-            // Node contents transfer ownership, var_decl is now hollow shell.
-            free(var_decl);
+            node_add_child(working_result, symbol);
+            node_add_child(working_result, value_expression);
 
             // Context variables environment gains new binding.
             Node* symbol_for_env = node_allocate();
@@ -549,28 +544,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             EXPECT(expected, "=", current_token, token_length, end);
             if (expected.found) {
-                // TODO: Stack based continuation to parse assignment expression.
-
-                // FIXME: This recursive call is the worse :^)
-                Node* assigned_expr = node_allocate();
-                err = parse_expr(context, current_token.end, end, assigned_expr);
-                if (err.type != ERROR_NONE) { return err; }
-
-                *value_expression = *assigned_expr;
-                // Node contents transfer ownership, assigned_expr is now hollow shell.
-                free(assigned_expr);
-
-                // // TODO: FIXME: Proper type-checking (this only accepts literals)
-                // // We will have to figure out the return value of the expression.
-                // if (assigned_expr->type != type_node->type) {
-                //     node_free(assigned_expr);
-                //     ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
-                //     return err;
-                // }
-                // // FIXME: This is also awful. We need to store value expression separate from type.
-                // type_node->value = assigned_expr->value;
-                // Node contents transfer ownership, assigned_expr is now hollow shell.
-                //free(assigned_expr);
+                working_result = value_expression;
+                continue;
             }
 
             return ok;
