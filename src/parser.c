@@ -570,7 +570,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
                 free(assigned_expr);
             }
-
             return ok;
         }
 
