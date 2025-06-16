@@ -64,9 +64,7 @@ int comment_at_beginning(Token token) {
 //     }
 //     return err;
 // }
-
 // ---------------------------------------------------------------------------
-
 // NOTE: New fixed lexer version
 // This fixes segmentation faults caused by comment lines that do not end with a newline,
 // or by dereferencing NULL pointers when the source ends inside a comment.
@@ -84,7 +82,7 @@ Error lex(char* source, Token* token) {
         return err;
     }
     token->beginning = source;
-    token->beginning += strspn(token->beginning, whitespace); // Skip the whitespace at the beginning.
+    token->beginning += strspn(token->beginning, whitespace); // Skip initial whitespace.
     token->end = token->beginning;
     if (*(token->end) == '\0') { return err; }
     // Check if current line is a comment, and skip past it.
@@ -340,7 +338,6 @@ void node_copy(Node* a, Node* b) {
             b->children = new_child;
             child_it = new_child;
         }
-
         node_copy(child, child_it);
         child = child->next_child;
     }
@@ -404,7 +401,6 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
         *current_length = current_length_copy;
         return out;
     }
-
     return out;
 }
 
@@ -416,7 +412,7 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
 int parse_integer(Token* token, Node* node) {
     if (!token || !node) { return 0; }
     char* end = NULL;
-    if (token->end - token->beginning == 1 && *(token->beginning) == '0') { // Just handles zero.
+    if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
     } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
@@ -446,7 +442,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // It would be cool to use an operator environment to look up
             // operators instead of hard-coding them. This would eventually
             // allow for user-defined operators, or stuff like that!
-
             return ok;
         }
 
@@ -465,11 +460,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
         EXPECT(expected, ":", current_token, token_length, end);
         if (expected.found) {
-
             // Re-assignment of existing variable (look for =)
             EXPECT(expected, "=", current_token, token_length, end);
             if (expected.found) {
-            
                 Node* variable_binding = node_allocate();
                 if (!environment_get(*context->variables, symbol, variable_binding)) {
                     // TODO: Add source location or something to the error.
@@ -479,17 +472,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     return err;
                 }
                 free(variable_binding);
-
-                // At this point, we have a guaranteed valid reassignment expression, unless
-                // errors occur when parsing the actual value expression.
-
-                // Node* var_reassign = node_allocate();
-                // var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
+                
                 working_result->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
-
-                Node* reassign_expr = node_allocate();
-
                 node_add_child(working_result, symbol);
+                Node* reassign_expr = node_allocate();
                 node_add_child(working_result, reassign_expr);
 
                 working_result = reassign_expr;
@@ -545,7 +531,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 working_result = value_expression;
                 continue;
             }
-
             return ok;
         }
 
@@ -556,6 +541,5 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         ERROR_PREP(err, ERROR_SYNTAX, "Unrecognized token reached during parsing");
         return err;
     }
-
     return err;
 }
