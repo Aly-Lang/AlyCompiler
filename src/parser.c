@@ -162,7 +162,7 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
-    assert(NODE_TYPE_MAX == 9&& "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 8 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
@@ -200,9 +200,6 @@ int node_compare(Node* a, Node* b) {
     case NODE_TYPE_PROGRAM:
         printf("TODO: Compare two programs.\n");
         break;
-    case NODE_TYPE_TYPE:
-        printf("TODO: Compare two type nodes.\n");
-        break;
     }
     return 0;
 }
@@ -234,8 +231,8 @@ Node* node_symbol_from_buffer(char* buffer, size_t length) {
 }
 
 // Take ownership of type_symbol.
-Error node_add_type(Environment* types, enum NodeType type, Node* type_symbol, long long byte_size) {
-    assert(!types && "Can not add type to NULL types environment");
+Error node_add_type(Environment* types, int type, Node* type_symbol, long long byte_size) {
+    assert(types && "Can not add type to NULL types environment");
     assert(type_symbol && "Can not add NULL type symbol to types environment");
     assert(byte_size >= 0 && "Can not define new type with zero or negative byte size");
 
@@ -244,11 +241,10 @@ Error node_add_type(Environment* types, enum NodeType type, Node* type_symbol, l
     size_node->value.integer = byte_size;
     
     Node* type_node = node_allocate();
-    type_node->type = NODE_TYPE_TYPE;
-    type_node->value.type = type;
+    type_node->type = type;
     type_node->children = size_node;
 
-    if (environment_set(types, type_symbol, type_node) != 1) {
+    if (environment_set(types, type_symbol, type_node) == 1) {
         return ok;
     }
     // TYPE REDEFINITION ERROR
@@ -264,7 +260,7 @@ void print_node(Node* node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
-    assert(NODE_TYPE_MAX == 9&& "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 8 && "print_node() must handle all node types");
     switch (node->type) {
     default:
         printf("UNKNOWN");
@@ -295,9 +291,6 @@ void print_node(Node* node, size_t indent_level) {
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
-        break;
-    case NODE_TYPE_TYPE:
-        printf("TYPE");
         break;
     }
     putchar('\n');
@@ -358,7 +351,8 @@ ParsingContext* parse_context_create() {
     ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
     assert(ctx && "Could not allocate memory for parsing context.");
     ctx->types = environment_create(NULL);
-    if (environment_set(ctx->types, node_symbol("integer"), node_integer(0)) == 0) {
+    Error err = node_add_type(ctx->types, NODE_TYPE_INTEGER, node_symbol("integer"), sizeof(long long));
+    if (err.type != ERROR_NONE) {
         printf("ERROR: Failed to set builtin type in types environment.\n");
     }
     ctx->variables = environment_create(NULL);
@@ -483,7 +477,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     ERROR_PREP(err, ERROR_GENERIC, "Reassignment of a variable that has not been declared!");
                     return err;
                 }
-                free(variable_binding);
 
                 // TODO: Stack based continuation to parse assignment expression.
 
@@ -495,9 +488,11 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // TODO: FIXME: Proper type-checking (this only accepts literals)
                 // We will have to figure out the return value of the expression.
                 if (reassign_expr->type != variable_binding->type) {
+                    free(variable_binding);
                     ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
                     return err;
                 }
+                free(variable_binding);
 
                 Node* var_reassign = node_allocate();
                 var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
