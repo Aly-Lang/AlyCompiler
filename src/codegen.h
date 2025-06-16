@@ -9,6 +9,6 @@ typedef enum CodegenOutputFormat {
     OUTPUT_FMT_x86_64_AT_T_ASM,
 } CodegenOutputFormat;
 
-Error codegen_program(CodegenOutputFormat, Node* program);
+Error codegen_program(CodegenOutputFormat, ParsingContext* context, Node* program);
 
 #endif // ALY_COMPILER_CODEGEN_H

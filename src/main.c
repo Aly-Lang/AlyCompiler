@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <codegen.h>
 #include <error.h>
 #include <file_io.h>
 #include <environment.h>
@@ -47,6 +48,12 @@ int main(int argc, char** argv) {
 
         print_node(program, 0);
         putchar('\n');
+
+        printf("Generating code!\n");
+
+        codegen_program(OUTPUT_FMT_DEFAULT, context, program);
+
+        printf("Code generated.\n");
 
         node_free(program);
         free(contents);
