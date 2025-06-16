@@ -1,7 +1,7 @@
 ; This is a comment. It will end at the newline.
 # This is also a comment.
 
-; This is a variable declaration with initialization.
+; This is a variable declaration with initialization. 
 
 a : integer = 69
 
@@ -16,7 +16,7 @@ b := 42
 ; This is an error! We should catch this as a variable redefinition.
 b : integer
 
-; This is a function definition with two integer arguments that returns
+; This is a function definition with two integer arguments that returns 
 ; an integer.
 defun foo (a:integer, b:integer):integer {
     ; TODO: How do we return things?

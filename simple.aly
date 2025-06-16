@@ -1,5 +1,5 @@
 a : integer = 69
-c := 420
+a := 420
 b : integer
 b := 42
-;b : integer
+b : integer
