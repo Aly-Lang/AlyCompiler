@@ -539,6 +539,16 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // Node contents transfer ownership, var_decl is now hollow shell.
             free(var_decl);
 
+            // Context variables environment gains new binding.
+            Node* symbol_for_env = node_allocate();
+            node_copy(symbol, symbol_for_env);
+            int status = environment_set(context->variables, symbol_for_env, type_node);
+            if (status != 1) {
+                printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
+                ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
+                return err;
+            }
+
             EXPECT(expected, "=", current_token, token_length, end);
             if (expected.found) {
                 // TODO: Stack based continuation to parse assignment expression.
@@ -559,16 +569,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 type_node->value = assigned_expr->value;
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
                 free(assigned_expr);
-            }
-
-            // Context variables environment gains new binding.
-            Node* symbol_for_env = node_allocate();
-            node_copy(symbol, symbol_for_env);
-            int status = environment_set(context->variables, symbol_for_env, type_node);
-            if (status != 1) {
-                printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
-                ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
-                return err;
             }
 
             return ok;
