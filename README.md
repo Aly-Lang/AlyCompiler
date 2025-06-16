@@ -24,10 +24,10 @@ Run the executable from a shell with a path to some source code as the only argu
 
 First generate a build tree using CMake.
 ```bash
-cmake -S . -B bld
+cmake -S . -B bld -G "MinGW Makefiles"
 ```
 
 Finally, build an executable from the build tree.
 ```bash
-cmake --build bld
+ cmake --build bld
 ```

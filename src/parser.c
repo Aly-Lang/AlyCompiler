@@ -418,7 +418,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 Node* var_reassign = node_allocate();
                 var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
-
+                
                 node_add_child(var_reassign, reassign_expr);
                 node_add_child(var_reassign, symbol);
 
