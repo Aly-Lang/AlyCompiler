@@ -1,17 +1,17 @@
 @echo off
-REM Navigate to the root directory (one level up from Scripts)
+REM Change to the root directory (one level up from scripts/)
 cd ..
 
-REM Create a build directory if it doesn't exist
-if not exist build (
-    mkdir bld
+REM Run CMake configuration
+cmake -S . -B bld -G "MinGW Makefiles"
+IF ERRORLEVEL 1 (
+    echo CMake configuration failed.
+    exit /b 1
 )
 
-REM Run CMake to configure the project for Visual Studio 2022
-cmake -S . -B bld -G "Visual Studio 17 2022"
-
-REM Build the project in Debug mode
-cmake --build bld --config Debug
-
-REM Pause to view any output (optional)
-pause
+REM Build the project
+cmake --build bld
+IF ERRORLEVEL 1 (
+    echo Build failed.
+    exit /b 1
+)

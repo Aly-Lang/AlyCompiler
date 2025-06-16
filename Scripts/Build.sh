@@ -1,18 +1,18 @@
-#!/bin/bash
+#!/bin/sh
 
-# Navigate to the root directory (one level up from Scripts)
+# Go up to the root directory
 cd ..
 
-# Create a build directory if it doesn't exist
-if [ ! -d "build" ]; then
-    mkdir bld
+# Run CMake configuration
+cmake -S . -B bld -G "MinGW Makefiles"
+if [ $? -ne 0 ]; then
+    echo "CMake configuration failed."
+    exit 1
 fi
 
-# Run CMake to configure the project for Visual Studio 2022
-cmake -S . -B bld -G "Visual Studio 17 2022"
-
-# Build the project in Debug mode
-cmake --build bld --config Debug
-
-# Optionally, print a message when done
-echo "Build complete."
+# Build the project
+cmake --build bld
+if [ $? -ne 0 ]; then
+    echo "Build failed."
+    exit 1
+fi
