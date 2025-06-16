@@ -26,8 +26,64 @@ int comment_at_beginning(Token token) {
     return 0;
 }
 
-/// Lex the next token from SOURCE, and point to it with BEG and END.
-/// If BEG and END of token are equal, there is nothing more to lex.
+/// NOTE: Old lexer version (commented out)
+/// This version has a critical flaw that can cause segmentation faults when processing comments:
+/// When strpbrk(token->beginning, "\n") returns NULL (no newline found),
+/// token->beginning and token->end are set to NULL,
+/// but later the code dereferences token->end causing a segfault.
+/// Also, it does not move past the newline before skipping whitespace,
+/// which can cause incorrect token positioning or infinite loops.
+//
+// Error lex(char* source, Token* token) {
+//     Error err = ok;
+//     if (!source || !token) {
+//         ERROR_PREP(err, ERROR_ARGUMENTS, "Can not lex empty source.");
+//         return err;
+//     }
+//     token->beginning = source;
+//     token->beginning += strspn(token->beginning, whitespace); // Skip the whitespace at the beginning.
+//     token->end = token->beginning;
+//     if (*(token->end) == '\0') { return err; }
+//     // Check if current line is a comment, and skip past it.
+//     while (comment_at_beginning(*token)) {
+//         // Skip to after next newline.
+//         token->beginning = strpbrk(token->beginning, "\n");
+//         if (!token->beginning) {
+//             // If last line of file is comment, we're done lexing.
+//             token->end = token->beginning;  // <-- token->end == NULL here!
+//             return err;
+//         }
+//         // Skip to beginning of next token after comment.
+//         token->beginning += strspn(token->beginning, whitespace);
+//         token->end = token->beginning;
+//     }
+//     if (*(token->end) == '\0') { return err; }
+//     token->end += strcspn(token->beginning, delimiters); // Skip everything not in delimiters.
+//     if (token->end == token->beginning) {
+//         token->end += 1;
+//     }
+//     return err;
+// }
+
+// ---------------------------------------------------------------------------
+
+// NOTE: New fixed lexer version
+// - Uses a temporary pointer 'newline' to safely handle the result of strpbrk.
+// - If no newline is found (strpbrk returns NULL), the code moves the pointers
+//   to the end of the source string instead of assigning NULL, preventing null dereference.
+// - Advances token->beginning past the newline before skipping whitespace to avoid
+//   incorrect positioning or infinite loops caused by stopping on newline characters.
+// - Checks token->end and token->beginning before dereferencing, ensuring no segmentation faults.
+//
+// This fixes segmentation faults caused by comment lines that do not end with a newline,
+// or by dereferencing NULL pointers when the source ends inside a comment.
+//
+// The rest of the token parsing logic remains unchanged and continues to correctly
+// lex tokens separated by delimiters.
+//
+// This approach ensures robust handling of comment lines and end-of-file conditions,
+// eliminating the segmentation faults experienced in the old version.
+
 Error lex(char* source, Token* token) {
     Error err = ok;
     if (!source || !token) {
@@ -40,14 +96,16 @@ Error lex(char* source, Token* token) {
     if (*(token->end) == '\0') { return err; }
     // Check if current line is a comment, and skip past it.
     while (comment_at_beginning(*token)) {
-        // Skip to after next newline.
-        token->beginning = strpbrk(token->beginning, "\n");
-        if (!token->beginning) {
-            // If last line of file is comment, we're done lexing.
-            token->end = token->beginning;
+        // Use a temporary pointer to avoid assigning NULL directly.
+        char* newline = strpbrk(token->beginning, "\n");
+        if (!newline) {
+            // If last line of file is comment, move to end of source and finish.
+            token->end = token->beginning + strlen(token->beginning);
+            token->beginning = token->end;
             return err;
         }
-        // Skip to beginning of next token after comment.
+        // Skip to beginning of next token after comment (past newline).
+        token->beginning = newline + 1;
         token->beginning += strspn(token->beginning, whitespace);
         token->end = token->beginning;
     }
