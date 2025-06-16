@@ -17,7 +17,6 @@ Environment* environment_create(Environment* parent) {
 int environment_set(Environment* env, Node* id, Node* value) {
     // Over-write existing value if ID is already bound in environment.
     if (!env || !id || !value) { return 0; }
-
     Binding* binding_it = env->bind;
     while (binding_it) {
         if (node_compare(binding_it->id, id)) {
