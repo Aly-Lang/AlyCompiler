@@ -509,10 +509,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             err = lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
             if (token_length == 0) { break; }
-            Node* expected_type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-            if (environment_get(*context->types, expected_type_symbol, result) == 0) {
+            Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+            if (environment_get(*context->types, type_symbol, result) == 0) {
                 ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
-                printf("\nINVALID TYPE: \"%s\"\n", expected_type_symbol->value.symbol);
+                printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
                 return err;
             }
 
