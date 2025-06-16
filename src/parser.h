@@ -30,13 +30,15 @@ typedef enum NodeType {
 
 	// END LITERALS
 
-	/// Contains two children. The first determines type (and value),
-	/// while the second contains the symbolic name of the variable.
+	/// Contains two children. 
+	/// 1. SYMBOL (VARIABLE IDENTIFIER)
+	/// 2. INITIALIZE EXPRESSION, or None.
 	NODE_TYPE_VARIABLE_DECLARATION,
 	NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED,
 
-	/// Contains two children. The first is the new expression to
-	/// execute that returns proper type, and second is ID symbol.
+	/// Contains two children.
+	/// 1. SYMBOL (VARIABLE IDENTIFIER)
+	/// 2. VALUE EXPRESSION
 	NODE_TYPE_VARIABLE_REASSIGNMENT,
 
 	/// Contains two children that determine left and right acceptable

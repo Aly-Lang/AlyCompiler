@@ -204,6 +204,12 @@ int node_compare(Node* a, Node* b) {
     return 0;
 }
 
+Node* node_none() {
+    Node* none = node_allocate();
+    none->type = NODE_TYPE_NONE;
+    return none;
+}
+
 Node* node_integer(long long value) {
     Node* integer = node_allocate();
     integer->type = NODE_TYPE_INTEGER;
@@ -484,21 +490,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 Node* reassign_expr = node_allocate();
                 err = parse_expr(context, current_token.end, end, reassign_expr);
                 if (err.type != ERROR_NONE) { return err; }
-
-                // TODO: FIXME: Proper type-checking (this only accepts literals)
-                // We will have to figure out the return value of the expression.
-                if (reassign_expr->type != variable_binding->type) {
-                    free(variable_binding);
-                    ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
-                    return err;
-                }
-                free(variable_binding);
-
+    
                 Node* var_reassign = node_allocate();
                 var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
                 
-                node_add_child(var_reassign, reassign_expr);
                 node_add_child(var_reassign, symbol);
+                node_add_child(var_reassign, reassign_expr);
 
                 *result = *var_reassign;
                 free(var_reassign);
@@ -528,8 +525,11 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             Node* var_decl = node_allocate();
             var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
 
+            Node* value_expression = node_none();
+
             // `symbol` is now owned by var_decl.
             node_add_child(var_decl, symbol);
+            node_add_child(var_decl, value_expression);
 
             // AST gains variable declaration node.
             *result = *var_decl;
@@ -555,6 +555,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 err = parse_expr(context, current_token.end, end, assigned_expr);
                 if (err.type != ERROR_NONE) { return err; }
 
+                *value_expression = *assigned_expr;
+                // Node contents transfer ownership, assigned_expr is now hollow shell.
+                free(assigned_expr);
+
                 // // TODO: FIXME: Proper type-checking (this only accepts literals)
                 // // We will have to figure out the return value of the expression.
                 // if (assigned_expr->type != type_node->type) {
@@ -564,11 +568,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // }
                 // // FIXME: This is also awful. We need to store value expression separate from type.
                 // type_node->value = assigned_expr->value;
-
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
-                free(assigned_expr);
+                //free(assigned_expr);
             }
-            
+
             return ok;
         }
 
