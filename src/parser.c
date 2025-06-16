@@ -442,11 +442,13 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     current_token.end = source;
     Error err = ok;
 
+    Node* working_result = result;
+
     while ((err = lex_advance(&current_token, &token_length, end)).type == ERROR_NONE) {
         //printf("lexed: "); print_token(current_token); putchar('\n');
         if (token_length == 0) { return ok; }
-
-        if (parse_integer(&current_token, result)) {
+        
+        if (parse_integer(&current_token, working_result)) {
             // TODO: Look ahead for binary operators that include integers.
             // It would be cool to use an operator environment to look up
             // operators instead of hard-coding them. This would eventually
@@ -484,30 +486,29 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     return err;
                 }
 
-                // TODO: Stack based continuation to parse assignment expression.
+                // At this point, we have a guaranteed valid reassignment expression, unless
+                // errors occur when parsing the actual value expression.
 
-                // FIXME: This recursive call is the worse :^)
-                Node* reassign_expr = node_allocate();
-                err = parse_expr(context, current_token.end, end, reassign_expr);
-                if (err.type != ERROR_NONE) { return err; }
-    
                 Node* var_reassign = node_allocate();
                 var_reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
                 
+                Node* reassign_expr = node_allocate();
+
                 node_add_child(var_reassign, symbol);
                 node_add_child(var_reassign, reassign_expr);
 
-                *result = *var_reassign;
+                *working_result = *var_reassign;
                 free(var_reassign);
 
-                return ok;
+                working_result = reassign_expr;
+                continue;
             }
 
             err = lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
             if (token_length == 0) { break; }
             Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-            if (environment_get(*context->types, type_symbol, result) == 0) {
+            if (environment_get(*context->types, type_symbol, working_result) == 0) {
                 ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                 printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
                 return err;

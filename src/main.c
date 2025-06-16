@@ -50,9 +50,7 @@ int main(int argc, char** argv) {
         putchar('\n');
 
         printf("Generating code!\n");
-
         codegen_program(OUTPUT_FMT_DEFAULT, context, program);
-
         printf("Code generated.\n");
 
         node_free(program);
