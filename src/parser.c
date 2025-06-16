@@ -528,9 +528,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             Node* var_decl = node_allocate();
             var_decl->type = NODE_TYPE_VARIABLE_DECLARATION;
 
-            Node* type_node = node_allocate();
-            type_node->type = result->type;
-
             // `symbol` is now owned by var_decl.
             node_add_child(var_decl, symbol);
 
@@ -542,7 +539,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // Context variables environment gains new binding.
             Node* symbol_for_env = node_allocate();
             node_copy(symbol, symbol_for_env);
-            int status = environment_set(context->variables, symbol_for_env, type_node);
+            int status = environment_set(context->variables, symbol_for_env, type_symbol);
             if (status != 1) {
                 printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
                 ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
@@ -558,18 +555,20 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 err = parse_expr(context, current_token.end, end, assigned_expr);
                 if (err.type != ERROR_NONE) { return err; }
 
-                // TODO: FIXME: Proper type-checking (this only accepts literals)
-                // We will have to figure out the return value of the expression.
-                if (assigned_expr->type != type_node->type) {
-                    node_free(assigned_expr);
-                    ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
-                    return err;
-                }
-                // FIXME: This is also awful. We need to store value expression separate from type.
-                type_node->value = assigned_expr->value;
+                // // TODO: FIXME: Proper type-checking (this only accepts literals)
+                // // We will have to figure out the return value of the expression.
+                // if (assigned_expr->type != type_node->type) {
+                //     node_free(assigned_expr);
+                //     ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
+                //     return err;
+                // }
+                // // FIXME: This is also awful. We need to store value expression separate from type.
+                // type_node->value = assigned_expr->value;
+
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
                 free(assigned_expr);
             }
+            
             return ok;
         }
 
