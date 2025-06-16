@@ -462,14 +462,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 Node* reassign_expr = node_allocate();
                 err = parse_expr(context, current_token.end, end, reassign_expr);
                 if (err.type != ERROR_NONE) {
-                    free(variable_binding);
                     return err;
                 }
 
                 // TODO: FIXME: Proper type-checking (this only accepts literals)
                 // We will have to figure out the return value of the expression.
                 if (reassign_expr->type != variable_binding->type) {
-                    free(variable_binding);
                     ERROR_PREP(err, ERROR_TYPE, "Variable assignment expression has mismatched type.");
                     return err;
                 }
