@@ -8,6 +8,8 @@
 #include <string.h>
 
 // ============================================================ BEG lexer
+
+// TODO: Allow multi-byte comment delimiters.
 const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,():";
@@ -190,9 +192,9 @@ void print_node(Node* node, size_t indent_level) {
         printf("INT:%lld", node->value.integer);
         break;
     case NODE_TYPE_SYMBOL:
-        printf("SYM:");
+        printf("SYM");
         if (node->value.symbol) {
-            printf("%s", node->value.symbol);
+            printf(":%s", node->value.symbol);
         }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
@@ -289,6 +291,48 @@ Error lex_advance(Token* token, size_t* token_length, char** end) {
     return err;
 }
 
+typedef struct ExpectReturnValue {
+    Error err;
+    char found; // NOTE: Maybe make this a BITMASK?
+    char done;
+} ExpectReturnValue;
+
+ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_length, char** end) {
+    ExpectReturnValue out;
+    out.done = 0;
+    out.found = 0;
+    out.err = ok;
+    if (!expected || !current || !current_length || !end) {
+        ERROR_PREP(out.err, ERROR_ARGUMENTS, "lex_expect() Can must not be passed NULL pointers!");
+        return out;
+    }
+    Token current_copy = *current;
+    size_t current_length_copy = *current_length;
+    char* end_value = *end;
+
+    out.err = lex_advance(&current_copy, &current_length_copy, &end_value);
+    if (out.err.type != ERROR_NONE) { return out; }
+    if (current_length_copy == 0) {
+        out.done = 1;
+        return out;
+    }
+
+    if (token_string_equalp(expected, &current_copy)) {
+        out.found = 1;
+        *end = end_value;
+        *current = current_copy;
+        *current_length = current_length_copy;
+        return out;
+    }
+
+    return out;
+}
+
+#define EXPECT(expected, expected_string, current_token, current_length, end)    \
+    expected = lex_expect(expected_string, &current_token, &current_length, end); \
+    if (expected.err.type) { return expected.err; }                                \
+    if (expected.done) { return ok; }
+
 int parse_integer(Token* token, Node* node) {
     if (!token || !node) { return 0; }
     char* end = NULL;
@@ -303,6 +347,7 @@ int parse_integer(Token* token, Node* node) {
 }
 
 Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) {
+    ExpectReturnValue expected;
     size_t token_count = 0;
     size_t token_length = 0;
     Token current_token;
@@ -336,11 +381,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         // then attempt to pattern match variable access, assignment, 
         // declaration, or declaration with initialization.
 
-        // TODO: Compact the next four lines into `expect()` helper.
-        err = lex_advance(&current_token, &token_length, end);
-        if (err.type != ERROR_NONE) { return err; }
-        if (token_length == 0) { break; }
-        if (token_string_equalp(":", &current_token)) {
+        EXPECT(expected, ":", current_token, token_length, end);
+        if (expected.found) {
 
             err = lex_advance(&current_token, &token_length, end);
             if (err.type != ERROR_NONE) { return err; }
@@ -404,12 +446,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // `symbol` is now owned by var_decl.
             node_add_child(var_decl, symbol);
 
-            // FIXME: Use `expect()` helper once it exists.
-            char* old_end = *end;
-            lex_advance(&current_token, &token_length, end);
-            if (err.type != ERROR_NONE) { return err; }
-            if (token_length == 0) { break; }
-            if (token_string_equalp("=", &current_token)) {
+            EXPECT(expected, "=", current_token, token_length, end);
+            if (expected.found) {
                 // TODO: Stack based continuation to parse assignment expression.
 
                 // FIXME: This recursive call is kind of the worse :^)
@@ -428,58 +466,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 type_node->value = assigned_expr->value;
                 // Node contents transfer ownership, assigned_expr is now hollow shell.
                 free(assigned_expr);
-            } else {
-                *end = old_end;
             }
-
-            /* VARIABLE DECLARATION
-             * `-- SYMBOL (ID)
-             * Add to parsing context variable enviornment
-             *
-             * ENVIRONMENT
-             * `-- Variables
-             *	   `-- Binding
-             *		   `-- SYMBOL (ID) -> TYPE (VALUE)
-             *
-             * During codegen:
-             * |-- Find somewhere to stick the length of bytes of the size of TYPE.
-             * `-- Keep track of where we stick it :^)
-             *
-             * We never actually need the symbol in the AST, I don't think.
-             * We just need to keep track of it in parsing context so that
-             * future accesses and re-assignments can refer to the same one.
-             *
-             * VARIABLE RE-ASSIGNMENT
-             * `-- NEW VALUE EXPRESSION -> SYMBOL (ID)
-             *
-             * If we have a codegen context, then we can map symbols to
-             * wherever we decide to stick them. Then we can just do a
-             * environment lookup in the codegen context to update the
-             * proper value.
-             *
-             * A codegen context must contain, for example in `x86_64` ASM,
-             * stack offsets of local variable declarations. Otherwise, how
-             * would we ever access them after creation, right?
-             *
-             * PROGRAM -> "a : integer  a := 420"
-             *   VARIABLE DECLARATION
-             *   `-- SYMBOL ("a")
-             *    VARIABLE REASSIGNMENT
-             *    `-- INTEGER (420) -> SYMBOL ("a")
-             *
-             * Codegen for each top-level VARIABLE DECLARATION (inherited from parsing context variables environment):
-             *   Look up symbol in variable environment <- should never fail if parsing works.
-             *   Get size of type in bytes
-             *   Generate variable space in .space or something.
-             *   Re-define binding in globals environment to store new symbol.
-             *
-             * ASM:
-             * .data
-             *   ga: .space <SIZEOF INTEGER>,0
-             * .code
-             *   movq ga, %rax
-             *   movq %rbx, (%rax)
-            */
 
             // AST gains variable declaration node.
             *result = *var_decl;
