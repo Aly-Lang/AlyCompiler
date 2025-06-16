@@ -41,6 +41,8 @@ typedef struct Node {
 
 		// END LITERALS
 
+		NODE_TYPE_TYPE,
+
 		/// Contains two children. The first determines type (and value),
 		/// while the second contains the symbolic name of the variable.
 		NODE_TYPE_VARIABLE_DECLARATION,
@@ -62,6 +64,7 @@ typedef struct Node {
 	union NodeValue {
 		long long integer;
 		char* symbol;
+		enum NodeType type;
 	} value;
 	// Possible TODO: Parent?
 	struct Node* children;
@@ -105,6 +108,9 @@ int parse_integer(Token* token, Node* node);
 
 typedef struct ParsingContext {
 	// FIXME: "struct ParsingContext* parent;" ???
+	/// TYPE
+	/// `-- SYMBOL (IDENTIFIER) -> TYPE (NODE_TYPE)
+	///                            `-- BYTE_SIZE (N)
 	Environment* types;
 	Environment* variables;
 } ParsingContext;

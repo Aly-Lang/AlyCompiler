@@ -162,7 +162,7 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
-    assert(NODE_TYPE_MAX == 8 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 9&& "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
@@ -173,7 +173,6 @@ int node_compare(Node* a, Node* b) {
         if (a->value.integer == b->value.integer) {
             return 1;
         }
-
         break;
     case NODE_TYPE_SYMBOL:
         if (a->value.symbol && b->value.symbol) {
@@ -200,6 +199,9 @@ int node_compare(Node* a, Node* b) {
         break;
     case NODE_TYPE_PROGRAM:
         printf("TODO: Compare two programs.\n");
+        break;
+    case NODE_TYPE_TYPE:
+        printf("TODO: Compare two type nodes.\n");
         break;
     }
     return 0;
@@ -231,6 +233,30 @@ Node* node_symbol_from_buffer(char* buffer, size_t length) {
     return symbol;
 }
 
+// Take ownership of type_symbol.
+Error node_add_type(Environment* types, enum NodeType type, Node* type_symbol, long long byte_size) {
+    assert(!types && "Can not add type to NULL types environment");
+    assert(type_symbol && "Can not add NULL type symbol to types environment");
+    assert(byte_size >= 0 && "Can not define new type with zero or negative byte size");
+
+    Node* size_node = node_allocate();
+    size_node->type = NODE_TYPE_INTEGER;
+    size_node->value.integer = byte_size;
+    
+    Node* type_node = node_allocate();
+    type_node->type = NODE_TYPE_TYPE;
+    type_node->value.type = type;
+    type_node->children = size_node;
+
+    if (environment_set(types, type_symbol, type_node) != 1) {
+        return ok;
+    }
+    // TYPE REDEFINITION ERROR
+    printf("Type that was redefined: \"%s\"\n", type_symbol->value.symbol);
+    ERROR_CREATE(err, ERROR_TYPE, "Redefinition of type!");
+    return err;
+}
+
 void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
     // Print indent.
@@ -238,7 +264,7 @@ void print_node(Node* node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
-    assert(NODE_TYPE_MAX == 8 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 9&& "print_node() must handle all node types");
     switch (node->type) {
     default:
         printf("UNKNOWN");
@@ -269,6 +295,9 @@ void print_node(Node* node, size_t indent_level) {
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
+        break;
+    case NODE_TYPE_TYPE:
+        printf("TYPE");
         break;
     }
     putchar('\n');
@@ -351,7 +380,7 @@ Error lex_advance(Token* token, size_t* token_length, char** end) {
 
 typedef struct ExpectReturnValue {
     Error err;
-    char found; // NOTE: Maybe make this a BITMASK?
+    char found; // TODO: Maybe use a BITMASK?
     char done;
 } ExpectReturnValue;
 
@@ -447,7 +476,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             if (expected.found) {
 
                 Node* variable_binding = node_allocate();
-                if (environment_get(*context->variables, symbol, variable_binding) == 0) {
+                if (!environment_get(*context->variables, symbol, variable_binding)) {
                     // TODO: Add source location or something to the error.
                     // TODO: Create new error type.
                     printf("ID of undeclared variable: \"%s\"\n", symbol->value.symbol);
@@ -461,9 +490,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // FIXME: This recursive call is kind of the worse :^)
                 Node* reassign_expr = node_allocate();
                 err = parse_expr(context, current_token.end, end, reassign_expr);
-                if (err.type != ERROR_NONE) {
-                    return err;
-                }
+                if (err.type != ERROR_NONE) { return err; }
 
                 // TODO: FIXME: Proper type-checking (this only accepts literals)
                 // We will have to figure out the return value of the expression.
@@ -559,5 +586,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         ERROR_PREP(err, ERROR_SYNTAX, "Unrecognized token reached during parsing");
         return err;
     }
+
     return err;
 }
