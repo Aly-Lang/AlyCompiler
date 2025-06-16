@@ -23,6 +23,7 @@ Error codegen_program_x86_64_att_asm(ParsingContext* context, Node* program) {
     // TODO: Allocate `.space` for all global variable declarations.
 
     Node* expression = program->children;
+    Node* tmpnode1 = node_allocate();
     while (expression) {
         switch (expression->type) {
         default:
@@ -30,10 +31,8 @@ Error codegen_program_x86_64_att_asm(ParsingContext* context, Node* program) {
         case NODE_TYPE_VARIABLE_DECLARATION:
             // TODO: Get size of type, generate `<identifier>: .space <size>` directive.
             //       We also need to keep track of identifier somehow.
-            Node* var_symbol = expression->children;
-            Node* type_node = node_allocate();
-            environment_get(*context->variables, var_symbol, type_node);
-            print_node(type_node, 0);
+            environment_get(*context->variables, expression->children, tmpnode1);
+            print_node(tmpnode1, 0);
             // TODO: Handle nested scopes (stack based variables)    
             break;
         }
