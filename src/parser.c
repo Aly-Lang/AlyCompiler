@@ -486,7 +486,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 // TODO: Stack based continuation to parse assignment expression.
 
-                // FIXME: This recursive call is kind of the worse :^)
+                // FIXME: This recursive call is the worse :^)
                 Node* reassign_expr = node_allocate();
                 err = parse_expr(context, current_token.end, end, reassign_expr);
                 if (err.type != ERROR_NONE) { return err; }
@@ -550,7 +550,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             if (expected.found) {
                 // TODO: Stack based continuation to parse assignment expression.
 
-                // FIXME: This recursive call is kind of the worse :^)
+                // FIXME: This recursive call is the worse :^)
                 Node* assigned_expr = node_allocate();
                 err = parse_expr(context, current_token.end, end, assigned_expr);
                 if (err.type != ERROR_NONE) { return err; }
