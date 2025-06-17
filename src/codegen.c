@@ -32,8 +32,12 @@ Error codegen_program_x86_64_att_asm(ParsingContext* context, Node* program) {
             // TODO: Get size of type, generate `<identifier>: .space <size>` directive.
             //       We also need to keep track of identifier somehow.
 
+            // Get type symbol ID of variable from variables context using 
+            // variable symbol ID.
             environment_get(*context->variables, expression->children, tmpnode1);
+            // Get type info of type from type context using type symbol ID.
             environment_get(*context->types, tmpnode1, tmpnode1);
+            
             print_node(tmpnode1, 0);
             // TODO: Handle nested scopes (stack based variables).
             break;
