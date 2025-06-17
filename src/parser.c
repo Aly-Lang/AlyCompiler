@@ -504,9 +504,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // Variable binding is shell-node for environment value contents.
             free(variable_binding);
 
-            printf("Working result before: \n");
-            print_node(working_result, 0);
-            putchar('\n');
+            // printf("Working result before: \n");
+            // print_node(working_result, 0);
+            // putchar('\n');
 
             working_result->type = NODE_TYPE_VARIABLE_DECLARATION;
 
