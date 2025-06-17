@@ -47,7 +47,10 @@ int main(int argc, char** argv) {
         
         if (err.type == ERROR_NONE) {
             printf("Generating code!\n");
-            codegen_program(OUTPUT_FMT_DEFAULT, context, program);
+            
+            err = codegen_program(OUTPUT_FMT_DEFAULT, context, program);
+            print_error(err);
+
             printf("Code generated.\n");
         }
 
