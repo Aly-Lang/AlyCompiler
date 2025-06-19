@@ -76,7 +76,7 @@ void print_token(Token t) {
   if (t.end - t.beginning < 1) {
     printf("INVALID TOKEN POINTERS");
   } else {
-    printf("%.*s", t.end - t.beginning, t.beginning);
+    printf("%.*s", (int)(t.end - t.beginning), t.beginning);
   }
 }
 
