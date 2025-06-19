@@ -5,9 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-long file_size(FILE* file) {
+size_t file_size(FILE* file) {
     if (!file) { return 0; }
-    fpos_t original = 0;
+    // Cast required for cross-compatibility.
+    fpos_t original;
     if (fgetpos(file, &original) != 0) {
         printf("fgetpos() failed: %i\n", errno);
         return 0;
@@ -26,7 +27,7 @@ char* file_contents(char* path) {
         printf("Could not open file at %s\n", path);
         return NULL;
     }
-    long size = file_size(file);
+    size_t size = file_size(file);
     char* contents = malloc(size + 1);
     assert(contents && "Could not allocate buffer for file contents");
     char* write_it = contents;
@@ -42,9 +43,7 @@ char* file_contents(char* path) {
         bytes_read += bytes_read_this_iteration;
         write_it += bytes_read_this_iteration;
 
-        if (feof(file)) {
-            break;
-        }
+        if (feof(file)) { break; }
     }
     contents[bytes_read] = '\0';
     return contents;
