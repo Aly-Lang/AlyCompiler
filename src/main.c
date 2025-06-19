@@ -38,5 +38,6 @@ int main(int argc, char** argv) {
     }
         
     node_free(program);
+    
     return 0;
 }

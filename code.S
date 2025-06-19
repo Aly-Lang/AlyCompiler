@@ -3,6 +3,7 @@
 b: .space 8
 a: .space 8
 .section .text
+jmp afterfoo
 foo:
 push %rbp
 mov %rsp, %rbp
@@ -10,6 +11,7 @@ sub $32, %rsp
 add $32, %rsp
 pop %rbp
 ret
+afterfoo:
 .global _start
 _start:
 push %rbp
@@ -19,6 +21,15 @@ lea a(%rip), %rax
 movq $420, (%rax)
 lea b(%rip), %rax
 movq $42, (%rax)
+jmp afterfoo
+foo:
+push %rbp
+mov %rsp, %rbp
+sub $32, %rsp
+add $32, %rsp
+pop %rbp
+ret
+afterfoo:
 mov $20, %rcx
 mov $34, %rdx
 call foo

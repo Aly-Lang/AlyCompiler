@@ -80,14 +80,23 @@ Error codegen_program_x86_64_att_asm_data_section(ParsingContext *context, FILE 
     return err;
 }
 
+Error codegen_function_x86_64_att_asm_mswin(ParsingContext* context, char* name, Node* function, FILE* code);
+
 // If top_level is non-zero, it is assumed that expressions are in top level of program.
 Error codegen_expression_list_x86_64_att_asm_mswin(ParsingContext* context, Node* expression, FILE* code) { 
+    Error err = ok;
     Node* tmpnode = node_allocate();
     size_t tmpcount;
     while (expression) {
         tmpcount = 0;
         switch (expression->type) {
         default:
+            break;
+        case NODE_TYPE_FUNCTION:
+            // Handling a function here means a lambda should be generated, I think.
+            // TODO: Generate name from sort of hashing algorithm or something.
+            err = codegen_function_x86_64_att_asm_mswin(context, "foo", expression, code);
+            if (err.type) { return err; }
             break;
         case NODE_TYPE_FUNCTION_CALL:
             // TODO: Actually codegen argument expressions.
@@ -154,6 +163,40 @@ Error codegen_expression_list_x86_64_att_asm_mswin(ParsingContext* context, Node
     return ok;
 }
 
+Error codegen_function_x86_64_att_asm_mswin(ParsingContext* context, char* name, Node* function, FILE* code) {
+    Node* parameter = function->children;
+    // Nested function execution protection
+    fwrite_bytes("jmp after", code);
+    fwrite_line(name, code);
+
+    // Function begin memory symbol
+    fwrite_bytes(name, code);
+    fwrite_line(":",code);
+
+    // Function header
+    fwrite_line("push %rbp", code);
+    fwrite_line("mov %rsp, %rbp", code);
+    fwrite_line("sub $32, %rsp", code);
+
+    // Function body
+    context = parse_context_create(context);
+    codegen_expression_list_x86_64_att_asm_mswin(context, function->children->next_child->next_child->children, code);
+    // TODO: Free context;
+    context = context->parent;
+
+    // Function footer
+    fwrite_line("add $32, %rsp", code);
+    fwrite_line("pop %rbp", code);
+    fwrite_line("ret", code);
+
+    // Nested function execution jump label
+    fwrite_bytes("after", code);
+    fwrite_bytes(name, code);
+    fwrite_line(":", code);
+
+    return ok;
+}
+
 /// Emit x86_64 AT&T Assembly with MS Windows function calling convention.
 /// Arguments passed in: RCX, RDX, R8, R9 -> stack
 Error codegen_program_x86_64_att_asm_mswin(ParsingContext *context, Node *program) {
@@ -185,30 +228,7 @@ Error codegen_program_x86_64_att_asm_mswin(ParsingContext *context, Node *progra
         Node* function = function_it->value;
         function_it = function_it->next;
 
-        print_node(function_id, 0);
-        putchar(':');
-        print_node(function, 0);
-        putchar('\n');
-
-        // Write identifier corresponding to variable
-        // (pass through literally, for now).
-        err = fwrite_bytes(function_id->value.symbol, code);
-        if (err.type) { return err; }
-        err = fwrite_line(":", code);
-        if (err.type) { return err; }
-    
-        fwrite_line("push %rbp", code);
-        fwrite_line("mov %rsp, %rbp", code);
-        fwrite_line("sub $32, %rsp", code);
-        
-        context = parse_context_create(context);
-        codegen_expression_list_x86_64_att_asm_mswin(context, function->children->next_child->next_child->children, code);
-        // TODO: Free used context.
-        context = context->parent;
-
-        fwrite_line("add $32, %rsp", code);
-        fwrite_line("pop %rbp", code);
-        fwrite_line("ret", code);
+        err = codegen_function_x86_64_att_asm_mswin(context, function_id->value.symbol, function, code);
     }
 
     // Top level program header
