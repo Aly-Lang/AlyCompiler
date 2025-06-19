@@ -87,6 +87,11 @@ Error codegen_expression_list_x86_64_att_asm_mswin(ParsingContext* context, Node
     Error err = ok;
     Node* tmpnode = node_allocate();
     size_t tmpcount;
+    const size_t lambda_symbol_size = 8;
+    char lambda_symbol[8];
+    for (size_t i = 0; i < lambda_symbol_size; ++i) {
+        lambda_symbol[i] = (rand() % 26) + 97;
+    }
     while (expression) {
         tmpcount = 0;
         switch (expression->type) {
@@ -95,7 +100,7 @@ Error codegen_expression_list_x86_64_att_asm_mswin(ParsingContext* context, Node
         case NODE_TYPE_FUNCTION:
             // Handling a function here means a lambda should be generated, I think.
             // TODO: Generate name from sort of hashing algorithm or something.
-            err = codegen_function_x86_64_att_asm_mswin(context, "foo", expression, code);
+            err = codegen_function_x86_64_att_asm_mswin(context, lambda_symbol, expression, code);
             if (err.type) { return err; }
             break;
         case NODE_TYPE_FUNCTION_CALL:

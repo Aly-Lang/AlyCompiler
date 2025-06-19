@@ -21,15 +21,15 @@ lea a(%rip), %rax
 movq $420, (%rax)
 lea b(%rip), %rax
 movq $42, (%rax)
-jmp afterfoo
-foo:
+jmp afteraylnlfdx
+aylnlfdx:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
 add $32, %rsp
 pop %rbp
 ret
-afterfoo:
+afteraylnlfdx:
 mov $20, %rcx
 mov $34, %rdx
 call foo
