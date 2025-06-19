@@ -34,6 +34,7 @@ target_compile_options(alyc PRIVATE
     $<$<C_COMPILER_ID:GNU>:
         -Wall
         -Wextra
+        -pedantic
         -Wno-unused-variable
         -Wno-deprecated-declarations
     >

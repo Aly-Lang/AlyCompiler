@@ -139,6 +139,7 @@ int node_compare(Node* a, Node* b) {
     break;
   case NODE_TYPE_VARIABLE_REASSIGNMENT:
     printf("TODO: node_compare() VARIABLE REASSIGNMENT\n");
+    break;
   case NODE_TYPE_VARIABLE_DECLARATION:
     printf("TODO: node_compare() VARIABLE DECLARATION\n");
     break;
