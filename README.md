@@ -31,3 +31,13 @@ Finally, build an executable from the build tree.
 ```bash
  cmake --build bld
 ```
+
+## Building x86_64 ASM
+
+- On Windows under MinGW:
+```bash
+as code.S -o code.o
+ld code.o -o code.exe && code.exe
+```
+
+TODO: On Linux

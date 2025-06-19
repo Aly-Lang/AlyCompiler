@@ -48,6 +48,8 @@ Error fwrite_integer(long long integer, FILE* file) {
 Error codegen_program_x86_64_att_asm_data_section(ParsingContext* context, FILE* code) {
     Error err = ok;
 
+    // TODO: Deal with initialization of global variables somehow.
+
     err = fwrite_line(".section .data", code);
     if (err.type) { return err; }
 
