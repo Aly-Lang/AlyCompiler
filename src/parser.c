@@ -153,7 +153,7 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
-    assert(NODE_TYPE_MAX == 8 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 9 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
@@ -178,6 +178,9 @@ int node_compare(Node* a, Node* b) {
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         printf("TODO: node_compare() BINARY OPERATOR\n");
+        break;
+    case NODE_TYPE_FUNCTION:
+        printf("TODO: node_compare() FUNCTION\n");
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         printf("TODO: node_compare VARIABLE REASSIGNMENT\n");
@@ -257,7 +260,7 @@ void print_node(Node* node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
-    assert(NODE_TYPE_MAX == 8 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 9 && "print_node() must handle all node types");
     switch (node->type) {
     default:
         printf("UNKNOWN");
@@ -288,6 +291,9 @@ void print_node(Node* node, size_t indent_level) {
         break;
     case NODE_TYPE_PROGRAM:
         printf("PROGRAM");
+        break;
+    case NODE_TYPE_FUNCTION:
+        printf("FUNCTION");
         break;
     }
     putchar('\n');
@@ -465,7 +471,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // PROGRAM/LIST of expressions
             // ... (body)
 
-            Node* function = node_allocate();
+            working_result->type = NODE_TYPE_FUNCTION;
             
             lex_advance(&current_token, &token_length, end);
             Node* function_name = node_symbol_from_buffer(current_token.beginning, token_length);
@@ -507,10 +513,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 node_add_child(parameter_list, parameter);
 
-                printf("added param: \n");
-                print_node(parameter, 0);
-                putchar('\n');
-
                 EXPECT(expected, ",", current_token, token_length, end);
                 if (expected.found) {
                     continue;
@@ -524,6 +526,22 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 break;
             }
 
+            node_add_child(working_result, parameter_list);
+
+            // Parse the return type.
+            EXPECT(expected, ":", current_token, token_length, end);
+            // TODO: / FIXME: Should we allow implicit return types?
+            if (!expected.found) {
+                ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires return type annotation following parameter list");
+                return err;
+            }
+
+            lex_advance(&current_token, &token_length, end);
+            Node* function_return_type = node_symbol_from_buffer(current_token.beginning, token_length);
+            node_add_child(working_result, function_return_type);
+
+            // TODO: Parse body of function.
+            
             print_node(parameter_list, 0);
 
             return ok;

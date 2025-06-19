@@ -16,7 +16,7 @@ void print_token(Token t);
 Error lex(char* source, Token* token);
 
 typedef enum NodeType {
-	// BEGIN LITERALS
+	// BEGIN NULL DENOTATION TYPES
 
 	/// The definition of nothing; false, etc.
 	NODE_TYPE_NONE,
@@ -28,7 +28,15 @@ typedef enum NodeType {
 	/// it becomes a symbol.
 	NODE_TYPE_SYMBOL,
 
-	// END LITERALS
+	// END NULL DENOTATION TYPES
+
+	/// Contains three children.
+	/// 1. Parameter List
+	///    1. Name Symbol
+	///    2. Type Symbol
+	// 2. Return Type Symbol
+	/// 3. Expression List (Program)
+	NODE_TYPE_FUNCTION,
 
 	/// Contains two children. 
 	/// 1. SYMBOL (VARIABLE IDENTIFIER)
