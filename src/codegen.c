@@ -99,8 +99,10 @@ Error codegen_expression_list_x86_64_att_asm_mswin(ParsingContext* context, Node
             break;
         case NODE_TYPE_FUNCTION:
             // Handling a function here means a lambda should be generated, I think.
-            // TODO: Generate name from sort of hashing algorithm or something.
+            // TODO: Generate name from some sort of hashing algorithm or something.
             err = codegen_function_x86_64_att_asm_mswin(context, lambda_symbol, expression, code);
+            // If we were to keep track of the name of this function, we could
+            // then properly fill in the jump memory label further on in the program.
             if (err.type) { return err; }
             break;
         case NODE_TYPE_FUNCTION_CALL:
@@ -144,8 +146,11 @@ Error codegen_expression_list_x86_64_att_asm_mswin(ParsingContext* context, Node
             fwrite_line(expression->children->value.symbol, code);
             break;
         case NODE_TYPE_VARIABLE_REASSIGNMENT:
+            // TODO: Find variable binding and keep track of which context it is found in.
+            //       If context is top-level, use global variable access, otherwise local.
+
             // TODO: Evaluate reassignment expression and get return value,
-            //       that we we can actually use it!
+            //       that way we can actually use it!
             if (!context->parent) {
                 fwrite_bytes("lea ",code);
                 fwrite_bytes(expression->children->value.symbol,code);
