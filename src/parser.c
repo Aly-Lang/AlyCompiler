@@ -543,9 +543,7 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             node_add_child(parameter_list, parameter);
 
             EXPECT(expected, ",", current_token, token_length, end);
-            if (expected.found) {
-                continue;
-            }
+            if (expected.found) { continue; }
 
             EXPECT (expected, ")", current_token, token_length, end);
             if (!expected.found) {
