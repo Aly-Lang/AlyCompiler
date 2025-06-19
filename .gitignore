@@ -66,3 +66,5 @@ mingw32/
 mingw64/
 msys/
 /MinGW Makefiles/
+
+windows/

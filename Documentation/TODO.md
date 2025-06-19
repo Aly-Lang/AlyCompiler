@@ -114,5 +114,5 @@
 - [ ] **Finalize approach for referencing types**  
   - Define how types should reference other types. This could help with creating meta-types or dealing with more complex type systems.
 
-- [x] **Fix warnings during compilation**  
+- [ ] **Fix warnings during compilation**  
   - Enable `-Wall` and `-WExtra` in the compiler, and fix any warnings that are outputted to ensure clean, production-quality code.
