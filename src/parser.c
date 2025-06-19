@@ -28,6 +28,37 @@ int comment_at_beginning(Token token) {
 
 /// Lex the next token from SOURCE, and point to it with BEG and END.
 /// If BEG and END of token are equal, there is nothing more to lex.
+// Error lex(char* source, Token* token) {
+//     Error err = ok;
+//     if (!source || !token) {
+//         ERROR_PREP(err, ERROR_ARGUMENTS, "Can not lex empty source.");
+//         return err;
+//     }
+//     token->beginning = source;
+//     token->beginning += strspn(token->beginning, whitespace);
+//     token->end = token->beginning;
+//     if (*(token->end) == '\0') { return err; }
+//     // Check if current line is a comment, and skip past it.
+//     while (comment_at_beginning(*token)) {
+//         // Skip to next newline.
+//         token->beginning = strpbrk(token->beginning, "\n");
+//         if (!token->beginning) {
+//         // If last line of file is comment, we're done lexing.
+//         token->end = token->beginning;
+//         return err;
+//         }
+//         // Skip to beginning of next token after comment.
+//         token->beginning += strspn(token->beginning, whitespace);
+//         token->end = token->beginning;
+//     }
+//     if (*(token->end) == '\0') { return err; }
+//     token->end += strcspn(token->beginning, delimiters);
+//     if (token->end == token->beginning) {
+//         token->end += 1;
+//     }
+//     return err;
+// }
+
 Error lex(char* source, Token* token) {
     Error err = ok;
     if (!source || !token) {
@@ -35,29 +66,32 @@ Error lex(char* source, Token* token) {
         return err;
     }
     token->beginning = source;
-    token->beginning += strspn(token->beginning, whitespace);
+    token->beginning += strspn(token->beginning, whitespace); // Skip initial whitespace.
     token->end = token->beginning;
     if (*(token->end) == '\0') { return err; }
     // Check if current line is a comment, and skip past it.
     while (comment_at_beginning(*token)) {
-        // Skip to next newline.
-        token->beginning = strpbrk(token->beginning, "\n");
-        if (!token->beginning) {
-        // If last line of file is comment, we're done lexing.
-        token->end = token->beginning;
-        return err;
+        // Use a temporary pointer to avoid assigning NULL directly.
+        char* newline = strpbrk(token->beginning, "\n");
+        if (!newline) {
+            // If last line of file is comment, move to end of source and finish.
+            token->end = token->beginning + strlen(token->beginning);
+            token->beginning = token->end;
+            return err;
         }
-        // Skip to beginning of next token after comment.
+        // Skip to beginning of next token after comment (past newline).
+        token->beginning = newline + 1;
         token->beginning += strspn(token->beginning, whitespace);
         token->end = token->beginning;
     }
     if (*(token->end) == '\0') { return err; }
-    token->end += strcspn(token->beginning, delimiters);
+    token->end += strcspn(token->beginning, delimiters); // Skip everything not in delimiters.
     if (token->end == token->beginning) {
         token->end += 1;
     }
     return err;
 }
+
 
 int token_string_equalp(char* string, Token* token) {
     if (!string || !token) { return 0; }
@@ -654,6 +688,7 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
 
             context->result->next_child = node_allocate();
             working_result = context->result->next_child;
+            context->result = working_result;
         }
     }
 
