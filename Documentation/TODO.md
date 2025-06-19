@@ -15,6 +15,8 @@
 - [ ] Add token member to AST node structure. This would allow for much better error messages that point to the source code that the error originates from.  
   - We should also think about line count or something like that; maybe node AST holds custom structure containing token span, as well as file path (if applicable), line number, column number, etc.
 
+- [ ] Make CodeGen structure with function pointers and such - This would allow each implementation to actually be generated the same way, just have slightly different semantics. It's kind of the same thing we're doing now, just moved into a structure data instead of switch case in function.
+
 # Dumb ideas that we could implement
 
 - `=Any=` type that can accept any type -- This would be cool to be able to accept any type as a parameter. We may need a way to query what type something is, bu t that is also totally doable. This may be too complicated, but would be cool.

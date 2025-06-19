@@ -4,3 +4,12 @@ b: .space 8
 a: .space 8
 .section .text
 _start:
+push %rbp
+mov %rsp, %rbp
+lea a(%rip), %rax
+movq $420, (%rax)
+lea b(%rip), %rax
+movq $42, (%rax)
+movq $69, %rax
+pop %rbp
+ret

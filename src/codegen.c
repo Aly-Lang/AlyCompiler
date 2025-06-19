@@ -97,18 +97,41 @@ Error codegen_program_x86_64_att_asm(ParsingContext* context, Node* program) {
     codegen_program_x86_64_att_asm_data_section(context, code);
 
     fwrite_line(".section .text", code);
+
+    // Top level program header
     fwrite_line("_start:", code);
-    
+    fwrite_line("push %rbp", code); // Save base pointer
+    fwrite_line("mov %rsp, %rbp", code); // Set base pointer to current stack pointer
+    // fwrite_line("sub $32, %rsp", code); // Allocate 32 bytes on the stack
+
     Node* expression = program->children;
     Node* tmpnode1 = node_allocate();
     while (expression) {
         switch (expression->type) {
         default:
             break;
+        case NODE_TYPE_VARIABLE_REASSIGNMENT: 
+            print_node(expression, 0);
+            // TODO: Evaluate reassignment expression and get return value,
+            //       that way we can actually use it!
+            fwrite_bytes("lea ", code); // Load effective address of variable
+            fwrite_bytes(expression->children->value.symbol, code);
+            fwrite_line("(%rip), %rax", code);
+            fwrite_bytes("movq $", code);
+            // TODO: FIXME: This assumes integer type, and is bad bad bad!!!
+            fwrite_integer(expression->children->next_child->value.integer, code);
+            fwrite_line(", (%rax)", code);
+            break;
         }
 
         expression = expression->next_child;
     }
+
+    // Top level program footer
+    // fwrite_bytes("add $32, %rsp", code); // Deallocate 32 bytes from the stack
+    fwrite_line("movq $69, %rax", code); // Exit syscall number
+    fwrite_line("pop %rbp", code); // Restore base pointer
+    fwrite_line("ret", code); // Return from program
 
     fclose(code);
     return ok;
