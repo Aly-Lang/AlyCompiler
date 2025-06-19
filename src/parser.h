@@ -140,7 +140,7 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result);
 ParsingContext* parse_context_create(ParsingContext* parent);
 ParsingContext* parse_context_default_create();
 
-Error parse_program(char* filepath, Node* result);
+Error parse_program(char* filepath, ParsingContext* context, Node* result);
 
 Error parse_expr(ParsingContext* context, char* source, char** end, Node* result);
 

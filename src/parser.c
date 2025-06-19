@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <error.h>
 #include <environment.h>
+#include <file_io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -743,4 +744,33 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
     }
 
     return err;
+}
+
+Error parse_program(char* filepath, ParsingContext* context, Node* result) {
+  Error err = ok;
+  char* contents = file_contents(filepath);
+  if (!contents) {
+    printf("Filepath: \"%s\"\n", filepath);
+    ERROR_PREP(err, ERROR_GENERIC, "parse_program(): Couldn't get file contents");
+    return err;
+  }
+  result->type = NODE_TYPE_PROGRAM;
+  char *contents_it = contents;
+  for (;;) {
+    Node* expression = node_allocate();
+    node_add_child(result, expression);
+    err = parse_expr(context, contents_it, &contents_it, expression);
+    if (err.type != ERROR_NONE) {
+      free(contents);
+      return err;
+    }
+    // Check for end-of-parsing case (source and end are the same).
+    if (!(*contents_it)) { break; }
+
+    //printf("Parsed expression:\n");
+    //print_node(expression,0);
+    //putchar('\n');
+  }
+  free(contents);
+  return ok;
 }
