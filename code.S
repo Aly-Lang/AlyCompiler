@@ -3,6 +3,13 @@
 b: .space 8
 a: .space 8
 .section .text
+foo:
+push %rbp
+mov %rsp, %rbp
+sub $32, %rsp
+pop %rbp
+ret
+.global _start
 _start:
 push %rbp
 mov %rsp, %rbp
