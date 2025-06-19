@@ -456,7 +456,6 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
 
         lex_advance(&current_token, &token_length, end);
         Node *function_name = node_symbol_from_buffer(current_token.beginning, token_length);
-        // TODO: Bind function_name to function node in functions environment.
 
         EXPECT(expected, "(", current_token, token_length, end);
         if (!expected.found) {
@@ -467,6 +466,9 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
 
         Node* parameter_list = node_allocate();
 
+        // FIXME: Should we possibly create a parser stack and evaluate the
+        // next expression, then ensure return value is var. decl in stack
+        // handling below?
         for (;;) {
           EXPECT(expected, ")", current_token, token_length, end);
           if (expected.found) { break; }
@@ -532,30 +534,18 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
           return err;
         }
 
-        // TODO: Parse body of function
-        // Before parsing, enter nested scope with parameter names bound to variables
-        // (create new parsing context as child of current, bind variables in env.).
-
-        // Check for end of function body
-        // If found, return function
-        // If not found, allocate new expression node and parse into that
-
-        // A := 2
-        // 6
-
-        // update working_result and be able to parse next single expression into function body
-
         context = parse_context_create(context);
         context->operator = node_symbol("defun");
-
+        
         Node* param_it = working_result->children->children;
         environment_set(context->variables, param_it->children, param_it->children->next_child);
-
+        
         Node* function_body = node_allocate();
         Node* function_first_expression = node_allocate();
         node_add_child(function_body, function_first_expression);
         node_add_child(working_result, function_body);
         working_result = function_first_expression;
+        context->result = working_result;
         continue;
 
       } else {
@@ -648,27 +638,24 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
       }
     }
 
-    if (!context->parent) {
-      break;
-    }
+    // If we reach here, we have a valid symbol or integer.
+    if (!context->parent) { break; } 
 
     Node* operator = context->operator;
     if (operator->type != NODE_TYPE_SYMBOL) {
-      ERROR_PREP(err, ERROR_TYPE, "Parsing context operator must be symbol. Likely internal error :(");
-      return err;
+        ERROR_PREP(err, ERROR_TYPE, "Parsing context operator must be symbol. Likely internal error :(");
+        return err;
     }
 
     if (strcmp(operator->value.symbol, "defun") == 0) {
-      // TODO: Evaluate next expression unless it's a closing brace.
-      EXPECT(expected, "}", current_token, token_length, end);
-      if (expected.found) {
-        break; // ??
-      }
+        // Evaluate next expression unless it's a closing brace.
+        EXPECT(expected, "}", current_token, token_length, end);
+        if (expected.found) { break; }
+
+        context->result->next_child = node_allocate();
+        working_result = context->result->next_child;
+        }
     }
 
-    return ok;
-
-  }
-
-  return err;
+    return err;
 }
