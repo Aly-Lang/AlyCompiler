@@ -80,7 +80,8 @@ Error codegen_program_x86_64_att_asm_data_section(ParsingContext *context, FILE 
     return err;
 }
 
-Error codegen_expression_list_x86_64_att_asm_mswin(Node* expression, FILE* code) { 
+// If top_level is non-zero, it is assumed that expressions are in top level of program.
+Error codegen_expression_list_x86_64_att_asm_mswin(ParsingContext* context, Node* expression, FILE* code) { 
     Node* tmpnode = node_allocate();
     size_t tmpcount;
     while (expression) {
@@ -129,20 +130,28 @@ Error codegen_expression_list_x86_64_att_asm_mswin(Node* expression, FILE* code)
             fwrite_line(expression->children->value.symbol, code);
             break;
         case NODE_TYPE_VARIABLE_REASSIGNMENT:
-            // TODO: Evaluate reassignment expression and get return value
-            //       That we we can actually use it!
-            fwrite_bytes("lea ",code);
-            fwrite_bytes(expression->children->value.symbol,code);
-            fwrite_line("(%rip), %rax",code);
-            fwrite_bytes("movq $",code);
-            // TODO: FIXME: This assumes integer type, and is bad bad bad!!!
-            fwrite_integer(expression->children->next_child->value.integer,code);
-            fwrite_line(", (%rax)",code);
+            // TODO: Evaluate reassignment expression and get return value,
+            //       that we we can actually use it!
+            if (!context->parent) {
+                fwrite_bytes("lea ",code);
+                fwrite_bytes(expression->children->value.symbol,code);
+                fwrite_line("(%rip), %rax",code);
+                fwrite_bytes("movq $",code);
+                // TODO: FIXME: This assumes integer type, and is bad bad bad!!!
+                fwrite_integer(expression->children->next_child->value.integer,code);
+                fwrite_line(", (%rax)",code);
+            } else {
+                // Get index of argument within function parameter list
+                // Use index of argument to write to proper address/register
+                
+            }
             break;
         }
         expression = expression->next_child;
     }
     free(tmpnode);
+
+    return ok;
 }
 
 /// Emit x86_64 AT&T Assembly with MS Windows function calling convention.
@@ -192,6 +201,12 @@ Error codegen_program_x86_64_att_asm_mswin(ParsingContext *context, Node *progra
         fwrite_line("mov %rsp, %rbp", code);
         fwrite_line("sub $32, %rsp", code);
         
+        context = parse_context_create(context);
+        codegen_expression_list_x86_64_att_asm_mswin(context, function->children->next_child->next_child->children, code);
+        // TODO: Free used context.
+        context = context->parent;
+
+        fwrite_line("add $32, %rsp", code);
         fwrite_line("pop %rbp", code);
         fwrite_line("ret", code);
     }
@@ -204,11 +219,10 @@ Error codegen_program_x86_64_att_asm_mswin(ParsingContext *context, Node *progra
     fwrite_line("sub $32, %rsp", code);
 
     // Program body
-    codegen_expression_list_x86_64_att_asm_mswin(program->children, code);
+    codegen_expression_list_x86_64_att_asm_mswin(context, program->children, code);
 
     // Top level program footer
     fwrite_line("add $32, %rsp", code);
-    fwrite_line("movq (%rax), %rax",code);
     fwrite_line("pop %rbp", code);
     fwrite_line("ret", code);
 

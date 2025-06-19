@@ -7,10 +7,11 @@ foo:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
+add $32, %rsp
 pop %rbp
 ret
-.global _start
-_start:
+.global main
+main:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
@@ -22,6 +23,5 @@ mov $20, %rcx
 mov $34, %rdx
 call foo
 add $32, %rsp
-movq (%rax), %rax
 pop %rbp
 ret
