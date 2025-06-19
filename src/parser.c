@@ -445,6 +445,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             return ok;
         }
 
+        Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+
         // TODO: Parse strings and other literal types.
 
         // TODO: Check for unary prefix operators.
@@ -452,7 +454,80 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         // TODO: Check that it isn't a binary operator (we should encounter left
         // side first and peek forward, rather than encounter it at top level).
 
-        Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+        if (strcmp("defun", symbol->value.symbol) == 0) {
+            // Begin function definition.
+            // FUNCTION
+            //   LIST OF parameters
+            //    PARAMETER
+            //      SYMBOL:NAME
+            //      SYMBOL:TYPE
+            //   RETURN TYPE SYMBOL
+            // PROGRAM/LIST of expressions
+            // ... (body)
+
+            Node* function = node_allocate();
+            
+            lex_advance(&current_token, &token_length, end);
+            Node* function_name = node_symbol_from_buffer(current_token.beginning, token_length);
+            // TODO: Bind function_name to function node in functions environment.
+
+            EXPECT(expected, "(", current_token, token_length, end);
+            if (!expected.found) {
+                printf("Function name: \"%s\"\n", function_name->value.symbol);
+                ERROR_PREP(err, ERROR_SYNTAX, "Expected opening parenthesis for parameter list after function name");
+                return err;
+            }
+
+            Node* parameter_list = node_allocate();
+
+            for (;;) {
+                EXPECT(expected, ")", current_token, token_length, end);
+                if (expected.found) { break; }
+                if (expected.done) {
+                    ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis for parameter list");
+                    return err;
+                }
+
+                err = lex_advance(&current_token, &token_length, end);
+                if (err.type) { return err; }
+                Node* parameter_name = node_symbol_from_buffer(current_token.beginning, token_length);
+                
+                EXPECT(expected, ":", current_token, token_length, end);
+                if (expected.done || !expected.found) {
+                    ERROR_PREP(err, ERROR_SYNTAX, "Parameter declaration requires a type annotation");
+                    return err;
+                }
+
+                lex_advance(&current_token, &token_length, end);
+                Node* parameter_type = node_symbol_from_buffer(current_token.beginning, token_length);
+
+                Node* parameter = node_allocate();
+                node_add_child(parameter, parameter_name);
+                node_add_child(parameter, parameter_type);
+
+                node_add_child(parameter_list, parameter);
+
+                printf("added param: \n");
+                print_node(parameter, 0);
+                putchar('\n');
+
+                EXPECT(expected, ",", current_token, token_length, end);
+                if (expected.found) {
+                    continue;
+                } 
+                
+                EXPECT(expected, ")", current_token, token_length, end);
+                if (!expected.found) {
+                    ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis following parameter list");
+                    return err;
+                }
+                break;
+            }
+
+            print_node(parameter_list, 0);
+
+            return ok;
+        }
 
         // TODO: Check if valid symbol for variable environment, 
         // then attempt to pattern match variable access, assignment, 
@@ -503,10 +578,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             }
             // Variable binding is shell-node for environment value contents.
             free(variable_binding);
-
-            // printf("Working result before: \n");
-            // print_node(working_result, 0);
-            // putchar('\n');
 
             working_result->type = NODE_TYPE_VARIABLE_DECLARATION;
 
