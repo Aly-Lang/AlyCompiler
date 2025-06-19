@@ -32,6 +32,8 @@ Finally, build an executable from the build tree.
  cmake --build bld
 ```
 
+However, I have made two scripts in `Scripts` folders to generate the project for GCC, which is what I used but if you find MSVC is more user friendly then you can use this command to generate a solution `CMake -B <folder>` and it will generate the `.sln` file for you.
+
 ## Building x86_64 ASM
 
 - On Windows under MinGW:
