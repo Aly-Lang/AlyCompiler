@@ -19,7 +19,7 @@ int comment_at_beginning(Token token) {
     const char* comment_it = comment_delimiters;
     while (*comment_it) {
         if (*(token.beginning) == *comment_it) {
-        return 1;
+            return 1;
         }
         comment_it++;
     }

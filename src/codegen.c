@@ -47,115 +47,115 @@ Error fwrite_integer(long long integer, FILE *file) {
 //================================================================ BEG x86_64 AT&T ASM
 
 Error codegen_program_x86_64_att_asm_data_section(ParsingContext *context, FILE *code) {
-  Error err = ok;
+    Error err = ok;
 
-  // TODO: Deal with initialization of global variables somehow.
+    // TODO: Deal with initialization of global variables somehow.
 
-  err = fwrite_line(".section .data", code);
-  if (err.type) { return err; }
-
-  Node *type_info = node_allocate();
-  Binding *it = context->variables->bind;
-  while (it) {
-    Node *var_id = it->id;
-    Node *type_id = it->value;
-    it = it->next;
-
-    // Get type info of type from types context using type symbol ID.
-    environment_get(*context->types, type_id, type_info);
-
-    // Write identifier corresponding to variable
-    // (pass through literally, for now).
-    err = fwrite_bytes(var_id->value.symbol, code);
-    if (err.type) { return err; }
-    err = fwrite_bytes(": .space ", code);
-    if (err.type) { return err; }
-    err = fwrite_integer(type_info->children->value.integer, code);
-    if (err.type) { return err; }
-    err = fwrite_bytes("\n", code);
+    err = fwrite_line(".section .data", code);
     if (err.type) { return err; }
 
-  }
-  free(type_info);
-  return err;
+    Node *type_info = node_allocate();
+    Binding *it = context->variables->bind;
+    while (it) {
+        Node *var_id = it->id;
+        Node *type_id = it->value;
+        it = it->next;
+
+        // Get type info of type from types context using type symbol ID.
+        environment_get(*context->types, type_id, type_info);
+
+        // Write identifier corresponding to variable
+        // (pass through literally, for now).
+        err = fwrite_bytes(var_id->value.symbol, code);
+        if (err.type) { return err; }
+        err = fwrite_bytes(": .space ", code);
+        if (err.type) { return err; }
+        err = fwrite_integer(type_info->children->value.integer, code);
+        if (err.type) { return err; }
+        err = fwrite_bytes("\n", code);
+        if (err.type) { return err; }
+
+    }
+    free(type_info);
+    return err;
 }
 
 Error codegen_program_x86_64_att_asm(ParsingContext *context, Node *program) {
-  Error err = ok;
-  if (!program || program->type != NODE_TYPE_PROGRAM) {
-    ERROR_PREP(err, ERROR_ARGUMENTS, "codegen_program() requires a program!");
-    return err;
-  }
-
-  FILE *code = fopen("code.S", "wb");
-  if (!code) {
-    ERROR_PREP(err, ERROR_GENERIC, "codegen_program() could not open code file");
-    return err;
-  }
-
-  err = fwrite_bytes(";#; ", code);
-  if (err.type) { return err; }
-  fwrite_line((char *)codegen_header, code);
-  if (err.type) { return err; }
-
-  codegen_program_x86_64_att_asm_data_section(context, code);
-
-  fwrite_line(".section .text", code);
-
-  // Top level program header
-  fwrite_line("_start:", code);
-  fwrite_line("push %rbp", code);
-  fwrite_line("mov %rsp, %rbp", code);
-  //fwrite_line("sub $32, %rsp", code);
-
-  Node *expression = program->children;
-  while (expression) {
-    switch (expression->type) {
-    default:
-      break;
-    case NODE_TYPE_VARIABLE_REASSIGNMENT:
-      // TODO: Evaluate reassignment expression and get return value
-      //       That we we can actually use it!
-      fwrite_bytes("lea ",code);
-      fwrite_bytes(expression->children->value.symbol,code);
-      fwrite_line("(%rip), %rax",code);
-      fwrite_bytes("movq $",code);
-      // TODO: FIXME: This assumes integer type, and is bad bad bad!!!
-      fwrite_integer(expression->children->next_child->value.integer,code);
-      fwrite_line(", (%rax)",code);
-
-      // RAX: 0xffffffffffffffff -> memory address and write at that address
-      // *RAX = 42;
-      // *RAX = *RAX;
-      // ...
-
-      break;
+    Error err = ok;
+    if (!program || program->type != NODE_TYPE_PROGRAM) {
+        ERROR_PREP(err, ERROR_ARGUMENTS, "codegen_program() requires a program!");
+        return err;
     }
 
-    expression = expression->next_child;
-  }
+    FILE *code = fopen("code.S", "wb");
+    if (!code) {
+        ERROR_PREP(err, ERROR_GENERIC, "codegen_program() could not open code file");
+        return err;
+    }
 
-  // Top level program footer
-  //fwrite_line("add $32, %rsp", code);
-  fwrite_line("movq (%rax), %rax",code);
-  fwrite_line("pop %rbp", code);
-  fwrite_line("ret", code);
+    err = fwrite_bytes(";;#; ", code);
+    if (err.type) { return err; }
+    fwrite_line((char *)codegen_header, code);
+    if (err.type) { return err; }
 
-  fclose(code);
-  return ok;
+    codegen_program_x86_64_att_asm_data_section(context, code);
+
+    fwrite_line(".section .text", code);
+
+    // Top level program header
+    fwrite_line("_start:", code);
+    fwrite_line("push %rbp", code);
+    fwrite_line("mov %rsp, %rbp", code);
+    //fwrite_line("sub $32, %rsp", code);
+
+    Node *expression = program->children;
+    while (expression) {
+        switch (expression->type) {
+        default:
+        break;
+        case NODE_TYPE_VARIABLE_REASSIGNMENT:
+        // TODO: Evaluate reassignment expression and get return value
+        //       That we we can actually use it!
+        fwrite_bytes("lea ",code);
+        fwrite_bytes(expression->children->value.symbol,code);
+        fwrite_line("(%rip), %rax",code);
+        fwrite_bytes("movq $",code);
+        // TODO: FIXME: This assumes integer type, and is bad bad bad!!!
+        fwrite_integer(expression->children->next_child->value.integer,code);
+        fwrite_line(", (%rax)",code);
+
+        // RAX: 0xffffffffffffffff -> memory address and write at that address
+        // *RAX = 42;
+        // *RAX = *RAX;
+        // ...
+
+        break;
+        }
+
+        expression = expression->next_child;
+    }
+
+    // Top level program footer
+    //fwrite_line("add $32, %rsp", code);
+    fwrite_line("movq (%rax), %rax",code);
+    fwrite_line("pop %rbp", code);
+    fwrite_line("ret", code);
+
+    fclose(code);
+    return ok;
 }
 
 //================================================================ END x86_64 AT&T ASM
 
 Error codegen_program(CodegenOutputFormat format, ParsingContext *context, Node *program) {
-  if (!context) {
-    ERROR_CREATE(err, ERROR_ARGUMENTS, "codegen_program() must be passed a non-NULL context.");
-    return err;
-  }
-  switch (format) {
-  case OUTPUT_FMT_DEFAULT:
-  case OUTPUT_FMT_x86_64_AT_T_ASM:
-    return codegen_program_x86_64_att_asm(context, program);
-  }
-  return ok;
+    if (!context) {
+        ERROR_CREATE(err, ERROR_ARGUMENTS, "codegen_program() must be passed a non-NULL context.");
+        return err;
+    }
+    switch (format) {
+    case OUTPUT_FMT_DEFAULT:
+    case OUTPUT_FMT_x86_64_AT_T_ASM:
+        return codegen_program_x86_64_att_asm(context, program);
+    }
+    return ok;
 }
