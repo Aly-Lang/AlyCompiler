@@ -10,6 +10,6 @@ lea a(%rip), %rax
 movq $420, (%rax)
 lea b(%rip), %rax
 movq $42, (%rax)
-movq $69, %rax
+movq (%rax), %rax
 pop %rbp
 ret

@@ -129,7 +129,7 @@ Error codegen_program_x86_64_att_asm(ParsingContext* context, Node* program) {
 
     // Top level program footer
     // fwrite_bytes("add $32, %rsp", code); // Deallocate 32 bytes from the stack
-    fwrite_line("movq $69, %rax", code); // Exit syscall number
+    fwrite_line("movq (%rax), %rax", code); // Exit syscall number
     fwrite_line("pop %rbp", code); // Restore base pointer
     fwrite_line("ret", code); // Return from program
 
