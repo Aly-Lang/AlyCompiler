@@ -142,7 +142,7 @@ int node_compare(Node* a, Node* b) {
         }
         return 0;
     }
-    assert(NODE_TYPE_MAX == 9 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 10 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
@@ -170,6 +170,9 @@ int node_compare(Node* a, Node* b) {
         break;
     case NODE_TYPE_FUNCTION:
         printf("TODO: node_compare() FUNCTION\n");
+        break;
+    case NODE_TYPE_FUNCTION_CALL:
+        printf("TODO: node_compare() FUNCTION CALL\n");
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         printf("TODO: node_compare() VARIABLE REASSIGNMENT\n");
@@ -250,7 +253,7 @@ void print_node(Node *node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
-    assert(NODE_TYPE_MAX == 9 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 10 && "print_node() must handle all node types");
     switch (node->type) {
     default:
         printf("UNKNOWN");
@@ -284,6 +287,9 @@ void print_node(Node *node, size_t indent_level) {
         break;
     case NODE_TYPE_FUNCTION:
         printf("FUNCTION");
+        break;
+    case NODE_TYPE_FUNCTION_CALL:
+        printf("FUNCTION CALL");
         break;
     }
     putchar('\n');
@@ -402,6 +408,10 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
         return out;
     }
 
+    // printf("Expecting: \"%s\", got: \"", expected);
+    // print_token(current_copy);
+    // printf("\"\n");
+
     if (token_string_equalp(expected, &current_copy)) {
         out.found = 1;
         *end = end_value;
@@ -438,7 +448,7 @@ int parse_integer(Token* token, Node* node) {
         node->value.integer = 0;
     } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
         if (end != token->end) {
-        return 0;
+            return 0;
         }
         node->type = NODE_TYPE_INTEGER;
     } else { return 0; }
@@ -660,7 +670,30 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
                 working_result = value_expression;
                 continue;
             }
-                return ok;
+            return ok;
+            } else {
+                // Symbol is not `defun` and it is not follow by an assignment operator `:`.
+
+                // Check if it's a function call (lookahead for symbol)
+                EXPECT(expected, "(", current_token, token_length, end);
+                if (expected.found) {
+                    working_result->type = NODE_TYPE_FUNCTION_CALL;
+                    node_add_child(working_result, symbol);
+                    Node* argument_list = node_allocate();
+                    Node* first_argument = node_allocate();
+                    node_add_child(argument_list, first_argument);
+                    node_add_child(working_result, argument_list);
+                    working_result = first_argument;
+                    // Create a parsing stack with function call operator IG, 
+                    // and then start parsing function argument expressions.
+
+                    context = parse_context_create(context);
+                    context->operator = node_symbol("funcall");
+                    context->result = working_result;
+                    continue;
+                } else {
+                    // TODO: Check if it's a variable access (defined variable)
+                }
             }
 
             printf("Unrecognized token: ");
@@ -684,11 +717,30 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
         if (strcmp(operator->value.symbol, "defun") == 0) {
             // Evaluate next expression unless it's a closing brace.
             EXPECT(expected, "}", current_token, token_length, end);
-            if (expected.found) { break; }
+            if (expected.done || expected.found) { break; }
 
             context->result->next_child = node_allocate();
             working_result = context->result->next_child;
             context->result = working_result;
+            continue;
+        } 
+        if (strcmp(operator->value.symbol, "funcall") == 0) {
+            EXPECT(expected, ")", current_token, token_length, end);
+            if (expected.done || expected.found) { break; }
+
+            // FIXME: Should comma be optional?
+            EXPECT(expected, ",", current_token, token_length, end);
+            if (expected.done || !expected.found) {
+                printf("Not a comma!\n");
+                print_token(current_token);
+                ERROR_PREP(err, ERROR_SYNTAX, "Parameter list expected closing parenthesis or comma for another parameter");
+                return err;
+            }
+
+            context->result->next_child = node_allocate();
+            working_result = context->result->next_child;
+            context->result = working_result;
+            continue;
         }
     }
 

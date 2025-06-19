@@ -36,6 +36,11 @@ typedef enum NodeType {
   /// 2. Return Type Symbol
   /// 3. Expression List (Program)
   NODE_TYPE_FUNCTION,
+  
+  /// Contains two children.
+  /// 1. Function Symbol
+  /// 2. Parameter List
+  NODE_TYPE_FUNCTION_CALL,
 
   /// Contains two children.
   /// 1. SYMBOL (VARIABLE IDENTIFIER)
