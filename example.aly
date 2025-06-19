@@ -19,7 +19,7 @@ b := 42
 ; This is a function definition with two integer arguments that returns 
 ; an integer.
 defun foo (a:integer, b:integer):integer {
-    a + b
+    a := 10
 }
 
 ; This is a function call.
