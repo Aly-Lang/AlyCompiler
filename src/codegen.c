@@ -21,10 +21,21 @@ Error fwrite_line(char* bytestring, FILE* file) {
 
 Error fwrite_bytes(char* bytestring, FILE* file) {
     ERROR_CREATE(err, ERROR_GENERIC, "fwrite_bytes(): Could not write bytes");
+    if (!file) { return err; }
     size_t length = strlen(bytestring);
     size_t bytes_written = fwrite(bytestring, 1, length, file);
     if (bytes_written != length) { return err; }
     return ok;
+}
+
+#define FWRITE_INT_STRING_WIDTH 21
+static char number[FWRITE_INT_STRING_WIDTH];
+Error fwrite_integer(long long integer, FILE* file) {
+    ERROR_CREATE(err, ERROR_GENERIC, "fwrite_integer(): Could not write integer");
+    if (!file) { return err; }
+    sprintf(number, "%lld", integer);
+    err = fwrite_bytes(number, file);
+    return err;
 }
 
 Error codegen_program_x86_64_att_asm(ParsingContext* context, Node* program) {
@@ -67,7 +78,9 @@ Error codegen_program_x86_64_att_asm(ParsingContext* context, Node* program) {
 
             err = fwrite_bytes(expression->children->value.symbol, code);
             if (err.type) { return err; }
-            err = fwrite_bytes(": ", code);
+            err = fwrite_bytes(": .space ", code);
+            if (err.type) { return err; }
+            err = fwrite_integer(tmpnode1->children->value.integer, code);
             if (err.type) { return err; }
             err = fwrite_bytes("\n", code);
             if (err.type) { return err; }
