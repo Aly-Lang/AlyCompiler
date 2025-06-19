@@ -12,6 +12,8 @@
 
 - [x] Parse in a while loop, instead of just parsing a single expression.
 
+- [ ] `param_it` needs to be fixed in `parser.c`
+
 - Think about how parser could parse within and into a given parsing context.
 
   - Maybe a parsing context contains multiple environments for types, defined variables, etc. This would allow the parser to look up variable access symbols to ensure that they are defined and of the proper type.

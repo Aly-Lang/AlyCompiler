@@ -1,48 +1,118 @@
-# AlyCompiler's TODO
+# AlyCompiler TODO
 
-- [x] Lex source into tokens or something
+---
 
-- [ ] Parse tokens or something into AST -- Just a tree containing data about the program
+## ✅ Completed
 
-- [ ] Compile AST into assembly, let's start with x86_64? We could also transpile into another language that then gets compiled, like C or something.
+- [x] Lex source into tokens  
+- [x] Lex past comments
 
-# Kind of Urgent
+---
 
-- [x] Lex past comments or something.
+## 🚧 Compiler Pipeline
 
-- [ ] Write a LISP runtime in the compiled language.
+### 🔁 Lexing / Parsing
+- [ ] **Parse tokens into AST**  
+  The AST should represent the structure of the program, containing relevant data.
 
-- [ ] Add token member to AST node structure. This would allow for much better error messages that point to the source code that the error originates from.  
-  - We should also think about line count or something like that; maybe node AST holds custom structure containing token span, as well as file path (if applicable), line number, column number, etc.
+- [ ] **Add token member to AST nodes**  
+  To improve error reporting, each AST node should store information about its source token:  
+  - Token span (start and end positions)  
+  - File path (if applicable)  
+  - Line number and column number
 
-- [ ] Make CodeGen structure with function pointers and such - This would allow each implementation to actually be generated the same way, just have slightly different semantics. It's kind of the same thing we're doing now, just moved into a structure data instead of switch case in function.
+---
 
-# Dumb ideas that we could implement
+### ⚙️ Code Generation
+- [ ] **Compile AST into assembly** (Start with x86_64?)  
+  Initially, we could compile directly to assembly or consider an intermediate step like transpiling to C, which can then be compiled.  
 
-- `=Any=` type that can accept any type -- This would be cool to be able to accept any type as a parameter. We may need a way to query what type something is, bu t that is also totally doable. This may be too complicated, but would be cool.
+- [ ] **Create a `CodeGen` structure with function pointers**  
+  - This would allow the code generation process to be modular and consistent, with different backends having their own semantic adjustments.  
+  - Move away from switch cases in functions by defining code generation behaviors using a structure.
 
-- Compile to brain-fuck XD? - This is just a perfect idea. I am not know if it's possible.
+---
 
-- Write end-to-end tests in Algol? This gives me something new to learn?
+## 🔥 High Priority
 
-# -- Miscellaneous
+- [ ] **Write a LISP runtime** in the compiled language  
+  - A runtime for executing LISP-style code in the generated language would be essential.
 
-- Allow automatic type deduction, as we already have the ability (or should have the ability) to deduce return type of an expression, why require type annotation explicitly in variable declarations? Maybe have custom `deduce` type or something.
+- [ ] **Add support for line/column tracking in the AST**  
+  - Having this information would greatly enhance error reporting and debugging.
 
-- Decide what the syntax is for uninitialized variables -- Maybe we can do something like the example below.Perhaps we could do so something like `a : integer !`
+- [ ] **Compile with `-Wall` and `-WExtra`**, fix warnings  
+  - Ensure clean compilation and fix any existing warnings.
 
-We could could also have a specific value the parser recognizes as uninitialized, like `a : integer = None` or something.
+---
 
-- Unnamed variable declarations
-  - It would be cool if an assignment and/or variable declaration could have no identifier, and work on a singular unnamed variable in the environment.
+## 🧠 Language Features
 
-- State Machine Parser:
-  - Just a thought but when we lex right now we need to go deeper and as the compiler and parser get more advanced maybe we could use a state machine or something to handle the special cases rather than how we are currently doing it. Right now, I think we'll handle all the special cases in the same way we are because it's going to become so much more complicated and that will waste time.
+### 🔧 Type System & Variables
+- [ ] **Support `=Any=` type**  
+  - A special type that can accept any other type as its value.  
+  - We may need a way to query the type of a value at runtime, but it's doable.
 
-- Have a type that represents all the other types:
-  - This would allow variables to be defined with a type of another type.
+- [ ] **Automatic type deduction**  
+  - Allow the compiler to automatically deduce types for variables.  
+  - If the return type of an expression can be inferred, do not require explicit type annotations for variables.
 
-- Compile to CHIP 8 ASM:
- - Someone is working on a CHIP-8 virtual machine, assembler and disassembler, etc. in PHP, and it would be cool to collaborate on that with them. 
+- [ ] **Uninitialized variables**  
+  - Decide on syntax for uninitialized variables:  
+    - Example: `a : integer !`  
+    - Alternatively: `a : integer = None` (or any other sentinel value).
 
- - No reason why Aly can't target CHIP-8.
+- [ ] **A type that represents all other types**  
+  - Allow a type that could represent *any* type. This could be useful for dynamic handling of types in advanced cases.
+
+- [ ] **Unnamed variable declarations**  
+  - Support for declaring variables without an explicit identifier, which could refer to a singular unnamed variable in the environment.  
+    - Example: `some_value = 10` could be treated as an unnamed variable.
+
+---
+
+### 📞 Function Calls
+- [ ] **Allow named arguments in any order**  
+  - The ability to pass arguments in any order if they are named.  
+  - Example: `diff(y: 9, 6)` could be re-ordered during parsing to `diff(9, 6)`.
+
+---
+
+## 🤯 Crazy / Fun Ideas
+
+- [ ] **Compile to Brainfuck**  
+  - Just for fun—compile Aly code into Brainfuck. Not sure if it’s practical, but it’d be an interesting challenge.
+
+- [ ] **Compile to CHIP-8 assembly**  
+  - Someone is working on a CHIP-8 virtual machine, assembler, and disassembler in PHP. It could be cool to collaborate with them and get Aly to target CHIP-8.
+
+- [ ] **Write end-to-end tests in Algol**  
+  - This could be a fun learning experience, exploring a classic language while testing the compiler.
+
+---
+
+## 🛠️ Structural Changes & Refactors
+
+- [ ] **Convert `Environment` type into an AST node**  
+  - This change would make the environment more flexible and allow it to be managed similarly to other AST nodes (e.g., for garbage collection or memory management).  
+  - It would also make the code more LISP-like, improving consistency with the rest of the system.
+
+- [ ] **Consider using a state machine for the parser**  
+  - As the parser grows more complex, a state machine could help handle edge cases and improve maintainability.  
+  - Currently, we are handling special cases directly in the parser, but a state machine could help separate concerns and improve scalability.
+
+---
+
+## 📌 Miscellaneous
+
+- [ ] **Finalize syntax for uninitialized variables**  
+  - Deciding on a clean and consistent syntax for uninitialized variables will be important for clarity and user experience.
+
+- [ ] **Refactor type inference**  
+  - Continue to improve the type inference system, particularly in cases where types can be automatically deduced.
+
+- [ ] **Finalize approach for referencing types**  
+  - Define how types should reference other types. This could help with creating meta-types or dealing with more complex type systems.
+
+- [ ] **Fix warnings during compilation**  
+  - Enable `-Wall` and `-WExtra` in the compiler, and fix any warnings that are outputted to ensure clean, production-quality code.
