@@ -109,7 +109,6 @@ Error codegen_program_x86_64_att_asm(ParsingContext *context, Node *program) {
   //fwrite_line("sub $32, %rsp", code);
 
   Node *expression = program->children;
-  Node *tmpnode1 = node_allocate();
   while (expression) {
     switch (expression->type) {
     default:
