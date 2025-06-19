@@ -411,7 +411,6 @@ int parse_integer(Token* token, Node* node) {
 
 Error parse_expr (ParsingContext* context, char* source, char** end, Node* result) {
   ExpectReturnValue expected;
-  size_t token_count = 0;
   size_t token_length = 0;
   Token current_token;
   current_token.beginning  = source;
