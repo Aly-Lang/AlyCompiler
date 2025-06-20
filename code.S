@@ -6,7 +6,7 @@ a: .space 8
 jmp afterfoo
 foo:
 push %rbp
-mov %rsp, %rbp
+mov %rsp, %rbp=
 sub $32, %rsp
 add $32, %rsp
 pop %rbp

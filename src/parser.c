@@ -512,6 +512,7 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             }  
 
             Node* parameter_list = node_allocate();
+            node_add_child(working_result, parameter_list);
 
             // FIXME: Should we possibly create a parser stack and evaluate the
             // next expression, then ensure return value is var. decl in stack
@@ -553,8 +554,6 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
                 }
                 break;
             }
-
-            node_add_child(working_result, parameter_list);
 
             // Parse return type.
             EXPECT(expected, ":", current_token, token_length, end);
@@ -730,7 +729,6 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             // FIXME: Should comma be optional?
             EXPECT(expected, ",", current_token, token_length, end);
             if (expected.done || !expected.found) {
-                printf("Not a comma!\n");
                 print_token(current_token);
                 ERROR_PREP(err, ERROR_SYNTAX, "Parameter list expected closing parenthesis or comma for another parameter");
                 return err;

@@ -31,13 +31,15 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    err = codegen_program(OUTPUT_FMT_DEFAULT, context, program);
+    // TODO: Typecheck the program!
+
+    err = codegen_program(CG_FMT_DEFAULT, context, program);
     if (err.type) {
         print_error(err);  
         return 2;
     }
         
     node_free(program);
-    
+
     return 0;
 }

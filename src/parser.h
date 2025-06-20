@@ -73,6 +73,8 @@ typedef struct Node {
   // Possible TODO: Parent?
   struct Node* children;
   struct Node* next_child;
+  /// Used during codegen to store result register descriptor.
+  int result_register;
 } Node;
 
 Node* node_allocate();
