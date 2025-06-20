@@ -70,7 +70,6 @@ typedef struct Node {
     long long integer;
     char* symbol;
   } value;
-  // Possible TODO: Parent?
   struct Node* children;
   struct Node* next_child;
   /// Used during codegen to store result register descriptor.

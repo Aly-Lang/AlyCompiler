@@ -26,6 +26,8 @@ void register_deallocate(Register* base, RegisterDescriptor register_descriptor)
 
 char* register_name(Register* base, RegisterDescriptor register_descriptor);
 
+char* label_generate();
+
 enum CodegenOutputFormat {
     CG_FMT_DEFAULT = 0,
     CG_GMT_x86_64_MSWIN,

@@ -8,6 +8,8 @@
 #include <error.h>
 #include <parser.h>
 
+//================================================================ BEG REGISTER STUFF
+
 Register* register_create(char* name) {
     Register* r = calloc(1, sizeof(Register));
     assert(r && "Could not allocate memory for new register");
@@ -74,11 +76,43 @@ char* register_name(Register* base, RegisterDescriptor register_descriptor) {
     return NULL;
 }
 
+//================================================================ END REGISTER STUFF
+
+//================================================================ BEG LABELS
+
+#define label_buffer_size 1024
+char label_buffer[label_buffer_size];
+size_t label_index = 0;
+size_t label_count = 0;
+char* label_generate() {
+    char* label = label_buffer + label_index;
+    label_index += snprintf(label, label_buffer_size - label_index, ".L%d:\n", label_count);
+    label_index++;
+    if (label_index >= label_buffer_size) {
+        label_index = 0;
+        return label_generate();
+    }
+    label_count++;
+    return label;
+}
+
+//================================================================ END LABELS
+
+
 //================================================================ BEG CG_FMT_x86_MSWIN
 
 Error codegen_program_x86_64_mswin(ParsingContext* context, Node* program) {
     Error err = ok;
-    
+    // 5452 - labels generated 
+    char* label_1 = label_generate();
+    char* label_2 = label_generate();
+    char* label_3 = label_generate();
+    char* label_4 = label_generate();
+    char* label_5 = label_generate();
+    char* label_6 = label_generate();
+
+    printf("Labels:\n" "%s %s %s %s %s %s", label_1, label_2, label_3, label_4, label_5, label_6);
+
     ERROR_PREP(err, ERROR_TODO, "codegen_program_x86_64_mswin()");
     return err; 
 }
