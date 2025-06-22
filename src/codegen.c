@@ -78,8 +78,6 @@ char* register_name(Register* base, RegisterDescriptor register_descriptor) {
 
 //================================================================ END REGISTER STUFF
 
-//================================================================ BEG LABELS
-
 #define label_buffer_size 1024
 char label_buffer[label_buffer_size];
 size_t label_index = 0;
@@ -96,34 +94,48 @@ char* label_generate() {
     return label;
 }
 
-//================================================================ END LABELS
-
-
 //================================================================ BEG CG_FMT_x86_MSWIN
 
-Error codegen_program_x86_64_mswin(ParsingContext* context, Node* program) {
-    Error err = ok;
-    // 5452 - labels generated 
-    char* label_1 = label_generate();
-    char* label_2 = label_generate();
-    char* label_3 = label_generate();
-    char* label_4 = label_generate();
-    char* label_5 = label_generate();
-    char* label_6 = label_generate();
+#define symbol_buffer_size 1024
+char symbol_buffer[symbol_buffer_size];
+size_t symbol_index = 0;
+size_t symbol_count = 0;
+char* symbol_to_address() {
+    // Calculate symbol address.
+    char* symbol_string = symbol_buffer + symbol_index;
+    // Global variable access.
+    symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%s(%%rip)", symbol->value.symbol);
+    // TODO: Local variable access.
 
-    printf("Labels:\n" "%s %s %s %s %s %s", label_1, label_2, label_3, label_4, label_5, label_6);
+    symbol_index++;
+    if (symbol_index >= symbol_buffer_size) {
+        symbol_index = 0;
+        return label_generate();
+    }
+    return symbol_string;
+}
+
+Error codegen_program_x86_64_mswin(FILE* code, ParsingContext* context, Node* program) {
+    Error err = ok;
 
     ERROR_PREP(err, ERROR_TODO, "codegen_program_x86_64_mswin()");
-    return err; 
+    return err;
 }
 
 //================================================================ END CG_FMT_x86_MSWIN
 
 Error codegen_program(enum CodegenOutputFormat format, ParsingContext* context, Node* program) {
     Error err = ok;
+
+    // Open file for writing.
+    FILE* code = fopen("code.S", "w");
+
     if (format == CG_FMT_DEFAULT || format == CG_GMT_x86_64_MSWIN) {
-        return codegen_program_x86_64_mswin(context, program);
+        err = codegen_program_x86_64_mswin(code, context, program);
     }
+    fclose(code);
+    if (err.type) { return err; }
+
     ERROR_PREP(err, ERROR_TODO, "codegen_program()");
     return err;
 }

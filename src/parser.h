@@ -106,7 +106,7 @@ void node_free(Node* root);
 void node_copy(Node* a, Node* b);
 
 // @return Boolean-like value; 1 for success, 0 for failure.
-int token_string_equalp(char* string, Token *token);
+int token_string_equalp(char* string, Token* token);
 
 /// @return Boolean-like value; 1 upon success, 0 for failure.
 int parse_integer(Token* token, Node* node);
