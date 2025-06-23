@@ -581,8 +581,11 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             context->operator = node_symbol("defun");
             
             Node* param_it = working_result->children->children;
-            environment_set(context->variables, param_it->children, param_it->children->next_child);
-            
+            while (param_it) {
+                environment_set(context->variables, param_it->children, param_it->children->next_child);
+                param_it = param_it->next_child;
+            }
+
             Node* function_body = node_allocate();
             Node* function_first_expression = node_allocate();
             node_add_child(function_body, function_first_expression);

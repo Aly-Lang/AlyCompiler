@@ -178,14 +178,14 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 }
 
 const char* function_header_x86_64 =
-  "push %rbp\n"
-  "mov %rsp, %rbp\n"
-  "sub $32, %rsp\n";
+    "push %rbp\n"
+    "mov %rsp, %rbp\n"
+    "sub $32, %rsp\n";
   
 const char* function_footer_x86_64 =
-  "add $32, %rsp\n"
-  "pop %rbp\n"
-  "ret\n";
+    "add $32, %rsp\n"
+    "pop %rbp\n"
+    "ret\n";
 
 Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code) {
     Error err = ok;
@@ -201,6 +201,7 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
         // Bind parameter name to integer base pointer offset.
         // FIXME: Assume each argument is 8 bytes for now.
         // TODO: This currently doesn't allow for passing arguments in registers, which is much faster.
+        //       We need some local binding that refers to a register vs base pointer offset.
         environment_set(cg_context->locals, parameter->children, node_integer(-param_count * 8));
         parameter = parameter->next_child;
     }
@@ -250,9 +251,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         Node* var_id = var_it->id;
         Node* type = var_it->value;
         Node* type_info = node_allocate();
-        if (environment_get(*context->types, type, type_info)) { 
-
-        } else {
+        if (!environment_get(*context->types, type, type_info)) { 
             printf("Type: \"%s\"\n", type->value.symbol);
             ERROR_PREP(err, ERROR_GENERIC, "Could not get type info from types environment!");
         }
