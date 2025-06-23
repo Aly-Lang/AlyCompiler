@@ -127,6 +127,12 @@ Error codegen_expression_x86_64_mswin(FILE* code, ParsingContext* context, Node*
 Error codegen_program_x86_64_mswin(FILE* code, ParsingContext* context, Node* program) {
     Error err = ok;
 
+    Node* expression = program->children;
+    while (expression) {
+        codegen_expression_x86_64_mswin(code, context, expression);
+        expression = expression->next_child;
+    }
+
     ERROR_PREP(err, ERROR_TODO, "codegen_program_x86_64_mswin()");
     return err;
 }
