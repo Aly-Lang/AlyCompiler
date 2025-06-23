@@ -16,8 +16,8 @@ main:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
-mov $420, a(%rip)
-mov $42, b(%rip)
+movq $420, a(%rip)
+movq $42, b(%rip)
 mov $69, %rax
 add $32, %rsp
 pop %rbp

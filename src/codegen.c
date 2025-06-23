@@ -144,7 +144,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
                     return err;
                 }
                 snprintf(result, 64, "$%lld", expression->children->next_child->value.integer);
-                fprintf(code, "mov %s, %s\n", result, symbol_to_address(expression->children));
+                fprintf(code, "movq %s, %s\n", result, symbol_to_address(expression->children));
                 free(result);
             } else {
                 err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
