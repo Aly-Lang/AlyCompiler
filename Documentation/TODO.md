@@ -44,7 +44,7 @@
 - [x] **Compile with `-Wall` and `-WExtra`**, fix warnings  
   - Ensure clean compilation and fix any existing warnings.
 
-- [ ] TODO: Create a method called `environment_free`
+- [ ] **TODO: Create a method called `environment_free`**
 ---
 
 ## 🧠 Language Features
@@ -116,4 +116,7 @@
   - Define how types should reference other types. This could help with creating meta-types or dealing with more complex type systems.
 
 - [x] **Fix warnings during compilation**  
-- Enable `-Wall` and `-WExtra` in the compiler, and fix any warnings that are outputted to ensure clean, production-quality code.
+  - Enable `-Wall` and `-WExtra` in the compiler, and fix any warnings that are outputted to ensure clean, production-quality code.
+
+- [ ] **Have Compiler able to collect TODO comments and things from source**
+  - This would allow compiler-aided software design in more scenarios.
