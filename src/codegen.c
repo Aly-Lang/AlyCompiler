@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <error.h>
 #include <environment.h>
 #include <parser.h>
@@ -134,8 +133,17 @@ Error codegen_program_x86_64_mswin(FILE* code, ParsingContext* context, Node* pr
 
 //================================================================ END CG_FMT_x86_MSWIN
 
+CodegenContext* codegen_context_create(CodegenContext* parent) {
+    CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
+    cg_ctx->parent = parent;
+    cg_ctx->locals - environment_create(NULL);
+    return cg_ctx;
+}
+
 Error codegen_program(enum CodegenOutputFormat format, ParsingContext* context, Node* program) {
     Error err = ok;
+
+    CodegenContext *cg_context = codegen_context_create();
 
     // Open file for writing.
     FILE* code = fopen("code.S", "w");

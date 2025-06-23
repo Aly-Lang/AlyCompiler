@@ -41,9 +41,10 @@
 - [ ] **Add support for line/column tracking in the AST**  
   - Having this information would greatly enhance error reporting and debugging.
 
-- [ ] **Compile with `-Wall` and `-WExtra`**, fix warnings  
+- [x] **Compile with `-Wall` and `-WExtra`**, fix warnings  
   - Ensure clean compilation and fix any existing warnings.
 
+- [ ] TODO: Create a method called `environment_free`
 ---
 
 ## 🧠 Language Features
