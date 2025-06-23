@@ -136,11 +136,23 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): ""Can not do local variable codegen yet, sorry :P")
             // break;
         } else {
-            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
-            if (err.type) { return err; }
-            char* result_register = register_name(r, expression->children->next_child->result_register);
-            fprintf(code, "mov %s, %s\n", result_register, symbol_to_address(expression->children));
-            register_deallocate(r, expression->children->next_child->result_register);
+            char* result = NULL;
+            if (context, expression->children->next_child->type == NODE_TYPE_INTEGER) {
+                result = malloc(64);
+                if (!result) {
+                    ERROR_PREP(err, ERROR_GENERIC, "Could not allocate integer result string buffer :^(");
+                    return err;
+                }
+                snprintf(result, 64, "$%lld", expression->children->next_child->value.integer);
+                fprintf(code, "mov %s, %s\n", result, symbol_to_address(expression->children));
+                free(result);
+            } else {
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
+                if (err.type) { return err; }
+                result = register_name(r, expression->children->next_child->result_register);
+                fprintf(code, "mov %s, %s\n", result, symbol_to_address(expression->children));
+                register_deallocate(r, expression->children->next_child->result_register);
+            }
         }
         break;
     }
