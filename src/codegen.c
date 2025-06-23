@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include <error.h>
+#include <environment.h>
 #include <parser.h>
 
 //================================================================ BEG REGISTER STUFF
@@ -113,6 +114,15 @@ char* symbol_to_address() {
         return label_generate();
     }
     return symbol_string;
+}
+
+Error codegen_expression_x86_64_mswin(FILE* code, ParsingContext* context, Node* expression) {
+    switch (expression->type) {
+    default:
+        break;
+    case NODE_TYPE_VARIABLE_REASSIGNMENT:
+        break;
+    }
 }
 
 Error codegen_program_x86_64_mswin(FILE* code, ParsingContext* context, Node* program) {

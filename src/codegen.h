@@ -2,6 +2,7 @@
 #define ALY_COMPILER_CODEGEN_H
 
 #include <error.h>
+#include <environment.h>
 #include <parser.h>
 
 typedef int RegisterDescriptor;
@@ -27,6 +28,13 @@ void register_deallocate(Register* base, RegisterDescriptor register_descriptor)
 char* register_name(Register* base, RegisterDescriptor register_descriptor);
 
 char* label_generate();
+
+typedef struct CodegenContext { 
+    struct CodegenContext* parent;
+    /// LOCALS
+    /// `-- SYMBOL (NAME) -> INTEGER (STACK OFFSET)
+    Environment* locals;
+} CodegenContext;
 
 enum CodegenOutputFormat {
     CG_FMT_DEFAULT = 0,
