@@ -147,6 +147,16 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
     return err;
 }
 
+const char* function_header_x86_64 =
+  "push %rbp\n"
+  "mov %rsp, %rbp\n"
+  "sub $32, %rsp\n";
+  
+const char* function_footer_x86_64 =
+  "add $32, %rsp\n"
+  "pop %rbp\n"
+  "ret\n";
+
 Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code) {
     Error err = ok;
 
@@ -170,11 +180,7 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     fprintf(code, "%s:\n", name);
  
     // Function header
-    const char *function_header =
-        "push %rbp\n"
-        "mov %rsp, %rbp\n"
-        "sub $32, %rsp\n";
-    fprintf(code, "%s", function_header);
+    fprintf(code, "%s", function_header_x86_64);
 
     // Function body
     Node* expression = function->children->next_child->next_child->children;
@@ -188,11 +194,7 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     }
 
     // Function footer
-    const char* function_footer = 
-        "add $32, %rsp\n"
-        "pop %rbp\n"
-        "ret\n";
-    fprintf(code, "%s", function_footer);
+    fprintf(code, "%s", function_footer_x86_64);
     
     // Nested function execution jump label
     fprintf(code, "after%s:\n", name);
@@ -210,6 +212,27 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     register_add(r, "%r10");
     register_add(r, "%r11");
 
+    fprintf(code, "%s", ".section .data\n");
+
+    // Generate global variables
+    Binding* var_it = context->variables->bind;
+    while (var_it) {
+        Node* var_id = var_it->id;
+        Node* type = var_it->value;
+        Node* type_info = node_allocate();
+        if (environment_get(*context->types, type, type_info)) { 
+
+        } else {
+            printf("Type: \"%s\"\n", type->value.symbol);
+            ERROR_PREP(err, ERROR_GENERIC, "Could not get type info from types environment!");
+        }
+        var_it = var_it->next;
+        fprintf(code, "%s: .space %lld\n", var_id->value.symbol, type_info->children->value.integer);
+        free(type_info);
+    }
+
+    fprintf(code, ".section .text\n");
+    
     // Generate global functions
     Binding* function_it = context->functions->bind;
     while (function_it) {
@@ -218,6 +241,11 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         function_it = function_it->next;
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, function_id->value.symbol, function, code);
     }
+ 
+    fprintf(code,
+        ".global main\n"
+        "main:\n"
+        "%s", function_header_x86_64);
 
     Node* expression = program->children;
     while (expression) {
@@ -225,8 +253,10 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         expression = expression->next_child;
     }
 
-    ERROR_PREP(err, ERROR_TODO, "codegen_program_x86_64_mswin()");
-    return err;
+    fprintf(code, "mov $69, %%rax\n"); // This is out return code for main.
+    fprintf(code, "%s", function_footer_x86_64);
+
+    return ok;
 }
 
 //================================================================ END CG_FMT_x86_MSWIN
@@ -243,8 +273,5 @@ Error codegen_program(enum CodegenOutputFormat format, ParsingContext* context, 
         err = codegen_program_x86_64_mswin(code, cg_context, context, program);
     }
     fclose(code);
-    if (err.type) { return err; }
-
-    ERROR_PREP(err, ERROR_TODO, "codegen_program()");
     return err;
 }
