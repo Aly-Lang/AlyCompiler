@@ -8,6 +8,13 @@
 #include <environment.h>
 #include <parser.h>
 
+CodegenContext* codegen_context_create(CodegenContext* parent) {
+    CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
+    cg_ctx->parent = parent;
+    cg_ctx->locals - environment_create(NULL);
+    return cg_ctx;
+}
+
 //================================================================ BEG REGISTER STUFF
 
 Register* register_create(char* name) {
@@ -100,7 +107,7 @@ char* label_generate() {
 char symbol_buffer[symbol_buffer_size];
 size_t symbol_index = 0;
 size_t symbol_count = 0;
-char* symbol_to_address() {
+char* symbol_to_address(Node* symbol) {
     // Calculate symbol address.
     char* symbol_string = symbol_buffer + symbol_index;
     // Global variable access.
@@ -115,21 +122,97 @@ char* symbol_to_address() {
     return symbol_string;
 }
 
-Error codegen_expression_x86_64_mswin(FILE* code, ParsingContext* context, Node* expression) {
+Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, ParsingContext* context, Node* expression) {
+    Error err = ok;
     switch (expression->type) {
     default:
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
+        if (cg_context->parent) {
+            // ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): ""Can not do local variable codegen yet, sorry :P")
+            // break;
+        } else {
+            char* result_register = "";
+            fprintf(code, "mov %s, %s\n", result_register, symbol_to_address(expression->children));
+        }
         break;
     }
+    return err;
 }
 
-Error codegen_program_x86_64_mswin(FILE* code, ParsingContext* context, Node* program) {
+Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code) {
     Error err = ok;
+
+    cg_context = codegen_context_create(cg_context);
+
+    // TODO: Store base pointer integer offset within locals environment
+    // Start at one to make space for pushed RBP in function header.
+    size_t param_count = 1;
+    Node* parameter = function->children->children;
+    while (parameter) {
+        param_count++;
+        // Bind parameter name to integer base pointer offset.
+        // FIXME: Assume each argument is 8 bytes for now.
+        // TODO: This currently doesn't allow for passing arguments in registers, which is much faster.
+        environment_set(cg_context->locals, parameter->children, node_integer(-param_count * 8));
+        parameter = parameter->next_child;
+    }
+    // Nested function execution protection
+    fprintf(code, "jmp after%s\n", name);
+    // Function beginning label
+    fprintf(code, "%s:\n", name);
+ 
+    // Function header
+    const char *function_header =
+        "push %rbp\n"
+        "mov %rsp, %rbp\n"
+        "sub $32, %rsp\n";
+    fprintf(code, "%s", function_header);
+
+    // Function body
+    Node* expression = function->children->next_child->next_child->children;
+    while (expression) {
+        err = codegen_expression_x86_64_mswin(code, cg_context, context, expression);
+        if (err.type) { 
+            print_error(err);
+            return err; 
+        }
+        expression = expression->next_child;
+    }
+
+    printf("Here\n");
+    
+    // Function footer
+    const char* function_footer = 
+        "add $32, %rsp\n"
+        "pop %rbp\n"
+        "ret\n";
+    fprintf(code, "%s", function_footer);
+    
+    // Nested function execution jump label
+    fprintf(code, "after%s:\n", name);
+    
+    // TODO: Free context
+    cg_context = cg_context->parent;
+
+    return ok;
+}
+
+Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, ParsingContext* context, Node* program) {
+    Error err = ok;
+
+    // Generate global functions
+    Binding* function_it = context->functions->bind;
+    while (function_it) {
+        Node* function_id = function_it->id;
+        Node* function = function_it->value;
+        function_it = function_it->next;
+        err = codegen_function_x86_64_att_asm_mswin(cg_context, context, function_id->value.symbol, function, code);
+    }
 
     Node* expression = program->children;
     while (expression) {
-        codegen_expression_x86_64_mswin(code, context, expression);
+        codegen_expression_x86_64_mswin(code, cg_context, context, expression);
         expression = expression->next_child;
     }
 
@@ -139,23 +222,16 @@ Error codegen_program_x86_64_mswin(FILE* code, ParsingContext* context, Node* pr
 
 //================================================================ END CG_FMT_x86_MSWIN
 
-CodegenContext* codegen_context_create(CodegenContext* parent) {
-    CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
-    cg_ctx->parent = parent;
-    cg_ctx->locals - environment_create(NULL);
-    return cg_ctx;
-}
-
 Error codegen_program(enum CodegenOutputFormat format, ParsingContext* context, Node* program) {
     Error err = ok;
 
-    CodegenContext *cg_context = codegen_context_create();
+    CodegenContext* cg_context = codegen_context_create(NULL);
 
     // Open file for writing.
     FILE* code = fopen("code.S", "w");
 
     if (format == CG_FMT_DEFAULT || format == CG_GMT_x86_64_MSWIN) {
-        err = codegen_program_x86_64_mswin(code, context, program);
+        err = codegen_program_x86_64_mswin(code, cg_context, context, program);
     }
     fclose(code);
     if (err.type) { return err; }
