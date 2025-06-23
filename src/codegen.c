@@ -122,25 +122,32 @@ char* symbol_to_address(Node* symbol) {
     return symbol_string;
 }
 
-Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, ParsingContext* context, Node* expression) {
+Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* cg_context, ParsingContext* context, Node* expression) {
     Error err = ok;
     switch (expression->type) {
     default:
+        break;
+    case NODE_TYPE_INTEGER:
+        expression->result_register = register_allocate(r);
+        fprintf(code, "mov $%lld, %s\n", expression->value.integer, register_name(r, expression->result_register));
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         if (cg_context->parent) {
             // ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): ""Can not do local variable codegen yet, sorry :P")
             // break;
         } else {
-            char* result_register = "";
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
+            if (err.type) { return err; }
+            char* result_register = register_name(r, expression->children->next_child->result_register);
             fprintf(code, "mov %s, %s\n", result_register, symbol_to_address(expression->children));
+            register_deallocate(r, expression->children->next_child->result_register);
         }
         break;
     }
     return err;
 }
 
-Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code) {
+Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code) {
     Error err = ok;
 
     cg_context = codegen_context_create(cg_context);
@@ -172,7 +179,7 @@ Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingC
     // Function body
     Node* expression = function->children->next_child->next_child->children;
     while (expression) {
-        err = codegen_expression_x86_64_mswin(code, cg_context, context, expression);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression);
         if (err.type) { 
             print_error(err);
             return err; 
@@ -180,8 +187,6 @@ Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingC
         expression = expression->next_child;
     }
 
-    printf("Here\n");
-    
     // Function footer
     const char* function_footer = 
         "add $32, %rsp\n"
@@ -201,18 +206,22 @@ Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingC
 Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, ParsingContext* context, Node* program) {
     Error err = ok;
 
+    Register* r = register_create("%rax");
+    register_add(r, "%r10");
+    register_add(r, "%r11");
+
     // Generate global functions
     Binding* function_it = context->functions->bind;
     while (function_it) {
         Node* function_id = function_it->id;
         Node* function = function_it->value;
         function_it = function_it->next;
-        err = codegen_function_x86_64_att_asm_mswin(cg_context, context, function_id->value.symbol, function, code);
+        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, function_id->value.symbol, function, code);
     }
 
     Node* expression = program->children;
     while (expression) {
-        codegen_expression_x86_64_mswin(code, cg_context, context, expression);
+        codegen_expression_x86_64_mswin(code, r, cg_context, context, expression);
         expression = expression->next_child;
     }
 

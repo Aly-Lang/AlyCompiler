@@ -7,5 +7,7 @@ add $32, %rsp
 pop %rbp
 ret
 afterfoo:
-mov , a(%rip)
-mov , b(%rip)
+mov $420, %rax
+mov %rax, a(%rip)
+mov $42, %rax
+mov %rax, b(%rip)
