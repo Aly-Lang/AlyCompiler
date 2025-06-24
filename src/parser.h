@@ -53,8 +53,9 @@ typedef enum NodeType {
   /// 2. VALUE EXPRESSION
   NODE_TYPE_VARIABLE_REASSIGNMENT,
 
-  /// Contains two children that determine left and right acceptable
-  /// types.
+  /// A valid binary operator. Contains two children.
+  /// 1. Left Hand Side, often abbreviated as LHS.
+  /// 2. Right Hand Side, often abbreviated as RHS.
   NODE_TYPE_BINARY_OPERATOR,
 
   /// Contains a list of expressions to execute in sequence.
@@ -111,7 +112,7 @@ int token_string_equalp(char* string, Token* token);
 /// @return Boolean-like value; 1 upon success, 0 for failure.
 int parse_integer(Token* token, Node* node);
 
-// TODO: Seperate context from stack
+// TODO: Separate context from stack
 typedef struct ParsingStack {
   struct ParsingStack* parent;
   Node* operator;
@@ -131,10 +132,19 @@ typedef struct ParsingContext {
   /// VARIABLE
   /// `-- SYMBOL (NAME) -> SYMBOL (TYPE)
   Environment* variables;
-  /// VARIABLE
+  /// FUNCTIONS
   /// `-- SYMBOL (NAME) -> FUNCTION
   Environment* functions;
+  /// BINARY OPERATOR
+  /// `-- SYMBOL (OPERATOR) -> NONE
+  ///                          `-- INTEGER (PRECEDENCE) 
+  ///                              -> SYMBOL (RETURN TYPE) 
+  ///                              -> SYMBOL (LHS TYPE) 
+  ///                              -> SYMBOL (RHS TYPE)
+  Environment* binary_operators;
 } ParsingContext;
+
+Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type);
 
 Error parse_get_type(ParsingContext* context, Node* id, Node* result);
 
