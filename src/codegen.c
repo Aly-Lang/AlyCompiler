@@ -265,6 +265,8 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
         expression = expression->next_child;
     }
 
+    // TODO: Copy last expression result register to RAX
+
     // Function footer
     fprintf(code, "%s", function_footer_x86_64);
     
@@ -317,13 +319,18 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         "main:\n"
         "%s", function_header_x86_64);
 
+    Node* last_expression = program->children;
     Node* expression = program->children;
     while (expression) {
         codegen_expression_x86_64_mswin(code, r, cg_context, context, expression);
+        last_expression = expression;
         expression = expression->next_child;
     }
 
-    fprintf(code, "mov $0, %%rax\n"); // This is out return code for main.
+    char* name = register_name(r, last_expression->result_register);
+    if (strcmp(name, "%rax")) {
+        fprintf(code, "mov %s, %%rax\n", name); // RETURN CODE
+    }
     fprintf(code, "%s", function_footer_x86_64);
 
     // TODO: This breaks things, but we should do it.

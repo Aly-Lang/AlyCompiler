@@ -12,7 +12,6 @@ mov $8, %rax
 sub %r10, %rax
 mov $6, %rax
 add %r10, %rax
-mov $0, %rax
 add $32, %rsp
 pop %rbp
 ret
