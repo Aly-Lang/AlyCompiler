@@ -720,8 +720,9 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             long long precedence = operator_value->children->value.integer;
 
             //printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
-
             //printf("working precedence: %lld\n", working_precedence);
+
+            // TODO: Handle grouped expressions through parentheses using precedence stack.
 
             Node* result_pointer = precedence <= working_precedence ? result : working_result;
 

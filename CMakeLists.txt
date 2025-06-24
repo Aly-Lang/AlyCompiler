@@ -20,6 +20,7 @@ add_executable(alyc
     src/parser.c
     src/environment.c
     src/codegen.c
+    src/typechecker.c
 )
 
 # Include directories

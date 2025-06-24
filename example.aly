@@ -29,7 +29,7 @@ defun foo (c:integer, b:integer):integer {
 
 ; This is a function call.
 ; For now, this errors because we no do function calls :^(
-foo(20, 34)
+foo(20, 34, 420)
 
 ; TODO: Support this lambda syntax!
 ; [(a:integer) { a : 25  a }]
