@@ -725,32 +725,16 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
 
             Node* result_pointer = precedence <= working_precedence ? result : working_result;
 
-            if (precedence <= working_precedence) {
-                Node* result_copy = node_allocate();
-                node_copy(result, result_copy);
-                result->type = NODE_TYPE_BINARY_OPERATOR;
-                result->value.symbol = operator_symbol->value.symbol;
-                result->children = result_copy;
-                result->next_child = NULL;
+            Node* result_copy = node_allocate();
+            node_copy(result_pointer, result_copy);
+            result_pointer->type = NODE_TYPE_BINARY_OPERATOR;
+            result_pointer->value.symbol = operator_symbol->value.symbol;
+            result_pointer->children = result_copy;
+            result_pointer->next_child = NULL;
 
-                Node* rhs = node_allocate();
-                node_add_child(result, rhs);
-                working_result = rhs;
-
-                //print_node(result, 0);
-            }
-            else {
-                Node* result_copy = node_allocate();
-                node_copy(working_result, result_copy);
-                working_result->type = NODE_TYPE_BINARY_OPERATOR;
-                working_result->value.symbol = operator_symbol->value.symbol;
-                working_result->children = result_copy;
-                working_result->next_child = NULL;
-                
-                Node* rhs = node_allocate();
-                node_add_child(working_result, rhs);
-                working_result = rhs;
-            }
+            Node* rhs = node_allocate();
+            node_add_child(result_pointer, rhs);
+            working_result = rhs;
 
             working_precedence = precedence;
 
@@ -762,7 +746,6 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
         node_free(operator_symbol);
         free(operator_value);
 
-    
         // TODO: If it works, update current token 
         
         // If we reach here, we have a valid symbol or integer.
@@ -839,18 +822,18 @@ Error parse_program(char* filepath, ParsingContext* context, Node* result) {
 }
 
 Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type) {
-  Node* binop = node_allocate();
-  node_add_child(binop, node_integer(precedence));
-  node_add_child(binop, node_symbol(return_type));
-  node_add_child(binop, node_symbol(lhs_type));
-  node_add_child(binop, node_symbol(rhs_type));
+    Node* binop = node_allocate();
+    node_add_child(binop, node_integer(precedence));
+    node_add_child(binop, node_symbol(return_type));
+    node_add_child(binop, node_symbol(lhs_type));
+    node_add_child(binop, node_symbol(rhs_type));
 
-  // FIXME: Every binary operator definition is global for now!
-  while (context->parent) { context = context->parent; }
-  int status = environment_set(context->binary_operators, node_symbol(operator), binop);
-  if (status == 0) {
-    ERROR_CREATE(err, ERROR_GENERIC, "Could not define binary operator in environment");
-    return err;
-  }
-  return ok;
+    // FIXME: Every binary operator definition is global for now!
+    while (context->parent) { context = context->parent; }
+    int status = environment_set(context->binary_operators, node_symbol(operator), binop);
+    if (status == 0) {
+        ERROR_CREATE(err, ERROR_GENERIC, "Could not define binary operator in environment");
+        return err;
+    }
+    return ok;
 }
