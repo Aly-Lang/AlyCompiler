@@ -181,6 +181,15 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Free no-longer-used right hand side result register.
             register_deallocate(r, expression->children->next_child->result_register);
+        } else if (strcmp(expression->value.symbol, "*") == 0) {
+            // Use left hand side result register as our result since IMUL is destructive!
+            expression->result_register = expression->children->result_register;
+
+            // Emit three address instruction
+            fprintf(code, "imul %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
+
+            // Free no-longer-used right hand side result register.
+            register_deallocate(r, expression->children->next_child->result_register);
         }
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
