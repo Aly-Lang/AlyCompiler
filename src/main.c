@@ -32,7 +32,6 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    // TODO: Typecheck the program!
     err = typecheck_program(context, program);
     if (err.type) {
         print_error(err);  

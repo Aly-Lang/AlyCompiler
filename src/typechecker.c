@@ -1,4 +1,3 @@
-
 #include <typechecker.h>
 
 #include <environment.h>
@@ -90,7 +89,5 @@ Error typecheck_program(ParsingContext* context, Node* program) {
         if (err.type) { return err; }
         expression = expression->next_child;
     }
-
-    ERROR_PREP(err, ERROR_TODO, "typecheck_program()");
     return err;
 }
