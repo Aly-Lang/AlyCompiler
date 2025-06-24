@@ -25,6 +25,7 @@ int expression_return_type(ParsingContext* context, Node* expression) {
         print_node(result, 0);
         break;
     }
+    return result->type;
 }
 Error typecheck_expression(ParsingContext* context, Node* expression) {
     Error err = ok;
