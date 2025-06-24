@@ -99,7 +99,7 @@ int token_string_equalp(char* string, Token* token) {
     char* beg = token->beginning;
     while (*string && token->beginning < token->end) {
         if (*string != *beg) {
-        return 0;
+            return 0;
         }
         string++;
         beg++;
@@ -128,7 +128,7 @@ void node_add_child(Node* parent, Node* new_child) {
     if (parent->children) {
         Node *child = parent->children;
         while (child->next_child) {
-        child = child->next_child;
+            child = child->next_child;
         }
         child->next_child = new_child;
     } else {
@@ -138,9 +138,7 @@ void node_add_child(Node* parent, Node* new_child) {
 
 int node_compare(Node* a, Node* b) {
     if (!a || !b) {
-        if (!a && !b) {
-        return 1;
-        }
+        if (!a && !b) { return 1; }
         return 0;
     }
     assert(NODE_TYPE_MAX == 10 && "node_compare() must handle all node types");
@@ -721,15 +719,23 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             *end = end_copy;
             long long precedence = operator_value->children->value.integer;
 
-            printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
+            //printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
 
             //printf("working precedence: %lld\n", working_precedence);
+
+            Node* result_pointer = precedence <= working_precedence ? result : working_result;
+
             if (precedence <= working_precedence) {
                 Node* result_copy = node_allocate();
                 node_copy(result, result_copy);
                 result->type = NODE_TYPE_BINARY_OPERATOR;
                 result->value.symbol = operator_symbol->value.symbol;
-                node_add_child(result, result_copy);
+                result->children = result_copy;
+                result->next_child = NULL;
+
+                Node* rhs = node_allocate();
+                node_add_child(result, rhs);
+                working_result = rhs;
 
                 //print_node(result, 0);
             }
@@ -738,12 +744,13 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
                 node_copy(working_result, result_copy);
                 working_result->type = NODE_TYPE_BINARY_OPERATOR;
                 working_result->value.symbol = operator_symbol->value.symbol;
-                node_add_child(working_result, result_copy);
+                working_result->children = result_copy;
+                working_result->next_child = NULL;
+                
+                Node* rhs = node_allocate();
+                node_add_child(working_result, rhs);
+                working_result = rhs;
             }
-
-            Node* rhs = node_allocate();
-            node_add_child(working_result, rhs);
-            working_result = rhs;
 
             working_precedence = precedence;
 
