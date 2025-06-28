@@ -46,6 +46,10 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
 
 Error typecheck_expression(ParsingContext* context, Node* expression) {
     Error err = ok;
+    if (!context || !expression) { 
+        ERROR_PREP(err, ERROR_ARGUMENTS, "typecheck_expression(): Arguments must not be NULL!");
+        return err; 
+    }
     ParsingContext* original_context = context;
     Node* value = node_allocate();
     Node* tmpnode = node_allocate();
@@ -63,8 +67,6 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
         // Get expected return type of LHS in tmpnode->type.
         parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
         if (type != tmpnode->type) {
-            printf("Type: %d\n", type);
-            print_node(value->children->next_child->next_child, 0);
             print_node(expression, 0);
             ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
             return err;
