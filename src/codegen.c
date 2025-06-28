@@ -12,7 +12,7 @@
 CodegenContext* codegen_context_create(CodegenContext* parent) {
     CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
     cg_ctx->parent = parent;
-    cg_ctx->locals - environment_create(NULL);
+    cg_ctx->locals = environment_create(NULL);
     return cg_ctx;
 }
 
@@ -99,7 +99,7 @@ size_t label_index = 0;
 size_t label_count = 0;
 char* label_generate() {
     char* label = label_buffer + label_index;
-    label_index += snprintf(label, label_buffer_size - label_index, ".L%d:\n", label_count);
+    label_index += snprintf(label, label_buffer_size - label_index, ".L%zu:\n", label_count);
     label_index++;
     if (label_index >= label_buffer_size) {
         label_index = 0;
@@ -349,7 +349,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     // TODO: This breaks things, but we should do it.
     // register_free(r);
     
-    return ok;
+    return err;
 }
 
 //================================================================ END CG_FMT_x86_MSWIN

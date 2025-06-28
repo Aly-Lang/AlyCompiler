@@ -464,6 +464,54 @@ int parse_integer(Token* token, Node* node) {
     return 1;
 }
 
+/// Set FOUND to 1 if an infix operator is found and parsing should continue, otherwise 0.
+Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* current, size_t* length, char** end,  long long* working_precedence, Node* result, Node** working_result) {
+    Error err = ok;
+    // Look ahead for a binary infix operator.
+    *found = 0;
+    Token current_copy = *current;
+    size_t length_copy = *length;
+    char* end_copy = *end;
+    err = lex_advance(&current_copy, &length_copy, &end_copy);
+    if (err.type != ERROR_NONE) { return err; }
+    Node* operator_symbol = node_symbol_from_buffer(current_copy.beginning, length_copy);
+    Node* operator_value = node_allocate();
+    ParsingContext* global = context;
+    while (global->parent) { global = global->parent; }
+    if (environment_get(*global->binary_operators, operator_symbol, operator_value)) {
+        *current = current_copy;
+        *length = length_copy;
+        *end = end_copy;
+        long long precedence = operator_value->children->value.integer;
+
+        //printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
+        //printf("working precedence: %lld\n", working_precedence);
+
+        // TODO: Handle grouped expressions through parentheses using precedence stack.
+
+        Node* result_pointer = precedence <= *working_precedence ? result : *working_result;
+
+        Node* result_copy = node_allocate();
+        node_copy(result_pointer, result_copy);
+        result_pointer->type = NODE_TYPE_BINARY_OPERATOR;
+        result_pointer->value.symbol = operator_symbol->value.symbol;
+        result_pointer->children = result_copy;
+        result_pointer->next_child = NULL;
+
+        Node* rhs = node_allocate();
+        node_add_child(result_pointer, rhs);
+        *working_result = rhs;
+
+        *working_precedence = precedence;
+
+        *found = 1;
+    }
+
+    free(operator_symbol);
+    free(operator_value);
+    return ok;
+}
+
 Error parse_expr (ParsingContext* context, char* source, char** end, Node* result) {
     ExpectReturnValue expected;
     size_t token_length = 0;
@@ -703,53 +751,59 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             }
         }
 
-        // Look ahead for a binary infix operator, right?
-        Token current_copy = current_token;
-        size_t length_copy = token_length;
-        char* end_copy = *end;
-        err = lex_advance(&current_copy, &length_copy, &end_copy);
-        if (err.type != ERROR_NONE) { return err; }
-        Node* operator_symbol = node_symbol_from_buffer(current_copy.beginning, length_copy);
-        Node* operator_value = node_allocate();
-        ParsingContext* global = context;
-        while (global->parent) { global = global->parent; }
-        if (environment_get(*global->binary_operators, operator_symbol, operator_value)) {
-            current_token = current_copy;
-            token_length = length_copy;
-            *end = end_copy;
-            long long precedence = operator_value->children->value.integer;
+        // Set FOUND to 1 if an infix operator is found and parsing should continue, otherwise 0.
+        int found = 0;
+        err = parse_binary_infix_operator(context, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
 
-            //printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
-            //printf("working precedence: %lld\n", working_precedence);
+        if (found) { continue; }
 
-            // TODO: Handle grouped expressions through parentheses using precedence stack.
+        // // Look ahead for a binary infix operator
+        // Token current_copy = current_token;
+        // size_t length_copy = token_length;
+        // char* end_copy = *end;
+        // err = lex_advance(&current_copy, &length_copy, &end_copy);
+        // if (err.type != ERROR_NONE) { return err; }
+        // Node* operator_symbol = node_symbol_from_buffer(current_copy.beginning, length_copy);
+        // Node* operator_value = node_allocate();
+        // ParsingContext* global = context;
+        // while (global->parent) { global = global->parent; }
+        // if (environment_get(*global->binary_operators, operator_symbol, operator_value)) {
+        //     current_token = current_copy;
+        //     token_length = length_copy;
+        //     *end = end_copy;
+        //     long long precedence = operator_value->children->value.integer;
 
-            Node* result_pointer = precedence <= working_precedence ? result : working_result;
+        //     //printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
+        //     //printf("working precedence: %lld\n", working_precedence);
 
-            Node* result_copy = node_allocate();
-            node_copy(result_pointer, result_copy);
-            result_pointer->type = NODE_TYPE_BINARY_OPERATOR;
-            result_pointer->value.symbol = operator_symbol->value.symbol;
-            result_pointer->children = result_copy;
-            result_pointer->next_child = NULL;
+        //     // TODO: Handle grouped expressions through parentheses using precedence stack.
 
-            Node* rhs = node_allocate();
-            node_add_child(result_pointer, rhs);
-            working_result = rhs;
+        //     Node* result_pointer = precedence <= working_precedence ? result : working_result;
 
-            working_precedence = precedence;
+        //     Node* result_copy = node_allocate();
+        //     node_copy(result_pointer, result_copy);
+        //     result_pointer->type = NODE_TYPE_BINARY_OPERATOR;
+        //     result_pointer->value.symbol = operator_symbol->value.symbol;
+        //     result_pointer->children = result_copy;
+        //     result_pointer->next_child = NULL;
 
-            free(operator_symbol);
-            free(operator_value);
+        //     Node* rhs = node_allocate();
+        //     node_add_child(result_pointer, rhs);
+        //     working_result = rhs;
 
-            continue;
-        }
-        node_free(operator_symbol);
-        free(operator_value);
+        //     working_precedence = precedence;
+
+        //     free(operator_symbol);
+        //     free(operator_value);
+
+        //     continue;
+        // }
+        // node_free(operator_symbol);
+        // free(operator_value);
 
         // TODO: If it works, update current token 
         
-        // If we reach here, we have a valid symbol or integer.
+        // If no more parser stack, return with current result.
         if (!context->parent) { break; } 
 
         Node* operator = context->operator;
@@ -773,7 +827,10 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
         } 
         if (strcmp(operator->value.symbol, "funcall") == 0) {
             EXPECT(expected, ")", current_token, token_length, end);
-            if (expected.done || expected.found) { break; }
+            if (expected.done || expected.found) { 
+                // We somehow have to lookahead for binary infix operator here.
+                break; 
+            }
 
             // FIXME: Should comma be optional?
             EXPECT(expected, ",", current_token, token_length, end);
@@ -794,32 +851,32 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
 }
 
 Error parse_program(char* filepath, ParsingContext* context, Node* result) {
-  Error err = ok;
-  char* contents = file_contents(filepath);
-  if (!contents) {
-    printf("Filepath: \"%s\"\n", filepath);
-    ERROR_PREP(err, ERROR_GENERIC, "parse_program(): Couldn't get file contents");
-    return err;
-  }
-  result->type = NODE_TYPE_PROGRAM;
-  char *contents_it = contents;
-  for (;;) {
-    Node* expression = node_allocate();
-    node_add_child(result, expression);
-    err = parse_expr(context, contents_it, &contents_it, expression);
-    if (err.type != ERROR_NONE) {
-        free(contents);
+    Error err = ok;
+    char* contents = file_contents(filepath);
+    if (!contents) {
+        printf("Filepath: \"%s\"\n", filepath);
+        ERROR_PREP(err, ERROR_GENERIC, "parse_program(): Couldn't get file contents");
         return err;
     }
-    // Check for end-of-parsing case (source and end are the same).
-    if (!(*contents_it)) { break; }
+    result->type = NODE_TYPE_PROGRAM;
+    char *contents_it = contents;
+    for (;;) {
+        Node* expression = node_allocate();
+        node_add_child(result, expression);
+        err = parse_expr(context, contents_it, &contents_it, expression);
+        if (err.type != ERROR_NONE) {
+            free(contents);
+            return err;
+        }
+        // Check for end-of-parsing case (source and end are the same).
+        if (!(*contents_it)) { break; }
 
-    //printf("Parsed expression:\n");
-    //print_node(expression,0);
-    //putchar('\n');
-  }
-  free(contents);
-  return ok;
+        //printf("Parsed expression:\n");
+        //print_node(expression,0);
+        //putchar('\n');
+    }
+    free(contents);
+    return ok;
 }
 
 Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type) {
