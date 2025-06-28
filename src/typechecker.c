@@ -11,6 +11,7 @@
 Error expression_return_type(ParsingContext* context, Node* expression, int* type) {
     Error err = ok;
     ParsingContext* original_context = context;
+    Node* tmpnode = node_allocate();
     Node* result = node_allocate();
     result->type = -1;
     *type = result->type;
@@ -37,8 +38,12 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
         }
         // RESULT contains a function node.
         print_node(result, 0);
+        result = result->children->next_child;
+        parse_get_type(original_context, result, tmpnode);
+        result->type = tmpnode->type;
         break;
     }
+    free(tmpnode);
     *type = result->type;
     free(result);
     return err;
@@ -48,7 +53,7 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
     Error err = ok;
     if (!context || !expression) { 
         ERROR_PREP(err, ERROR_ARGUMENTS, "typecheck_expression(): Arguments must not be NULL!");
-        return err; 
+        return err;
     }
     ParsingContext* original_context = context;
     Node* value = node_allocate();
