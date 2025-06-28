@@ -155,8 +155,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         while (context->parent) { context = context-> parent; }
         // FIXME: Second argument is memory leaked! :(
         environment_get(*context->binary_operators, node_symbol(expression->value.symbol), tmpnode);
-        printf("Codegenning symbol %s\n", expression->value.symbol);
-        print_node(tmpnode, 0);
+        
+        // printf("Codegenning binary operator %s\n", expression->value.symbol);
+        // print_node(tmpnode, 0);
 
         // Codegen LHS
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children);
