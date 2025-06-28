@@ -65,7 +65,6 @@ typedef enum NodeType {
 } NodeType;
 
 typedef struct Node {
-  // TODO: Think about how to document node types and how they fit in the AST.
   int type;
   union NodeValue {
     long long integer;
@@ -138,8 +137,8 @@ typedef struct ParsingContext {
   /// BINARY OPERATOR
   /// `-- SYMBOL (OPERATOR) -> NONE
   ///                          `-- INTEGER (PRECEDENCE) 
-  ///                              -> SYMBOL (RETURN TYPE) 
-  ///                              -> SYMBOL (LHS TYPE) 
+  ///                              -> SYMBOL (RETURN TYPE)
+  ///                              -> SYMBOL (LHS TYPE)
   ///                              -> SYMBOL (RHS TYPE)
   Environment* binary_operators;
 } ParsingContext;

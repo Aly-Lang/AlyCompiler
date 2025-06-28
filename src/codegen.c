@@ -159,7 +159,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         print_node(tmpnode, 0);
 
         // Codegen LHS
-        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children);            
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children);
         // Codegen RHS
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
         
@@ -191,6 +191,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // Free no-longer-used right hand side result register.
             register_deallocate(r, expression->children->next_child->result_register);
         }
+
+        // TODO: Division codegen!
+
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         if (!cg_context->parent) { break; }

@@ -48,7 +48,7 @@ int environment_get(Environment env, Node* id, Node* result) {
     return 0;
 }
 
-int enviornment_get_by_symbol(Environment env, char* symbol, Node* result) {
+int environment_get_by_symbol(Environment env, char* symbol, Node* result) {
     Node* symbol_node = node_symbol(symbol);
     int status = environment_get(env, symbol_node, result);
     free(symbol_node);

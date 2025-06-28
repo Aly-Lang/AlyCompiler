@@ -28,12 +28,11 @@ Environment* environment_create(Environment* parent);
 int environment_set(Environment* env, Node* id, Node* value);
 
 /** Fill RESULT with value bound to ID in ENV, if successful.
-*
 * @return Boolean-like value; 1 for success, 0 for failure.
 */
 int environment_get(Environment env, Node* id, Node* result);
 
 /// @return Boolean-like value; 1 for success, 0 for failure.
-int enviornment_get_by_symbol(Environment env, char* symbol, Node* result);
+int environment_get_by_symbol(Environment env, char* symbol, Node* result);
 
 #endif // ALY_COMPILER_ENVIRONMENT_H
