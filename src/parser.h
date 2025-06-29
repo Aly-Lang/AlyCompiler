@@ -120,7 +120,12 @@ typedef struct ParsingStack {
 
 // FIXME: Should this be an environment that contains other environments and things?
 typedef struct ParsingContext {
+  /// Used for upward scope searching, mainly.
   struct ParsingContext* parent;
+  /// Used for entering scopes as different stages of the compiler
+  /// iterate and operate on the AST.
+  struct ParsingContext* children;
+  struct ParsingContext* next_child;
   /// Used for stack continuation while parsing
   Node* operator;
   Node* result;

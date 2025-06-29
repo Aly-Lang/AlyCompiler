@@ -134,6 +134,7 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
     free(result);
     free(value);
     free(tmpnode);
+    free(iterator);
     return err;
 }
 

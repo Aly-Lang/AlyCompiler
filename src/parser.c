@@ -434,7 +434,7 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
     return out;
 }
 
-Error parse_get_type(ParsingContext *context, Node *id, Node *result) {
+Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
   Error err = ok;
   while (context) {
     int status = environment_get(*context->types, id, result);
@@ -746,7 +746,7 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
                     working_result = first_argument;
                     // Create a parsing stack with function call operator IG, 
                     // and then start parsing function argument expressions.
-
+                    
                     context = parse_context_create(context);
                     context->operator = node_symbol("funcall");
                     context->result = working_result;
@@ -763,7 +763,7 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
  
         // If no more parser stack, return with current result.
         if (!context->parent) { 
-            break; 
+            break;
         }
         // Otherwise, handle parser stack operator.
 
