@@ -434,17 +434,19 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
     return out;
 }
 
-Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
-    Error err = ok;
-    while (context) {
-        int status = environment_get(*context->types, id, result);
-        if (status) { return ok; }
-        context = context->parent;
-    }
-    result->type = NODE_TYPE_NONE;
-    ERROR_PREP(err, ERROR_GENERIC, "Type is not found in environment.");
-    return err;
+Error parse_get_type(ParsingContext *context, Node *id, Node *result) {
+  Error err = ok;
+  while (context) {
+    int status = environment_get(*context->types, id, result);
+    if (status) { return ok; }
+    context = context->parent;
+  }
+  result->type = NODE_TYPE_NONE;
+  printf("Type not found: \"%s\"\n", id->value.symbol);
+  ERROR_PREP(err, ERROR_GENERIC, "Type is not found in environment.");
+  return err;
 }
+
 
 #define EXPECT(expected, expected_string, current_token, current_length, end)   \
   expected = lex_expect(expected_string, &current_token, &current_length, end); \
@@ -684,7 +686,11 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             if (token_length == 0) { break; }
             Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
             Node* type_value = node_allocate();
-            parse_get_type(context, type_symbol, type_value);
+            err = parse_get_type(context, type_symbol, type_value);
+            if (err.type) { 
+                free(type_value);
+                return err;
+            }
             if (nonep(*type_value)) {
                 ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                 printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
@@ -751,60 +757,15 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             }
         }
 
-        // Set FOUND to 1 if an infix operator is found and parsing should continue, otherwise 0.
         int found = 0;
         err = parse_binary_infix_operator(context, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
-
         if (found) { continue; }
-
-        // // Look ahead for a binary infix operator
-        // Token current_copy = current_token;
-        // size_t length_copy = token_length;
-        // char* end_copy = *end;
-        // err = lex_advance(&current_copy, &length_copy, &end_copy);
-        // if (err.type != ERROR_NONE) { return err; }
-        // Node* operator_symbol = node_symbol_from_buffer(current_copy.beginning, length_copy);
-        // Node* operator_value = node_allocate();
-        // ParsingContext* global = context;
-        // while (global->parent) { global = global->parent; }
-        // if (environment_get(*global->binary_operators, operator_symbol, operator_value)) {
-        //     current_token = current_copy;
-        //     token_length = length_copy;
-        //     *end = end_copy;
-        //     long long precedence = operator_value->children->value.integer;
-
-        //     //printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
-        //     //printf("working precedence: %lld\n", working_precedence);
-
-        //     // TODO: Handle grouped expressions through parentheses using precedence stack.
-
-        //     Node* result_pointer = precedence <= working_precedence ? result : working_result;
-
-        //     Node* result_copy = node_allocate();
-        //     node_copy(result_pointer, result_copy);
-        //     result_pointer->type = NODE_TYPE_BINARY_OPERATOR;
-        //     result_pointer->value.symbol = operator_symbol->value.symbol;
-        //     result_pointer->children = result_copy;
-        //     result_pointer->next_child = NULL;
-
-        //     Node* rhs = node_allocate();
-        //     node_add_child(result_pointer, rhs);
-        //     working_result = rhs;
-
-        //     working_precedence = precedence;
-
-        //     free(operator_symbol);
-        //     free(operator_value);
-
-        //     continue;
-        // }
-        // node_free(operator_symbol);
-        // free(operator_value);
-
-        // TODO: If it works, update current token 
-        
+ 
         // If no more parser stack, return with current result.
-        if (!context->parent) { break; } 
+        if (!context->parent) { 
+            break; 
+        }
+        // Otherwise, handle parser stack operator.
 
         Node* operator = context->operator;
         if (operator->type != NODE_TYPE_SYMBOL) {
@@ -824,12 +785,15 @@ Error parse_expr (ParsingContext* context, char* source, char** end, Node* resul
             working_result = context->result->next_child;
             context->result = working_result;
             continue;
-        } 
+        }
+
         if (strcmp(operator->value.symbol, "funcall") == 0) {
             EXPECT(expected, ")", current_token, token_length, end);
-            if (expected.done || expected.found) { 
-                // We somehow have to lookahead for binary infix operator here.
-                break; 
+            if (expected.done || expected.found) {
+                int found = 0;
+                err = parse_binary_infix_operator(context, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
+                if (found) { continue; }
+                break;
             }
 
             // FIXME: Should comma be optional?

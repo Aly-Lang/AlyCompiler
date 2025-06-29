@@ -26,9 +26,8 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
         while (context->parent) { context = context->parent; }
         environment_get_by_symbol(*context->binary_operators, expression->value.symbol, result);
         err = parse_get_type(original_context, result->children->next_child, result);
-        if (err.type) { break; }
         break;
-    case NODE_TYPE_FUNCTION_CALL:
+        case NODE_TYPE_FUNCTION_CALL:
         while (context) {
             if (environment_get(*context->functions, expression->children, result)) {
                 break;
@@ -36,9 +35,7 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
             context = context->parent;
         }
         // RESULT contains a function node.
-        result = result->children->next_child;
-        parse_get_type(original_context, result, tmpnode);
-        result->type = tmpnode->type;
+        err = parse_get_type(original_context, result->children->next_child, tmpnode);
         break;
     }
     free(tmpnode);
