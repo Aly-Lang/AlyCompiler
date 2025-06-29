@@ -148,6 +148,8 @@ typedef struct ParsingContext {
   Environment* binary_operators;
 } ParsingContext;
 
+void parse_context_print(ParsingContext* top, size_t indent);
+
 /// PARENT is modified, CHILD is used verbatim.
 void parse_context_add_child(ParsingContext* parent, ParsingContext* child);
 

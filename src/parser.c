@@ -346,6 +346,24 @@ void node_copy(Node* a, Node* b) {
     }
 }
 
+void parse_context_print(ParsingContext* top, size_t indent) {
+    size_t indent_it = indent;
+    while (indent--) { putchar(' '); }
+    printf("TYPES:");
+    environment_print(*top->types);
+    indent_it = indent;
+    while (indent--) { putchar(' '); }
+
+    indent_it = indent;
+    while (indent--) { putchar(' '); }
+
+    ParsingContext* child = top->children;
+    while (child) {
+        parse_context_print(child, indent);
+        child = child->next_child;
+    }
+}
+
 void parse_context_add_child(ParsingContext* parent, ParsingContext* child) {
     if (parent) {
         if (parent->children) {
