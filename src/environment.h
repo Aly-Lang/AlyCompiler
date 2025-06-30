@@ -18,8 +18,6 @@ typedef struct Environment {
 	Binding* bind;
 } Environment;
 
-void environment_print(Environment env);
-
 Environment* environment_create(Environment* parent);
 
 /**
@@ -30,6 +28,7 @@ Environment* environment_create(Environment* parent);
 int environment_set(Environment* env, Node* id, Node* value);
 
 /** Fill RESULT with value bound to ID in ENV, if successful.
+*
 * @return Boolean-like value; 1 for success, 0 for failure.
 */
 int environment_get(Environment env, Node* id, Node* result);

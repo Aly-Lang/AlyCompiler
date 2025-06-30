@@ -1,6 +1,2 @@
-x : integer
-
-defun foo (x : integer) : integer { x }
-
-;2 * 3 / 5 + 1 / 5
--2 * 3 + 1 + 2 + foo(5)
+; 2 * 3 / 5 + 1 / 5
+2 * 3 + 1 + foo
