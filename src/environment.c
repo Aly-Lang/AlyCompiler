@@ -10,7 +10,7 @@
 void environment_print(Environment env) {
     Binding* binding_it = env.bind;
     while (binding_it) {
-        printf("%s -> %s\n", node_text(binding_it->id, 0), node_text(binding_it->value, 0));
+        printf("%s -> %s\n", node_text(binding_it->id), node_text(binding_it->value));
         binding_it = binding_it->next;
     }
 }

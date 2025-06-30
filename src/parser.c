@@ -249,6 +249,9 @@ Error define_type(Environment* types, int type, Node* type_symbol, long long byt
 char node_text_buffer[512];
 char* node_text(Node* node) {
     assert(NODE_TYPE_MAX == 10 && "print_node() must handle all node types");
+    if (!node) {
+        return "NULL";
+    }
     switch (node->type) {
     default:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "UNKNOWN");
@@ -260,10 +263,7 @@ char* node_text(Node* node) {
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "INT:%lld", node->value.integer);
         break;
     case NODE_TYPE_SYMBOL:
-        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "SYM");
-        if (node->value.symbol) {
-            snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, ":%s", node->value.symbol);
-        }
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "SYM:%s", node->value.symbol);
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "BINARY OPERATOR:%s", node->value.symbol);
@@ -273,9 +273,6 @@ char* node_text(Node* node) {
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "VARIABLE DECLARATION");
-        break;
-    case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "VARIABLE DECLARATION INITIALIZED");
         break;
     case NODE_TYPE_PROGRAM:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "PROGRAM");
@@ -298,8 +295,7 @@ void print_node(Node* node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
-
-    putchar('\n');
+    printf("%s\n", node_text(node));
     // Print children.
     Node* child = node->children;
     while (child) {
