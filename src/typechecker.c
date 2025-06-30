@@ -36,7 +36,6 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
             context = context->parent;
         }
         // RESULT contains a function node.
-        print_node(result, 0);
         result = result->children->next_child;
         parse_get_type(original_context, result, tmpnode);
         result->type = tmpnode->type;
@@ -60,6 +59,15 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
     Node* iterator = node_allocate();
     Node* result = node_allocate();
     int type = NODE_TYPE_NONE;
+
+    // Typecheck all the children of node before typechecking node.
+    Node* child_it = expression->children;
+    while (child_it) {
+        err = typecheck_expression(context, child_it);
+        if (err.type) { return err; }
+        child_it = child_it->next_child;
+    }
+
     switch (expression->type) {
     default:
         break;
@@ -116,7 +124,7 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
         }
         if (iterator != NULL) {
             printf("Function:%s\n", expression->children->value.symbol);
-            ERROR_CREATE(err, ERROR_ARGUMENTS, "Too many arguments passed to function!");
+            ERROR_PREP(err, ERROR_ARGUMENTS, "Too many arguments passed to function!");
             break;
         }
         break;
