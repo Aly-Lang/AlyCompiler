@@ -117,9 +117,14 @@ typedef struct ParsingStack {
 	Node* result;
 } ParsingStack;
 
-// FIXME: Should this be an environment that contains other environments and things?
+// TODO: Shove ParsingContext within an AST node.
 typedef struct ParsingContext {
+	/// Used for upward scope searching, mainly.
 	struct ParsingContext* parent;
+	/// Used for entering scopes as different stages of the compiler
+	/// iterate and operate on the AST.
+	struct ParsingContext* children;
+	struct ParsingContext* next_child;
 	/// Used for stack continuation while parsing
 	Node* operator;
 	Node* result;
@@ -141,6 +146,9 @@ typedef struct ParsingContext {
 	///                              -> SYMBOL (RHS TYPE)
 	Environment* binary_operators;
 } ParsingContext;
+
+/// PARENT is modified, CHILD is used verbatim.
+void parse_context_add_child(ParsingContext* parent, ParsingContext* child);
 
 Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type);
 

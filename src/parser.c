@@ -348,10 +348,27 @@ void node_copy(Node* a, Node* b) {
     }
 }
 
+void parse_context_add_child(ParsingContext* parent, ParsingContext* child) {
+    if (parent) {
+        if (parent->children) {
+            parent = parent->children;
+            while (parent->next_child) { parent = parent->next_child; }
+            parent->next_child = child;
+        } else {
+            parent->children = child;
+        }
+    }
+}
+
 ParsingContext* parse_context_create(ParsingContext* parent) {
     ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
     assert(ctx && "Could not allocate memory for parsing context.");
+    if (!ctx) { return NULL; }
     ctx->parent = parent;
+    // TODO: Add this new context as a child to given parent.
+    parse_context_add_child(parent, ctx);
+    ctx->children = NULL;
+    ctx->next_child = NULL;
     ctx->operator = NULL;
     ctx->result = NULL;
     ctx->types = environment_create(NULL);

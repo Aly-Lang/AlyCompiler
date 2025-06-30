@@ -1,4 +1,5 @@
 .section .data
+x: .space 8
 .section .text
 jmp afterfoo
 foo:
