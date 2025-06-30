@@ -3,8 +3,17 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include <parser.h>
+
+void environment_print(Environment env) {
+    Binding* binding_it = env.bind;
+    while (binding_it) {
+        printf("%s -> %s\n", node_text(binding_it->id, 0), node_text(binding_it->value, 0));
+        binding_it = binding_it->next;
+    }
+}
 
 Environment* environment_create(Environment* parent) {
     Environment* env = malloc(sizeof(Environment));

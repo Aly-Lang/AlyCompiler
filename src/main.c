@@ -27,23 +27,25 @@ int main(int argc, char** argv) {
     print_node(program, 0);
     putchar('\n');
 
+    parse_context_print(context, 0);
+
     if (err.type) {
         print_error(err);
         return 1;
     }
-    
+
     err = typecheck_program(context, program);
     if (err.type) {
-        print_error(err);  
+        print_error(err);
         return 2;
     }
 
     err = codegen_program(CG_FMT_DEFAULT, context, program);
     if (err.type) {
-        print_error(err);  
+        print_error(err);
         return 3;
     }
-        
+
     node_free(program);
 
     return 0;

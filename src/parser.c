@@ -245,6 +245,51 @@ Error define_type(Environment* types, int type, Node* type_symbol, long long byt
     return err;
 }
 
+#define NODE_TEXT_BUFFER_SIZE 512
+char node_text_buffer[512];
+char* node_text(Node* node) {
+    assert(NODE_TYPE_MAX == 10 && "print_node() must handle all node types");
+    switch (node->type) {
+    default:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "UNKNOWN");
+        break;
+    case NODE_TYPE_NONE:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "NONE");
+        break;
+    case NODE_TYPE_INTEGER:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "INT:%lld", node->value.integer);
+        break;
+    case NODE_TYPE_SYMBOL:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "SYM");
+        if (node->value.symbol) {
+            snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, ":%s", node->value.symbol);
+        }
+        break;
+    case NODE_TYPE_BINARY_OPERATOR:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "BINARY OPERATOR:%s", node->value.symbol);
+        break;
+    case NODE_TYPE_VARIABLE_REASSIGNMENT:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "VARIABLE REASSIGNMENT");
+        break;
+    case NODE_TYPE_VARIABLE_DECLARATION:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "VARIABLE DECLARATION");
+        break;
+    case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "VARIABLE DECLARATION INITIALIZED");
+        break;
+    case NODE_TYPE_PROGRAM:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "PROGRAM");
+        break;
+    case NODE_TYPE_FUNCTION:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "FUNCTION");
+        break;
+    case NODE_TYPE_FUNCTION_CALL:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "FUNCTION CALL");
+        break;
+    }
+    return node_text_buffer;
+}
+
 void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
 
@@ -253,45 +298,7 @@ void print_node(Node* node, size_t indent_level) {
         putchar(' ');
     }
     // Print type + value.
-    assert(NODE_TYPE_MAX == 10 && "print_node() must handle all node types");
-    switch (node->type) {
-    default:
-        printf("UNKNOWN");
-        break;
-    case NODE_TYPE_NONE:
-        printf("NONE");
-        break;
-    case NODE_TYPE_INTEGER:
-        printf("INT:%lld", node->value.integer);
-        break;
-    case NODE_TYPE_SYMBOL:
-        printf("SYM");
-        if (node->value.symbol) {
-            printf(":%s", node->value.symbol);
-        }
-        break;
-    case NODE_TYPE_BINARY_OPERATOR:
-        printf("BINARY OPERATOR:%s", node->value.symbol);
-        break;
-    case NODE_TYPE_VARIABLE_REASSIGNMENT:
-        printf("VARIABLE REASSIGNMENT");
-        break;
-    case NODE_TYPE_VARIABLE_DECLARATION:
-        printf("VARIABLE DECLARATION");
-        break;
-    case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("VARIABLE DECLARATION INITIALIZED");
-        break;
-    case NODE_TYPE_PROGRAM:
-        printf("PROGRAM");
-        break;
-    case NODE_TYPE_FUNCTION:
-        printf("FUNCTION");
-        break;
-    case NODE_TYPE_FUNCTION_CALL:
-        printf("FUNCTION CALL");
-        break;
-    }
+
     putchar('\n');
     // Print children.
     Node* child = node->children;
@@ -344,6 +351,24 @@ void node_copy(Node* a, Node* b) {
 
         node_copy(child, child_it);
 
+        child = child->next_child;
+    }
+}
+
+void parse_context_print(ParsingContext* top, size_t indent) {
+    size_t indent_it = indent;
+    while (indent_it--) { putchar(' '); }
+    printf("TYPES:");
+    environment_print(*top->types);
+    indent_it = indent;
+    while (indent_it--) { putchar(' '); }
+
+    indent_it = indent;
+    while (indent_it--) { putchar(' '); }
+
+    ParsingContext* child = top->children;
+    while (child) {
+        parse_context_print(child, indent);
         child = child->next_child;
     }
 }

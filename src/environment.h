@@ -18,6 +18,8 @@ typedef struct Environment {
 	Binding* bind;
 } Environment;
 
+void environment_print(Environment env);
+
 Environment* environment_create(Environment* parent);
 
 /**

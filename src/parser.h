@@ -75,6 +75,8 @@ typedef struct Node {
 	int result_register;
 } Node;
 
+char* node_text(Node* node);
+
 Node* node_allocate();
 
 #define nonep(node) ((node).type == NODE_TYPE_NONE)
@@ -146,6 +148,8 @@ typedef struct ParsingContext {
 	///                              -> SYMBOL (RHS TYPE)
 	Environment* binary_operators;
 } ParsingContext;
+
+void parse_context_print(ParsingContext* top, size_t indent);
 
 /// PARENT is modified, CHILD is used verbatim.
 void parse_context_add_child(ParsingContext* parent, ParsingContext* child);
