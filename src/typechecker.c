@@ -26,7 +26,6 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
         while (context->parent) { context = context->parent; }
         environment_get_by_symbol(*context->binary_operators, expression->value.symbol, result);
         err = parse_get_type(original_context, result->children->next_child, result);
-        if (err.type) { break; }
         break;
     case NODE_TYPE_FUNCTION_CALL:
         while (context) {
@@ -36,9 +35,7 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
             context = context->parent;
         }
         // RESULT contains a function node.
-        result = result->children->next_child;
-        parse_get_type(original_context, result, tmpnode);
-        result->type = tmpnode->type;
+        err = parse_get_type(original_context, result->children->next_child, result);
         break;
     }
     free(tmpnode);
@@ -56,7 +53,7 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
     ParsingContext* original_context = context;
     Node* value = node_allocate();
     Node* tmpnode = node_allocate();
-    Node* iterator = node_allocate();
+    Node* iterator = NULL;
     Node* result = node_allocate();
     int type = NODE_TYPE_NONE;
 
@@ -75,21 +72,25 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
         while (context->parent) { context = context->parent; }
         environment_get_by_symbol(*context->binary_operators, expression->value.symbol, value);
         // Get return type of LHS in type integer.
-        expression_return_type(original_context, expression->children, &type);
+        err = expression_return_type(original_context, expression->children, &type);
+        if (err.type) { return err; }
         // Get expected return type of LHS in tmpnode->type.
-        parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
+        err = parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
+        if (err.type) { return err; }
         if (type != tmpnode->type) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of left hand side expression of binary operator does not match declared left hand side return type");
             return err;
         }
         // Get return type of RHS in type integer.
-        expression_return_type(original_context, expression->children->next_child, &type);
+        err = expression_return_type(original_context, expression->children->next_child, &type);
+        if (err.type) { return err; }
         // Get expected return type of RHS in tmpnode->type.
-        parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
+        err = parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
+        if (err.type) { return err; }
         if (type != tmpnode->type) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of RHS expression of binary operator does not match declared RHS return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of right hand side expression of binary operator does not match declared right hand side return type");
             return err;
         }
         break;
@@ -106,14 +107,16 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
         iterator = expression->children->next_child->children;
         tmpnode = value->children->children;
         while (iterator && tmpnode) {
-            err = parse_get_type(context, tmpnode->children->next_child, result);
+            err = parse_get_type(original_context, tmpnode->children->next_child, result);
             if (err.type) { break; }
-            expression_return_type(context, iterator, &type);
+            err = expression_return_type(original_context, iterator, &type);
+            if (err.type) { return err; }
             if (type != result->type) {
                 printf("Function:%s\n", expression->children->value.symbol);
                 ERROR_PREP(err, ERROR_TYPE, "Argument type does not match declared parameter type");
                 break;
             }
+
             iterator = iterator->next_child;
             tmpnode = tmpnode->next_child;
         }
@@ -132,7 +135,6 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
     free(result);
     free(value);
     free(tmpnode);
-    free(iterator);
     return err;
 }
 

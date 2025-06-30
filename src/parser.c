@@ -442,6 +442,7 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
         context = context->parent;
     }
     result->type = NODE_TYPE_NONE;
+    printf("Type not found: \"%s\"\n", id->value.symbol);
     ERROR_PREP(err, ERROR_GENERIC, "Type is not found in environment.");
     return err;
 }
@@ -691,10 +692,13 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 err = lex_advance(&current_token, &token_length, end);
                 if (err.type != ERROR_NONE) { return err; }
                 if (token_length == 0) { break; }
-                Node* type_symbol =
-                    node_symbol_from_buffer(current_token.beginning, token_length);
+                Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
                 Node* type_value = node_allocate();
-                parse_get_type(context, type_symbol, type_value);
+                err = parse_get_type(context, type_symbol, type_value);
+                if (err.type) {
+                    free(type_value);
+                    return err;
+                }
                 if (nonep(*type_value)) {
                     ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                     printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
