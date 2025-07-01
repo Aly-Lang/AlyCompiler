@@ -13,7 +13,8 @@ void environment_print(Environment env, long long ident) {
     while (binding_it) {
         indent_it = ident;
         while (indent_it-- > 0) { putchar(' '); }
-        printf("%s -> %s\n", node_text(binding_it->id), node_text(binding_it->value));
+        printf("%s -> ", node_text(binding_it->id));
+        printf("%s\n", node_text(binding_it->value));
         binding_it = binding_it->next;
     }
 }

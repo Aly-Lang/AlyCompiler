@@ -685,7 +685,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // Parse function body.
                 EXPECT(expected, "{", current_token, token_length, end);
                 if (expected.done || !expected.found) {
-                    ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires body following return type: \"{ a + b }\"");
+                    ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires body following return type");
                     return err;
                 }
 
