@@ -18,7 +18,7 @@ typedef struct Environment {
 	Binding* bind;
 } Environment;
 
-void environment_print(Environment env);
+void environment_print(Environment env, long long ident);
 
 Environment* environment_create(Environment* parent);
 

@@ -346,7 +346,6 @@ void node_copy(Node* a, Node* b) {
         }
 
         node_copy(child, child_it);
-
         child = child->next_child;
     }
 }
@@ -354,17 +353,29 @@ void node_copy(Node* a, Node* b) {
 void parse_context_print(ParsingContext* top, size_t indent) {
     size_t indent_it = indent;
     while (indent_it--) { putchar(' '); }
-    printf("TYPES:");
-    environment_print(*top->types);
-    indent_it = indent;
-    while (indent_it--) { putchar(' '); }
+    printf("TYPES:\n");
+    environment_print(*top->types, indent + 2);
 
     indent_it = indent;
     while (indent_it--) { putchar(' '); }
+    printf("VARIABLES:\n");
+    environment_print(*top->variables, indent + 2);
+
+    if (top->parent == NULL) {
+        indent_it = indent;
+        while (indent_it--) { putchar(' '); }
+        printf("BINARY OPERATORS:\n");
+        environment_print(*top->binary_operators, indent + 2);
+    }
+
+    indent_it = indent;
+    while (indent_it--) { putchar(' '); }
+    printf("FUNCTIONS:\n");
+    environment_print(*top->functions, indent + 2);
 
     ParsingContext* child = top->children;
     while (child) {
-        parse_context_print(child, indent);
+        parse_context_print(child, indent + 2);
         child = child->next_child;
     }
 }

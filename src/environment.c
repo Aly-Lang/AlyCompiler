@@ -7,9 +7,12 @@
 
 #include <parser.h>
 
-void environment_print(Environment env) {
+void environment_print(Environment env, long long ident) {
     Binding* binding_it = env.bind;
+    long long indent_it = ident;
     while (binding_it) {
+        indent_it = ident;
+        while (indent_it-- > 0) { putchar(' '); }
         printf("%s -> %s\n", node_text(binding_it->id), node_text(binding_it->value));
         binding_it = binding_it->next;
     }
