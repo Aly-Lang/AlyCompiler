@@ -79,8 +79,7 @@ void register_deallocate(Register* base, RegisterDescriptor register_descriptor)
     exit(1);
 }
 
-char* register_name
-(Register* base, RegisterDescriptor register_descriptor) {
+char* register_name(Register* base, RegisterDescriptor register_descriptor) {
     while (base) {
         if (register_descriptor <= 0) {
             return base->name;

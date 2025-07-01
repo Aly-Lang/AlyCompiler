@@ -45,7 +45,9 @@ typedef enum NodeType {
 	/// 1. SYMBOL (VARIABLE IDENTIFIER)
 	/// 2. INITIALIZE EXPRESSION, or None.
 	NODE_TYPE_VARIABLE_DECLARATION,
-	NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED,
+	
+	// Contains variable symbol in value.
+	NODE_TYPE_VARIABLE_ACCESS,
 
 	/// Contains two children.
 	/// 1. SYMBOL (VARIABLE IDENTIFIER)

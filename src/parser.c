@@ -13,7 +13,7 @@
 // TODO: Allow multi-byte comment delimiters.
 const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n,():";
+const char* delimiters = " \r\n,()[]<>:";
 
 /// @return Boolean-like value: 1 for success, 0 for failure.
 int comment_at_beginning(Token token) {
@@ -67,7 +67,7 @@ Error lex(char* source, Token* token) {
         return err;
     }
     token->beginning = source;
-    token->beginning += strspn(token->beginning, whitespace); // Skip initial whitespace.
+    token->beginning += strspn(token->beginning, whitespace);
     token->end = token->beginning;
     if (*(token->end) == '\0') { return err; }
     // Check if current line is a comment, and skip past it.
@@ -86,7 +86,7 @@ Error lex(char* source, Token* token) {
         token->end = token->beginning;
     }
     if (*(token->end) == '\0') { return err; }
-    token->end += strcspn(token->beginning, delimiters); // Skip everything not in delimiters.
+    token->end += strcspn(token->beginning, delimiters);
     if (token->end == token->beginning) {
         token->end += 1;
     }
@@ -180,8 +180,8 @@ int node_compare(Node* a, Node* b) {
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("TODO: node_compare() VARIABLE DECLARATION\n");
         break;
-    case NODE_TYPE_VARIABLE_DECLARATION_INITIALIZED:
-        printf("TODO: node_compare() VARIABLE DECLARATION INITIALIZED\n");
+    case NODE_TYPE_VARIABLE_ACCESS:
+        printf("TODO: node_compare() VARIABLE ACCESS\n");
         break;
     case NODE_TYPE_PROGRAM:
         printf("TODO: Compare two programs.\n");
@@ -274,6 +274,9 @@ char* node_text(Node* node) {
     case NODE_TYPE_VARIABLE_DECLARATION:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "VARIABLE DECLARATION");
         break;
+    case NODE_TYPE_VARIABLE_ACCESS:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "VARIABLE ACCESS:%s", node->value.symbol);
+        break;
     case NODE_TYPE_PROGRAM:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "PROGRAM");
         break;
@@ -336,7 +339,6 @@ void node_copy(Node* a, Node* b) {
     Node* child_it = NULL;
     while (child) {
         Node* new_child = node_allocate();
-
         if (child_it) {
             child_it->next_child = new_child;
             child_it = child_it->next_child;
@@ -412,9 +414,14 @@ ParsingContext* parse_context_create(ParsingContext* parent) {
 
 ParsingContext* parse_context_default_create() {
     ParsingContext* ctx = parse_context_create(NULL);
-    Error err = define_type(ctx->types, NODE_TYPE_INTEGER, node_symbol("integer"), sizeof(long long));
+    Error err = ok;
+    err = define_type(ctx->types, NODE_TYPE_INTEGER, node_symbol("integer"), sizeof(long long));
     if (err.type != ERROR_NONE) {
         printf("ERROR: Failed to set builtin integer type in types environment.\n");
+    }
+    err = define_type(ctx->types, NODE_TYPE_FUNCTION, node_symbol("function"), sizeof(long long));
+    if (err.type != ERROR_NONE) {
+        printf("ERROR: Failed to set builtin function type in types environment.\n");
     }
     // TODO: Should we use type IDs vs type symbols?
     // FIXME: Use precedence enum!
@@ -433,8 +440,7 @@ ParsingContext* parse_context_default_create() {
 /// Update token, token length, and end of current token pointer.
 Error lex_advance(Token* token, size_t* token_length, char** end) {
     if (!token || !token_length || !end) {
-        ERROR_CREATE(err, ERROR_ARGUMENTS,
-            "lex_advance(): pointer arguments must not be NULL!");
+        ERROR_CREATE(err, ERROR_ARGUMENTS, "lex_advance(): pointer arguments must not be NULL!");
         return err;
     }
     Error err = lex(token->end, token);
@@ -564,7 +570,7 @@ Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* cu
     return ok;
 }
 
-Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) {
+Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) { //30250
     ExpectReturnValue expected;
     size_t token_length = 0;
     Token current_token;
@@ -581,14 +587,100 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
         if (parse_integer(&current_token, working_result)) {
 
-            // TODO: Look ahead for binary ops that include integers.
-            // It would be cool to use an operator environment to look up
-            // operators instead of hard-coding them. This would eventually
-            // allow for user-defined operators, or stuff like that!
-
         } else {
 
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+            // Parse lambda
+            if (strcmp("[", symbol->value.symbol) == 0) {
+
+                Node* lambda = working_result;
+                lambda->type = NODE_TYPE_FUNCTION;
+
+                // Return type
+                lex_advance(&current_token, &token_length, end);
+                Node* function_return_type = node_symbol_from_buffer(current_token.beginning, token_length);
+
+                // Parameter list
+                EXPECT(expected, "(", current_token, token_length, end);
+                if (!expected.found || expected.done) {
+                    ERROR_PREP(err, ERROR_SYNTAX, "Parameter list required within lambda definition");
+                    return err;
+                }
+
+                Node* parameter_list = node_allocate();
+
+                // FIXME: Should we possibly create a parser stack and evaluate the
+                // next expression, then ensure return value is var. decl. in stack
+                // handling below?
+                for (;;) {
+                    EXPECT(expected, ")", current_token, token_length, end);
+                    if (expected.found) { break; }
+                    if (expected.done) {
+                        ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis for parameter list");
+                        return err;
+                    }
+
+                    err = lex_advance(&current_token, &token_length, end);
+                    if (err.type) { return err; }
+                    Node* parameter_name = node_symbol_from_buffer(current_token.beginning, token_length);
+
+                    EXPECT(expected, ":", current_token, token_length, end);
+                    if (expected.done || !expected.found) {
+                        ERROR_PREP(err, ERROR_SYNTAX, "Parameter declaration requires a type annotation");
+                        return err;
+                    }
+
+                    lex_advance(&current_token, &token_length, end);
+                    Node* parameter_type = node_symbol_from_buffer(current_token.beginning, token_length);
+
+                    Node* parameter = node_allocate();
+                    node_add_child(parameter, parameter_name);
+                    node_add_child(parameter, parameter_type);
+
+                    node_add_child(parameter_list, parameter);
+
+                    EXPECT(expected, ",", current_token, token_length, end);
+                    if (expected.found) { continue; }
+
+                    EXPECT(expected, ")", current_token, token_length, end);
+                    if (!expected.found) {
+                        ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis following parameter list");
+                        return err;
+                    }
+                    break;
+                }
+
+                // TODO / FIXME: Do I need to bind unnamed function in environment?
+                //environment_set(context->functions, function_name, working_result);
+
+                // Parse function body
+                EXPECT(expected, "{", current_token, token_length, end);
+                if (expected.done || !expected.found) {
+                    ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires body following return type");
+                    return err;
+                }
+
+                context = parse_context_create(context);
+                context->operator = node_symbol("lambda");
+
+                Node* param_it = parameter_list->children;
+                while (param_it) {
+                    environment_set(context->variables, param_it->children, param_it->children->next_child);
+                    param_it = param_it->next_child;
+                }
+
+                Node* function_body = node_allocate();
+                Node* function_first_expression = node_allocate();
+                node_add_child(function_body, function_first_expression);
+                working_result = function_first_expression;
+
+                node_add_child(lambda, parameter_list);
+                node_add_child(lambda, function_return_type);
+                node_add_child(lambda, function_body);
+
+                context->result = working_result;
+                continue;
+            }
 
             // TODO: Parse strings and other literal types.
 
@@ -630,8 +722,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     EXPECT(expected, ")", current_token, token_length, end);
                     if (expected.found) { break; }
                     if (expected.done) {
-                        ERROR_PREP(err, ERROR_SYNTAX,
-                            "Expected closing parenthesis for parameter list");
+                        ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis for parameter list");
                         return err;
                     }
 
@@ -670,8 +761,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 EXPECT(expected, ":", current_token, token_length, end);
                 // TODO/FIXME: Should we allow implicit return type?
                 if (expected.done || !expected.found) {
-                    ERROR_PREP(err, ERROR_SYNTAX,
-                        "Function definition requires return type annotation following parameter list");
+                    ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires return type annotation following parameter list");
                     return err;
                 }
 
@@ -694,9 +784,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 Node* param_it = working_result->children->children;
                 while (param_it) {
-                    environment_set(context->variables,
-                        param_it->children,
-                        param_it->children->next_child);
+                    environment_set(context->variables, param_it->children, param_it->children->next_child);
                     param_it = param_it->next_child;
                 }
 
@@ -707,7 +795,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 working_result = function_first_expression;
                 context->result = working_result;
                 continue;
-
             }
             // TODO: Check if valid symbol for variable environment, then
             // attempt to pattern match variable access, assignment,
@@ -809,7 +896,20 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     context->result = working_result;
                     continue;
                 } else {
-                    // TODO: Check if it's a variable access (defined variable)
+                    Node* variable = node_allocate();
+                    while (context) {
+                        if (environment_get(*context->variables, symbol, variable)) {
+                            break;
+                        }
+                        context = context->parent;
+                    }
+                    if (!context) {
+                        // ERROR at unknown token
+                    }
+                    // Variable access node
+                    working_result->type = NODE_TYPE_VARIABLE_ACCESS;
+                    working_result->value.symbol = strdup(symbol->value.symbol);
+                    free(variable);
                 }
             }
         }
@@ -822,7 +922,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         if (!context->parent) {
             break;
         }
-        // Otherwise, handle parse stack operator.
+        // Otherwise, handle parser stack operator.
 
         Node* operator = context->operator;
         if (operator->type != NODE_TYPE_SYMBOL) {
@@ -830,6 +930,23 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             return err;
         }
 
+        if (strcmp(operator->value.symbol, "lambda") == 0) {
+            // Evaluate next expression unless it's a closing brace.
+            EXPECT(expected, "}", current_token, token_length, end);
+            if (expected.done || expected.found) {
+                EXPECT(expected, "]", current_token, token_length, end);
+                if (expected.done || expected.found) {
+                    break;
+                }
+                ERROR_PREP(err, ERROR_SYNTAX, "Expected closing square bracket for following lambda body definition");
+                return err;
+            }
+
+            context->result->next_child = node_allocate();
+            working_result = context->result->next_child;
+            context->result = working_result;
+            continue;
+        }
         if (strcmp(operator->value.symbol, "defun") == 0) {
             // Evaluate next expression unless it's a closing brace.
             EXPECT(expected, "}", current_token, token_length, end);

@@ -1,6 +1,23 @@
-x : integer 
+;a : integer
 
-defun foo (x : integer) : integer { x }
+;[integer (z : integer) { z }]
+
+;x : integer 
+
+defun foo (x : integer) : integer {
+;    bar : function = [integer (y : integer) { y }]
+    x
+}
+
+; TODO: Support operator (re)definition.
+; _ : operator = (x : integer, y : integer) {
+;
+;}
 
 ; 2 * 3 / 5 + 1 / 5
--2 * 3 + 1 + 2 + foo(5)
+; TODO: Something breaks here :^(
+
+;2 * 3 + 1
+
+;2 * 3 + 1 + 2 + foo(5)
+
