@@ -782,6 +782,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 context = parse_context_create(context);
                 context->operator = node_symbol("defun");
 
+
                 Node* param_it = working_result->children->children;
                 while (param_it) {
                     environment_set(context->variables, param_it->children, param_it->children->next_child);
@@ -896,15 +897,18 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     context->result = working_result;
                     continue;
                 } else {
+                    ParsingContext* context_it = context;
                     Node* variable = node_allocate();
-                    while (context) {
-                        if (environment_get(*context->variables, symbol, variable)) {
+                    while (context_it) {
+                        if (environment_get(*context_it->variables, symbol, variable)) {
                             break;
                         }
-                        context = context->parent;
+                        context_it = context_it->parent;
                     }
                     if (!context) {
-                        // ERROR at unknown token
+                        printf("Symbol: \"%s\"\n", node_text(symbol));
+                        ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
+                        return err;
                     }
                     // Variable access node
                     working_result->type = NODE_TYPE_VARIABLE_ACCESS;
@@ -936,10 +940,18 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             if (expected.done || expected.found) {
                 EXPECT(expected, "]", current_token, token_length, end);
                 if (expected.done || expected.found) {
-                    break;
+                    if (!context->parent) {
+                        return ok;
+                    }
+                    context = context->parent;
+                    // Returning into global context, return result expression.
+                    if (!context->parent) {
+                        break;
+                    }
+                } else {
+                    ERROR_PREP(err, ERROR_SYNTAX, "Expected closing square bracket for following lambda body definition");
+                    return err;
                 }
-                ERROR_PREP(err, ERROR_SYNTAX, "Expected closing square bracket for following lambda body definition");
-                return err;
             }
 
             context->result->next_child = node_allocate();
@@ -951,10 +963,15 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // Evaluate next expression unless it's a closing brace.
             EXPECT(expected, "}", current_token, token_length, end);
             if (expected.done || expected.found) {
-                // TODO: Should we pop parser context here?
-                break;
+                if (!context->parent || !context->parent->parent) {
+                    break;
+                }
+                context = context->parent;
+                // Returning into global context, return result expression.
+                if (!context->parent) {
+                    break;
+                }
             }
-
             context->result->next_child = node_allocate();
             working_result = context->result->next_child;
             context->result = working_result;
@@ -969,7 +986,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 break;
             }
 
-            // FIXME?: Should comma be optional?
+            // FIXME: Should comma be optional?
             EXPECT(expected, ",", current_token, token_length, end);
             if (expected.done || !expected.found) {
                 print_token(current_token);
@@ -980,7 +997,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             context->result->next_child = node_allocate();
             working_result = context->result->next_child;
             context->result = working_result;
-
             continue;
         }
     }
@@ -1000,11 +1016,17 @@ Error parse_program(char* filepath, ParsingContext* context, Node* result) {
     for (;;) {
         Node* expression = node_allocate();
         node_add_child(result, expression);
+
+        // FIXME: I DID THIS
+        context->result = expression;
+
         err = parse_expr(context, contents_it, &contents_it, expression);
         if (err.type != ERROR_NONE) {
             free(contents);
             return err;
         }
+
+
         // Check for end-of-parsing case (source and end are the same).
         if (!(*contents_it)) { break; }
 

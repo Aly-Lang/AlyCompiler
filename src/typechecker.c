@@ -79,7 +79,7 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
         if (err.type) { return err; }
         if (type != tmpnode->type) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of left hand side expression of binary operator does not match declared left hand side return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
             return err;
         }
         // Get return type of RHS in type integer.
@@ -90,7 +90,7 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
         if (err.type) { return err; }
         if (type != tmpnode->type) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of right hand side expression of binary operator does not match declared right hand side return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of RHS expression of binary operator does not match declared RHS return type");
             return err;
         }
         break;
