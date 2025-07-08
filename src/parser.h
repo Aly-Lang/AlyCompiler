@@ -1,8 +1,8 @@
 #ifndef ALY_COMPILER_PARSER_H
 #define ALY_COMPILER_PARSER_H
 
-#include <stddef.h>
 #include <error.h>
+#include <stddef.h>
 
 typedef struct Environment Environment;
 
@@ -45,7 +45,7 @@ typedef enum NodeType {
 	/// 1. SYMBOL (VARIABLE IDENTIFIER)
 	/// 2. INITIALIZE EXPRESSION, or None.
 	NODE_TYPE_VARIABLE_DECLARATION,
-	
+
 	// Contains variable symbol in value.
 	NODE_TYPE_VARIABLE_ACCESS,
 

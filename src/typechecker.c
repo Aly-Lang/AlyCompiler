@@ -3,7 +3,6 @@
 #include <error.h>
 #include <environment.h>
 #include <parser.h>
-
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,7 +115,6 @@ Error typecheck_expression(ParsingContext* context, Node* expression) {
                 ERROR_PREP(err, ERROR_TYPE, "Argument type does not match declared parameter type");
                 break;
             }
-
             iterator = iterator->next_child;
             tmpnode = tmpnode->next_child;
         }

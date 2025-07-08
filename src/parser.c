@@ -88,7 +88,7 @@ Error lex(char* source, Token* token) {
     if (*(token->end) == '\0') { return err; }
     token->end += strcspn(token->beginning, delimiters);
     if (token->end == token->beginning) {
-        token->end += 1;
+        token->end += 1; // Lex protection.
     }
     return err;
 }
@@ -97,9 +97,7 @@ int token_string_equalp(char* string, Token* token) {
     if (!string || !token) { return 0; }
     char* beg = token->beginning;
     while (*string && token->beginning < token->end) {
-        if (*string != *beg) {
-            return 0;
-        }
+        if (*string != *beg) { return 0; }
         string++;
         beg++;
     }
@@ -137,29 +135,21 @@ void node_add_child(Node* parent, Node* new_child) {
 
 int node_compare(Node* a, Node* b) {
     if (!a || !b) {
-        if (!a && !b) {
-            return 1;
-        }
+        if (!a && !b) { return 1; }
         return 0;
     }
     assert(NODE_TYPE_MAX == 10 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
-        if (nonep(*b)) {
-            return 1;
-        }
+        if (nonep(*b)) { return 1; }
         break;
     case NODE_TYPE_INTEGER:
-        if (a->value.integer == b->value.integer) {
-            return 1;
-        }
+        if (a->value.integer == b->value.integer) { return 1; }
         break;
     case NODE_TYPE_SYMBOL:
         if (a->value.symbol && b->value.symbol) {
-            if (strcmp(a->value.symbol, b->value.symbol) == 0) {
-                return 1;
-            }
+            if (strcmp(a->value.symbol, b->value.symbol) == 0) { return 1; }
             break;
         } else if (!a->value.symbol && !b->value.symbol) {
             return 1;
@@ -292,7 +282,6 @@ char* node_text(Node* node) {
 
 void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
-
     // Print indent.
     for (size_t i = 0; i < indent_level; ++i) {
         putchar(' ');
@@ -346,7 +335,6 @@ void node_copy(Node* a, Node* b) {
             b->children = new_child;
             child_it = new_child;
         }
-
         node_copy(child, child_it);
         child = child->next_child;
     }
@@ -514,9 +502,7 @@ int parse_integer(Token* token, Node* node) {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
     } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
-        if (end != token->end) {
-            return 0;
-        }
+        if (end != token->end) { return 0; }
         node->type = NODE_TYPE_INTEGER;
     } else { return 0; }
     return 1;
@@ -542,7 +528,7 @@ Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* cu
         *end = end_copy;
         long long precedence = operator_value->children->value.integer;
 
-        //printf("Got op. %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
+        //printf("Got operator %s with precedence %lld (working %lld)\n", operator_symbol->value.symbol, precedence, working_precedence);
         //printf("working precedence: %lld\n", working_precedence);
 
         // TODO: Handle grouped expressions through parentheses using precedence stack.
@@ -564,7 +550,6 @@ Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* cu
 
         *found = 1;
     }
-
     free(operator_symbol);
     free(operator_value);
     return ok;
@@ -588,11 +573,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         if (parse_integer(&current_token, working_result)) {
 
         } else {
-
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
             // Parse lambda
             if (strcmp("[", symbol->value.symbol) == 0) {
-
                 Node* lambda = working_result;
                 lambda->type = NODE_TYPE_FUNCTION;
 
@@ -699,7 +682,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 //   RETURN TYPE SYMBOL
                 //   PROGRAM/LIST of expressions
                 //     ...
-
                 working_result->type = NODE_TYPE_FUNCTION;
 
                 lex_advance(&current_token, &token_length, end);
@@ -754,7 +736,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         return err;
                     }
                     break;
-
                 }
 
                 // Parse return type.
@@ -782,7 +763,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 context = parse_context_create(context);
                 context->operator = node_symbol("defun");
 
-
                 Node* param_it = working_result->children->children;
                 while (param_it) {
                     environment_set(context->variables, param_it->children, param_it->children->next_child);
@@ -803,7 +783,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             EXPECT(expected, ":", current_token, token_length, end);
             if (expected.found) {
-
                 // Re-assignment of existing variable (look for =)
                 EXPECT(expected, "=", current_token, token_length, end);
                 if (expected.found) {
@@ -923,9 +902,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         if (found) { continue; }
 
         // If no more parser stack, return with current result.
-        if (!context->parent) {
-            break;
-        }
+        if (!context->parent) { break; }
         // Otherwise, handle parser stack operator.
 
         Node* operator = context->operator;
@@ -968,9 +945,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 }
                 context = context->parent;
                 // Returning into global context, return result expression.
-                if (!context->parent) {
-                    break;
-                }
+                if (!context->parent) { break; }
             }
             context->result->next_child = node_allocate();
             working_result = context->result->next_child;
@@ -1026,14 +1001,12 @@ Error parse_program(char* filepath, ParsingContext* context, Node* result) {
             return err;
         }
 
-
         // Check for end-of-parsing case (source and end are the same).
         if (!(*contents_it)) { break; }
 
         //printf("Parsed expression:\n");
         //print_node(expression,0);
         //putchar('\n');
-
     }
     free(contents);
     return ok;

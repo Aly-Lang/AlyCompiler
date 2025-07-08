@@ -120,3 +120,32 @@
 
 - [ ] **Have Compiler able to collect TODO comments and things from source**
   - This would allow compiler-aided software design in more scenarios.
+
+# Syntax
+
+- [ ] Support quick function declaration syntax, this could look something like the code sample below
+```bash
+integer_identity : integer (x : integer) { x }
+
+void foo () {}
+
+foo : None () {}
+
+foo :[None() {}]
+foo :[None() {}]
+foo :None() {}
+foo :None() {}
+```
+
+Basic syntax as of now:
+`...` means any amount repeated.
+Surrounded by `[]` means it is optional.
+Inside `""` means string is compared against literally.
+
+Helpers:
+  - Parameter List :: "(" < variable declaration> ["," <variable declaration>]... ")"
+  - Expression List :: "{" <expression> [<expression>]... "}"
+
+Syntaxes that make AST Nodes:
+- Integer :: <positive-or-negative-integer>
+- Variable Declaration :: <symbol> ":" <type>

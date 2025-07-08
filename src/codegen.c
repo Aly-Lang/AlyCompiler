@@ -119,9 +119,7 @@ size_t symbol_count = 0;
 char* symbol_to_address(Node* symbol) {
     char* symbol_string = symbol_buffer + symbol_index;
     // Global variable access.
-    symbol_index += snprintf(symbol_string,
-        symbol_buffer_size - symbol_index,
-        "%s(%%rip)", symbol->value.symbol);
+    symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%s(%%rip)", symbol->value.symbol);
     // TODO: Local variable access.
 
     symbol_index++;
@@ -132,22 +130,10 @@ char* symbol_to_address(Node* symbol) {
     return symbol_string;
 }
 
-// Forward declare codegen_function for codegen_expression
-Error codegen_function_x86_64_att_asm_mswin
-(Register* r,
-    CodegenContext* cg_context,
-    ParsingContext* context,
-    char* name,
-    Node* function,
-    FILE* code);
+// Forward declare codegen_function for codegen_expression.
+Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code);
 
-Error codegen_expression_x86_64_mswin
-(FILE* code,
-    Register* r,
-    CodegenContext* cg_context,
-    ParsingContext* context,
-    Node* expression
-) {
+Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* cg_context, ParsingContext* context, Node* expression) {
     Error err = ok;
     char* result = NULL;
     Node* tmpnode = node_allocate();
@@ -156,16 +142,13 @@ Error codegen_expression_x86_64_mswin
         break;
     case NODE_TYPE_INTEGER:
         expression->result_register = register_allocate(r);
-        fprintf(code, "mov $%lld, %s\n",
-            expression->value.integer,
-            register_name(r, expression->result_register));
+        fprintf(code, "mov $%lld, %s\n", expression->value.integer, register_name(r, expression->result_register));
         break;
     case NODE_TYPE_FUNCTION:
         if (!cg_context->parent) { break; }
         // TODO: Keep track of local lambda label in environment or something.
         result = label_generate();
-        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context,
-            result, expression, code);
+        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, result, expression, code);
         if (err.type) { break; }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
@@ -175,10 +158,8 @@ Error codegen_expression_x86_64_mswin
         //printf("Codegenning binary operator %s\n", expression->value.symbol);
         //print_node(tmpnode, 0);
 
-        err = codegen_expression_x86_64_mswin(code, r, cg_context, context,
-            expression->children);
-        err = codegen_expression_x86_64_mswin(code, r, cg_context, context,
-            expression->children->next_child);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
 
         if (strcmp(expression->value.symbol, "+") == 0) {
             // https://www.felixcloutier.com/x86/add
@@ -186,9 +167,7 @@ Error codegen_expression_x86_64_mswin
             // Use right hand side result register as our result since ADD is destructive!
             expression->result_register = expression->children->next_child->result_register;
 
-            fprintf(code, "add %s, %s\n",
-                register_name(r, expression->children->result_register),
-                register_name(r, expression->children->next_child->result_register));
+            fprintf(code, "add %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
 
             // Free no-longer-used left hand side result register.
             register_deallocate(r, expression->children->result_register);
@@ -198,9 +177,7 @@ Error codegen_expression_x86_64_mswin
             // Use right hand side result register as our result since ADD is destructive!
             expression->result_register = expression->children->next_child->result_register;
 
-            fprintf(code, "sub %s, %s\n",
-                register_name(r, expression->children->result_register),
-                register_name(r, expression->children->next_child->result_register));
+            fprintf(code, "sub %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
 
             // Free no-longer-used left hand side result register.
             register_deallocate(r, expression->children->result_register);
@@ -211,9 +188,7 @@ Error codegen_expression_x86_64_mswin
             // Use right hand side result register as our result since ADD is destructive!
             expression->result_register = expression->children->next_child->result_register;
 
-            fprintf(code, "imul %s, %s\n",
-                register_name(r, expression->children->result_register),
-                register_name(r, expression->children->next_child->result_register));
+            fprintf(code, "imul %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
 
             // Free no-longer-used left hand side result register.
             register_deallocate(r, expression->children->result_register);
@@ -226,7 +201,6 @@ Error codegen_expression_x86_64_mswin
             // Quotient is in RAX, Remainder in RDX; we must save and
             // restore these registers before and after divide, sadly.
         }
-
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         if (!cg_context->parent) { break; }
@@ -236,8 +210,7 @@ Error codegen_expression_x86_64_mswin
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         if (cg_context->parent) {
-            //ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): "
-            //           "Can not do local variable codegen yet, sorry :p");
+            //ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): " "Can not do local variable codegen yet, sorry :p");
             //break;
         } else {
             // Very simple optimization to handle plain integer node assignment.
@@ -251,8 +224,7 @@ Error codegen_expression_x86_64_mswin
                 fprintf(code, "movq %s, %s\n", result, symbol_to_address(expression->children));
                 free(result);
             } else {
-                err = codegen_expression_x86_64_mswin(code, r, cg_context, context,
-                    expression->children->next_child);
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
                 if (err.type) { break; }
                 result = register_name(r, expression->children->next_child->result_register);
                 fprintf(code, "mov %s, %s\n", result, symbol_to_address(expression->children));
@@ -273,6 +245,7 @@ const char* function_footer_x86_64 =
 "add $32, %rsp\n"
 "pop %rbp\n"
 "ret\n";
+
 Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code) {
     Error err = ok;
 
@@ -361,10 +334,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, function_id->value.symbol, function, code);
     }
 
-    fprintf(code,
-        ".global main\n"
-        "main:\n"
-        "%s", function_header_x86_64);
+    fprintf(code, ".global main\n" "main:\n" "%s", function_header_x86_64);
 
     Node* last_expression = program->children;
     Node* expression = program->children;

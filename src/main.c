@@ -5,8 +5,8 @@
 
 #include <codegen.h>
 #include <error.h>
-#include <file_io.h>
 #include <environment.h>
+#include <file_io.h>
 #include <parser.h>
 #include <typechecker.h>
 

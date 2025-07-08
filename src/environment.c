@@ -1,11 +1,10 @@
 #include <environment.h>
 
 #include <assert.h>
+#include <parser.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-
-#include <parser.h>
 
 void environment_print(Environment env, long long indent) {
     Binding* binding_it = env.bind;
