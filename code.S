@@ -39,6 +39,7 @@ mov a(%rip), %rax
 pushq %rax
 call foo
 add $8, %rsp
+mov a(%rip), %rax
 add $32, %rsp
 pop %rbp
 ret

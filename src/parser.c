@@ -38,7 +38,9 @@ int comment_at_beginning(Token token) {
 //    token->beginning = source;
 //    token->beginning += strspn(token->beginning, whitespace);
 //    token->end = token->beginning;
-//    if (*(token->end) == '\0') { return err; }
+//    if (*(token->end) == '\0') {
+//        return err;
+//    }
 //    // Check if current line is a comment, and skip past it.
 //    while (comment_at_beginning(*token)) {
 //        // Skip to next newline.
@@ -60,6 +62,10 @@ int comment_at_beginning(Token token) {
 //    return err;
 //}
 
+/// NOTE: Highly recommened to use this lex method as it's doesn't 
+/// have segmentation faults for EOF comments.
+/// Lex the next token from SOURCE, and point to it with BEG and END.
+/// If BEG and END of token are equal, there is nothing more to lex.
 Error lex(char* source, Token* token) {
     Error err = ok;
     if (!source || !token) {
@@ -69,7 +75,9 @@ Error lex(char* source, Token* token) {
     token->beginning = source;
     token->beginning += strspn(token->beginning, whitespace);
     token->end = token->beginning;
-    if (*(token->end) == '\0') { return err; }
+    if (*(token->end) == '\0') {
+        return err;
+    }
     // Check if current line is a comment, and skip past it.
     while (comment_at_beginning(*token)) {
         // Use a temporary pointer to avoid assigning NULL directly.
@@ -499,8 +507,7 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
 
 #define EXPECT(expected, expected_string, current_token, current_length, end)      \
     expected = lex_expect(expected_string, &current_token, &current_length, end);   \
-    if (expected.err.type) { return expected.err; }                                  \
-    if (expected.done) { return ok; }
+    if (expected.err.type) { return expected.err; }                                  
 
 int parse_integer(Token* token, Node* node) {
     if (!token || !node) { return 0; }
@@ -793,7 +800,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // declaration, or declaration with initialization.
 
             EXPECT(expected, ":", current_token, token_length, end);
-            if (expected.found) {
+            if (!expected.done && expected.found) {
+
                 // Re-assignment of existing variable (look for =)
                 EXPECT(expected, "=", current_token, token_length, end);
                 if (expected.found) {
@@ -869,9 +877,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             } else {
                 // Symbol is not `defun` and it is not followed by an assignment operator `:`.
 
-                // Check if it's a function call (lookahead for symbol)
+        // Check if it's a function call (lookahead for symbol)
                 EXPECT(expected, "(", current_token, token_length, end);
-                if (expected.found) {
+                if (!expected.done && expected.found) {
                     working_result->type = NODE_TYPE_FUNCTION_CALL;
                     node_add_child(working_result, symbol);
                     Node* argument_list = node_allocate();
@@ -904,6 +912,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // Variable access node
                 working_result->type = NODE_TYPE_VARIABLE_ACCESS;
                 working_result->value.symbol = strdup(symbol->value.symbol);
+
                 free(variable);
             }
         }
