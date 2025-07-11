@@ -148,12 +148,29 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
     Error err = ok;
     char* result = NULL;
     Node* tmpnode = node_allocate();
+    Node* iterator = NULL;
+    long long count = 0;
     switch (expression->type) {
     default:
         break;
     case NODE_TYPE_INTEGER:
         expression->result_register = register_allocate(r);
         fprintf(code, "mov $%lld, %s\n", expression->value.integer, register_name(r, expression->result_register));
+        break;
+    case NODE_TYPE_FUNCTION_CALL:
+        // Push arguments *in reverse order* on to the stack.
+        // TODO: In reverse order.
+        iterator = expression->children->next_child->children;
+        while (iterator) {
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, iterator);
+            fprintf(code, "pushq %s\n", register_name(r, iterator->result_register));
+            register_deallocate(r, iterator->result_register);
+            iterator = iterator->next_child;
+            count++;
+        }
+        // Emit call
+        fprintf(code, "call %s\n", expression->children->value.symbol);
+        fprintf(code, "add $%lld, %%rsp\n", count * 8);
         break;
     case NODE_TYPE_FUNCTION:
         if (!cg_context->parent) { break; }
