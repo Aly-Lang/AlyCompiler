@@ -208,17 +208,13 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         if (!cg_context->parent) { break; }
-
-        printf("Local variable \"%s\"\n", expression->children->value.symbol);
-        environment_print(*context->variables, 0);
-
         while (context) {
             if (environment_get(*context->variables, expression->children, tmpnode)) { break; }
             context = context->parent;
         }
         err = parse_get_type(context, tmpnode, tmpnode);
         if (err.type) { return err; }
-        fprintf(code, "sub $%lld, %%rsp", tmpnode->children->value.integer);
+        fprintf(code, "sub $%lld, %%rsp\n", tmpnode->children->value.integer);
         // Allocate space on stack
         //  Get the size in bytes of the type of the variable.
         //  Subtract type size in bytes from stack pointer.

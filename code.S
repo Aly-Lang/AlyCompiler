@@ -5,7 +5,8 @@ foo:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
-sub $8, %rspadd $32, %rsp
+sub $8, %rsp
+add $32, %rsp
 pop %rbp
 ret
 afterfoo:
