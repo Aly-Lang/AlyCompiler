@@ -13,7 +13,7 @@
 // TODO: Allow multi-byte comment delimiters.
 const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n,()[]<>:";
+const char* delimiters = " \r\n,{}()[]<>:";
 
 /// @return Boolean-like value: 1 for success, 0 for failure.
 int comment_at_beginning(Token token) {
@@ -569,7 +569,7 @@ Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* cu
     return ok;
 }
 
-Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) { //30250
+Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) {
     ParsingStack* stack = NULL;
     ExpectReturnValue expected;
     size_t token_length = 0;
@@ -589,6 +589,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
         } else {
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+
+            if (strcmp("if", symbol->value.symbol) == 0) {
+
+            }
 
             // Parse lambda
             if (strcmp("[", symbol->value.symbol) == 0) {
