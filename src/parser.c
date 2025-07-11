@@ -16,8 +16,7 @@ const char* whitespace = " \r\n";
 const char* delimiters = " \r\n,()[]<>:";
 
 /// @return Boolean-like value: 1 for success, 0 for failure.
-int comment_at_beginning(Token token)
-{
+int comment_at_beginning(Token token) {
     const char* comment_it = comment_delimiters;
     while (*comment_it) {
         if (*(token.beginning) == *comment_it) {
@@ -61,8 +60,7 @@ int comment_at_beginning(Token token)
 //    return err;
 //}
 
-Error lex(char* source, Token* token)
-{
+Error lex(char* source, Token* token) {
     Error err = ok;
     if (!source || !token) {
         ERROR_PREP(err, ERROR_ARGUMENTS, "Can not lex empty source.");
@@ -95,8 +93,7 @@ Error lex(char* source, Token* token)
     return err;
 }
 
-int token_string_equalp(char* string, Token* token)
-{
+int token_string_equalp(char* string, Token* token) {
     if (!string || !token) { return 0; }
     char* beg = token->beginning;
     while (*string && token->beginning < token->end) {
@@ -107,8 +104,7 @@ int token_string_equalp(char* string, Token* token)
     return 1;
 }
 
-void print_token(Token t)
-{
+void print_token(Token t) {
     if (t.end - t.beginning < 1) {
         printf("INVALID TOKEN POINTERS");
     } else {
@@ -118,15 +114,13 @@ void print_token(Token t)
 
 //================================================================ END lexer
 
-Node* node_allocate()
-{
+Node* node_allocate() {
     Node* node = calloc(1, sizeof(Node));
     assert(node && "Could not allocate memory for AST node");
     return node;
 }
 
-void node_add_child(Node* parent, Node* new_child)
-{
+void node_add_child(Node* parent, Node* new_child) {
     if (!parent || !new_child) { return; }
     if (parent->children) {
         Node* child = parent->children;
@@ -139,8 +133,7 @@ void node_add_child(Node* parent, Node* new_child)
     }
 }
 
-int node_compare(Node* a, Node* b)
-{
+int node_compare(Node* a, Node* b) {
     if (!a || !b) {
         if (!a && !b) { return 1; }
         return 0;
@@ -187,31 +180,27 @@ int node_compare(Node* a, Node* b)
     return 0;
 }
 
-Node* node_none()
-{
+Node* node_none() {
     Node* none = node_allocate();
     none->type = NODE_TYPE_NONE;
     return none;
 }
 
-Node* node_integer(long long value)
-{
+Node* node_integer(long long value) {
     Node* integer = node_allocate();
     integer->type = NODE_TYPE_INTEGER;
     integer->value.integer = value;
     return integer;
 }
 
-Node* node_symbol(char* symbol_string)
-{
+Node* node_symbol(char* symbol_string) {
     Node* symbol = node_allocate();
     symbol->type = NODE_TYPE_SYMBOL;
     symbol->value.symbol = strdup(symbol_string);
     return symbol;
 }
 
-Node* node_symbol_from_buffer(char* buffer, size_t length)
-{
+Node* node_symbol_from_buffer(char* buffer, size_t length) {
     assert(buffer && "Can not create AST symbol node from NULL buffer");
     char* symbol_string = malloc(length + 1);
     assert(symbol_string && "Could not allocate memory for symbol string");
@@ -224,8 +213,7 @@ Node* node_symbol_from_buffer(char* buffer, size_t length)
 }
 
 // Take ownership of type_symbol.
-Error define_type(Environment* types, int type, Node* type_symbol, long long byte_size)
-{
+Error define_type(Environment* types, int type, Node* type_symbol, long long byte_size) {
     assert(types && "Can not add type to NULL types environment");
     assert(type_symbol && "Can not add NULL type symbol to types environment");
     assert(byte_size >= 0 && "Can not define new type with zero or negative byte size");
@@ -249,8 +237,7 @@ Error define_type(Environment* types, int type, Node* type_symbol, long long byt
 
 #define NODE_TEXT_BUFFER_SIZE 512
 char node_text_buffer[512];
-char* node_text(Node* node)
-{
+char* node_text(Node* node) {
     assert(NODE_TYPE_MAX == 10 && "print_node() must handle all node types");
     if (!node) {
         return "NULL";
@@ -293,8 +280,7 @@ char* node_text(Node* node)
     return node_text_buffer;
 }
 
-void print_node(Node* node, size_t indent_level)
-{
+void print_node(Node* node, size_t indent_level) {
     if (!node) { return; }
     // Print indent.
     for (size_t i = 0; i < indent_level; ++i) {
@@ -310,8 +296,7 @@ void print_node(Node* node, size_t indent_level)
     }
 }
 
-void node_free(Node* root)
-{
+void node_free(Node* root) {
     if (!root) { return; }
     Node* child = root->children;
     Node* next_child = NULL;
@@ -326,8 +311,7 @@ void node_free(Node* root)
     free(root);
 }
 
-void node_copy(Node* a, Node* b)
-{
+void node_copy(Node* a, Node* b) {
     if (!a || !b) { return; }
     b->type = a->type;
     // Handle all allocated values here.
@@ -356,8 +340,7 @@ void node_copy(Node* a, Node* b)
     }
 }
 
-void parse_context_print(ParsingContext* top, size_t indent)
-{
+void parse_context_print(ParsingContext* top, size_t indent) {
     size_t indent_it = indent;
     while (indent_it--) { putchar(' '); }
     printf("TYPES:\n");
@@ -387,8 +370,7 @@ void parse_context_print(ParsingContext* top, size_t indent)
     }
 }
 
-void parse_context_add_child(ParsingContext* parent, ParsingContext* child)
-{
+void parse_context_add_child(ParsingContext* parent, ParsingContext* child) {
     if (parent) {
         if (parent->children) {
             parent = parent->children;
@@ -400,8 +382,7 @@ void parse_context_add_child(ParsingContext* parent, ParsingContext* child)
     }
 }
 
-ParsingContext* parse_context_create(ParsingContext* parent)
-{
+ParsingContext* parse_context_create(ParsingContext* parent) {
     ParsingContext* ctx = calloc(1, sizeof(ParsingContext));
     assert(ctx && "Could not allocate memory for parsing context.");
     if (!ctx) { return NULL; }
@@ -419,8 +400,7 @@ ParsingContext* parse_context_create(ParsingContext* parent)
     return ctx;
 }
 
-ParsingContext* parse_context_default_create()
-{
+ParsingContext* parse_context_default_create() {
     ParsingContext* ctx = parse_context_create(NULL);
     Error err = ok;
     err = define_type(ctx->types, NODE_TYPE_INTEGER, node_symbol("integer"), sizeof(long long));
@@ -446,8 +426,7 @@ ParsingContext* parse_context_default_create()
 }
 
 /// Update token, token length, and end of current token pointer.
-Error lex_advance(Token* token, size_t* token_length, char** end)
-{
+Error lex_advance(Token* token, size_t* token_length, char** end) {
     if (!token || !token_length || !end) {
         ERROR_CREATE(err, ERROR_ARGUMENTS, "lex_advance(): pointer arguments must not be NULL!");
         return err;
@@ -465,8 +444,7 @@ typedef struct ExpectReturnValue {
     char done;
 } ExpectReturnValue;
 
-ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_length, char** end)
-{
+ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_length, char** end) {
     ExpectReturnValue out;
     out.done = 0;
     out.found = 0;
@@ -499,8 +477,7 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
     return out;
 }
 
-Error parse_get_type(ParsingContext* context, Node* id, Node* result)
-{
+Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
     Error err = ok;
     while (context) {
         int status = environment_get(*context->types, id, result);
@@ -518,8 +495,7 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result)
     if (expected.err.type) { return expected.err; }                                  \
     if (expected.done) { return ok; }
 
-int parse_integer(Token* token, Node* node)
-{
+int parse_integer(Token* token, Node* node) {
     if (!token || !node) { return 0; }
     char* end = NULL;
     if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
@@ -533,8 +509,7 @@ int parse_integer(Token* token, Node* node)
 }
 
 /// Set FOUND to 1 if an infix operator is found and parsing should continue, otherwise 0.
-Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* current, size_t* length, char** end, long long* working_precedence, Node* result, Node** working_result)
-{
+Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* current, size_t* length, char** end, long long* working_precedence, Node* result, Node** working_result) {
     Error err = ok;
     // Look ahead for a binary infix operator.
     *found = 0;
@@ -580,8 +555,7 @@ Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* cu
     return ok;
 }
 
-Error parse_expr(ParsingContext* context, char* source, char** end, Node* result)
-{ //30250
+Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) { //30250
     ExpectReturnValue expected;
     size_t token_length = 0;
     Token current_token;
@@ -600,6 +574,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
         } else {
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+
             // Parse lambda
             if (strcmp("[", symbol->value.symbol) == 0) {
                 Node* lambda = working_result;
@@ -608,6 +583,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // Return type
                 lex_advance(&current_token, &token_length, end);
                 Node* function_return_type = node_symbol_from_buffer(current_token.beginning, token_length);
+                // TODO: Ensure function return type is valid type.
 
                 // Parameter list
                 EXPECT(expected, "(", current_token, token_length, end);
@@ -695,9 +671,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             // TODO: Check for unary prefix operators.
 
-            // TODO: Check that it isn't a binary operator (we should encounter left
-            // side first and peek forward, rather than encounter it at top level).
-
             if (strcmp("defun", symbol->value.symbol) == 0) {
                 // Begin function definition.
                 // FUNCTION
@@ -708,6 +681,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 //   RETURN TYPE SYMBOL
                 //   PROGRAM/LIST of expressions
                 //     ...
+
                 working_result->type = NODE_TYPE_FUNCTION;
 
                 lex_advance(&current_token, &token_length, end);
@@ -896,36 +870,38 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     working_result = first_argument;
                     // Create a parsing stack with function call operator IG,
                     // and then start parsing function argument expressions.
-
                     context = parse_context_create(context);
                     context->operator = node_symbol("funcall");
                     context->result = working_result;
                     continue;
-                } else {
-                    ParsingContext* context_it = context;
-                    Node* variable = node_allocate();
-                    while (context_it) {
-                        if (environment_get(*context_it->variables, symbol, variable)) {
-                            break;
-                        }
-                        context_it = context_it->parent;
-                    }
-                    if (!context_it) {
-                        printf("Symbol: \"%s\"\n", node_text(symbol));
-                        ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
-                        return err;
-                    }
-                    // Variable access node
-                    working_result->type = NODE_TYPE_VARIABLE_ACCESS;
-                    working_result->value.symbol = strdup(symbol->value.symbol);
-                    free(variable);
                 }
+
+                ParsingContext* context_it = context;
+                Node* variable = node_allocate();
+                while (context_it) {
+                    if (environment_get(*context_it->variables, symbol, variable)) {
+                        break;
+                    }
+                    context_it = context_it->parent;
+                }
+                if (!context_it) {
+                    printf("Symbol: \"%s\"\n", node_text(symbol));
+                    ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
+                    return err;
+                }
+
+                // Variable access node
+                working_result->type = NODE_TYPE_VARIABLE_ACCESS;
+                working_result->value.symbol = strdup(symbol->value.symbol);
+                free(variable);
             }
         }
 
         int found = 0;
         err = parse_binary_infix_operator(context, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
-        if (found) { continue; }
+        if (found) {
+            continue;
+        }
 
         // If no more parser stack, return with current result.
         if (!context->parent) {
@@ -1006,8 +982,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     return err;
 }
 
-Error parse_program(char* filepath, ParsingContext* context, Node* result)
-{
+Error parse_program(char* filepath, ParsingContext* context, Node* result) {
     Error err = ok;
     char* contents = file_contents(filepath);
     if (!contents) {
@@ -1041,8 +1016,7 @@ Error parse_program(char* filepath, ParsingContext* context, Node* result)
     return ok;
 }
 
-Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type)
-{
+Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type) {
     Node* binop = node_allocate();
     node_add_child(binop, node_integer(precedence));
     node_add_child(binop, node_symbol(return_type));

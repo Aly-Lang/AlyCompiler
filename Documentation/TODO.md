@@ -12,7 +12,7 @@
 ## 🚧 Compiler Pipeline
 
 ### 🔁 Lexing / Parsing
-- [ ] **Parse tokens into AST**  
+- [x] **Parse tokens into AST**  
   The AST should represent the structure of the program, containing relevant data.
 
 - [ ] **Add token member to AST nodes**  
@@ -24,7 +24,7 @@
 ---
 
 ### ⚙️ Code Generation
-- [ ] **Compile AST into assembly** (Start with x86_64?)  
+- [x] **Compile AST into assembly** (Start with x86_64?)  
   Initially, we could compile directly to assembly or consider an intermediate step like transpiling to C, which can then be compiled.  
 
 - [ ] **Create a `CodeGen` structure with function pointers**  
@@ -156,3 +156,26 @@ Syntaxes that make AST Nodes:
 - Variable Access :: <symbol>
 - Binary Operator :: <expression> <operator> <expression>
 - Function Call :: <symbol> <parameter list>
+
+
+- [ ] Separate parsing stack and parsing context
+  - The context is a hierarchy of environments that detail the different scopes of the program.
+
+  - The stack is used internally to handle continuations while parsing.
+
+  - Currently, these are one in the same, and this causes major issues when it comes to function calls. Function calls require a continuation, but do not require a new context to be created. With our current system, this isn't possible, so our parsing context get's too many children added to it that aren't needed and that messes things up pretty bad.
+
+  - To fix this, we will need to separate the stack and the context.
+
+- [ ] Begin to handle command line flags and options
+
+  - Some common ones right away are:
+    - `--help, -h` :: Print usage, version etc.
+    - `--output, -o` :: Set name of output file.
+
+    - `--format, -f` :: Set target output format. All code is generated.
+    - `--formats` :: List all supported output formats.
+
+  - Are these helpful at all? They seem interesting, though.
+    - `--notypecheck, -nt` :: Do not typecheck after parsing.
+    - `--nocodegen, nc` :: Do not generate any code, stop after typechecking.
