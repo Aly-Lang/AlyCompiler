@@ -6,12 +6,17 @@ a : integer
 b : integer
 z : integer
 
+x : integer
+
+x := 7
+
 a := 420
 b := 42
 z := 120
 
 defun foo (x : integer) : integer {
     bar : function = [integer (y : integer) { y }]
+    bar
     x := 3
     x
 }

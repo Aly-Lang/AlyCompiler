@@ -124,7 +124,7 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
         // Global variable access.
         symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%s(%%rip)", symbol->value.symbol);
     } else {
-        // TODO: Local variable access.
+        // Local variable access.
         Node* stack_offset = node_allocate();
         if (!environment_get(*cg_ctx->locals, symbol, stack_offset)) {
             printf("ERROR: Internal compiler error :^(\n");
@@ -333,6 +333,7 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     Node* expression = function->children->next_child->next_child->children;
     while (expression) {
         err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, next_child_context, expression);
+        register_deallocate(r, expression->result_register);
         if (err.type) {
             print_error(err);
             return err;
