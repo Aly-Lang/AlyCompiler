@@ -178,3 +178,8 @@ Syntaxes that make AST Nodes:
   - Are these helpful at all? They seem interesting, though.
     - `--notypecheck, -nt` :: Do not typecheck after parsing.
     - `--nocodegen, nc` :: Do not generate any code, stop after typechecking.
+
+
+- [ ] Variable declaration with assignment is not codegenning properly.
+
+- [ ] Work on parsing and codegenning of `if` conditional statements.

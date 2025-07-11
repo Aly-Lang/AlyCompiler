@@ -402,6 +402,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         if (!environment_get(*context->types, type, type_info)) {
             printf("Type: \"%s\"\n", type->value.symbol);
             ERROR_PREP(err, ERROR_GENERIC, "Could not get type info from types environment!");
+            // TODO / FIXME: Should I return an error here?
         }
         var_it = var_it->next;
         fprintf(code, "%s: .space %lld\n", var_id->value.symbol, type_info->children->value.integer);

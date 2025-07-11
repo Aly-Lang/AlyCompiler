@@ -877,7 +877,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             } else {
                 // Symbol is not `defun` and it is not followed by an assignment operator `:`.
 
-        // Check if it's a function call (lookahead for symbol)
+                // Check if it's a function call (lookahead for symbol)
                 EXPECT(expected, "(", current_token, token_length, end);
                 if (!expected.done && expected.found) {
                     working_result->type = NODE_TYPE_FUNCTION_CALL;
