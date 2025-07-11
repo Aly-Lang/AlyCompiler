@@ -7,4 +7,4 @@ defun foo(a : integer) : integer {
     a + 10
 }
 
-foo(69)
+foo(10)

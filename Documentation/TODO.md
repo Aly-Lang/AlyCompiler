@@ -121,7 +121,7 @@
 - [ ] **Have Compiler able to collect TODO comments and things from source**
   - This would allow compiler-aided software design in more scenarios.
 
-- [ ] Type check and valid variable accesses
+- [x] Type check and validate variable accesses
 
 # Syntax
 

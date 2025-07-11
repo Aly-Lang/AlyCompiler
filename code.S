@@ -22,7 +22,7 @@ mov %rsp, %rbp
 sub $32, %rsp
 movq $420, a(%rip)
 movq $42, b(%rip)
-mov $69, %rax
+mov $10, %rax
 pushq %rax
 call foo
 add $8, %rsp
