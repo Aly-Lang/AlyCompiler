@@ -9,3 +9,7 @@ defun foo(a : integer) : integer {
 
 a := 69
 foo(a)
+
+foo(a)
+foo(a)
+foo(a)

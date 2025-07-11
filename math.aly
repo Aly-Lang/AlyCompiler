@@ -36,6 +36,8 @@ a
 
 z
 
+x
+
 ; TODO: Last expression of file is kind of just ignored for some reason
 ;       It seems to be just variable accesses...
 b
