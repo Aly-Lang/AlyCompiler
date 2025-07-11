@@ -13,6 +13,7 @@ CodegenContext* codegen_context_create(CodegenContext* parent) {
     CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
     cg_ctx->parent = parent;
     cg_ctx->locals = environment_create(NULL);
+    cg_ctx->locals_offset = 0;
     return cg_ctx;
 }
 
@@ -131,9 +132,9 @@ char* symbol_to_address(Node* symbol) {
 }
 
 // Forward declare codegen_function for codegen_expression.
-Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code);
+Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code);
 
-Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* cg_context, ParsingContext* context, Node* expression) {
+Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, Node* expression) {
     Error err = ok;
     char* result = NULL;
     Node* tmpnode = node_allocate();
@@ -148,7 +149,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (!cg_context->parent) { break; }
         // TODO: Keep track of local lambda label in environment or something.
         result = label_generate();
-        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, result, expression, code);
+        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context, result, expression, code);
         if (err.type) { break; }
         break;
     case NODE_TYPE_BINARY_OPERATOR:
@@ -158,8 +159,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         //printf("Codegenning binary operator %s\n", expression->value.symbol);
         //print_node(tmpnode, 0);
 
-        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children);
-        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
 
         if (strcmp(expression->value.symbol, "+") == 0) {
             // https://www.felixcloutier.com/x86/add
@@ -171,7 +172,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Free no-longer-used left hand side result register.
             register_deallocate(r, expression->children->result_register);
-        } else if (strcmp(expression->value.symbol, "-") == 0) {
+        }
+        else if (strcmp(expression->value.symbol, "-") == 0) {
             // https://www.felixcloutier.com/x86/sub
 
             // Use right hand side result register as our result since ADD is destructive!
@@ -181,7 +183,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Free no-longer-used left hand side result register.
             register_deallocate(r, expression->children->result_register);
-        } else if (strcmp(expression->value.symbol, "*") == 0) {
+        }
+        else if (strcmp(expression->value.symbol, "*") == 0) {
             // https://www.felixcloutier.com/x86/mul
             // https://www.felixcloutier.com/x86/imul
 
@@ -192,7 +195,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Free no-longer-used left hand side result register.
             register_deallocate(r, expression->children->result_register);
-        } else if (strcmp(expression->value.symbol, "/") == 0) {
+        }
+        else if (strcmp(expression->value.symbol, "/") == 0) {
             // TODO: Division codegen!
 
             // https://www.felixcloutier.com/x86/div
@@ -204,15 +208,30 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         if (!cg_context->parent) { break; }
-        printf("TODO: Local variable declaration");
+
+        printf("Local variable \"%s\"\n", expression->children->value.symbol);
+        environment_print(*context->variables, 0);
+
+        while (context) {
+            if (environment_get(*context->variables, expression->children, tmpnode)) { break; }
+            context = context->parent;
+        }
+        err = parse_get_type(context, tmpnode, tmpnode);
+        if (err.type) { return err; }
+        fprintf(code, "sub $%lld, %%rsp", tmpnode->children->value.integer);
         // Allocate space on stack
-        // Keep track of RBP offset.
+        //  Get the size in bytes of the type of the variable.
+        //  Subtract type size in bytes from stack pointer.
+        // Keep track of RBP offset
+        //  Kept in codegen context.
+        //cg_context->locals_offset
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         if (cg_context->parent) {
-            //ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): " "Can not do local variable codegen yet, sorry :p");
+            //ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): ""Can not do local variable codegen yet, sorry :p");
             //break;
-        } else {
+        }
+        else {
             // Very simple optimization to handle plain integer node assignment.
             if (expression->children->next_child->type == NODE_TYPE_INTEGER) {
                 result = malloc(64);
@@ -223,8 +242,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
                 snprintf(result, 64, "$%lld", expression->children->next_child->value.integer);
                 fprintf(code, "movq %s, %s\n", result, symbol_to_address(expression->children));
                 free(result);
-            } else {
-                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression->children->next_child);
+            }
+            else {
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
                 if (err.type) { break; }
                 result = register_name(r, expression->children->next_child->result_register);
                 fprintf(code, "mov %s, %s\n", result, symbol_to_address(expression->children));
@@ -246,7 +266,7 @@ const char* function_footer_x86_64 =
 "pop %rbp\n"
 "ret\n";
 
-Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, char* name, Node* function, FILE* code) {
+Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code) {
     Error err = ok;
 
     cg_context = codegen_context_create(cg_context);
@@ -274,17 +294,33 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     fprintf(code, "%s", function_header_x86_64);
 
     // Function body
+    ParsingContext* ctx = next_child_context ? *next_child_context : context;
+
+    printf("Using context for function:\n");
+    parse_context_print(ctx, 2);
+
+    Node* last_expression = NULL;
     Node* expression = function->children->next_child->next_child->children;
     while (expression) {
-        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, expression);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, next_child_context, expression);
         if (err.type) {
             print_error(err);
             return err;
         }
+        last_expression = expression;
         expression = expression->next_child;
     }
+    if (next_child_context) {
+        *next_child_context = (*next_child_context)->next_child;
+    }
 
-    // TODO: Copy last expression result register to RAX
+    // Copy last expression result register to RAX
+    if (last_expression) {
+        char* name = register_name(r, last_expression->result_register);
+        if (strcmp(name, "%rax")) {
+            fprintf(code, "mov %s, %%rax\n", name);
+        }
+    }
 
     // Function footer
     fprintf(code, "%s", function_footer_x86_64);
@@ -326,12 +362,13 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     fprintf(code, ".section .text\n");
 
     // Generate global functions
+    ParsingContext* next_child_context = context->children;
     Binding* function_it = context->functions->bind;
     while (function_it) {
         Node* function_id = function_it->id;
         Node* function = function_it->value;
         function_it = function_it->next;
-        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, function_id->value.symbol, function, code);
+        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, &next_child_context, function_id->value.symbol, function, code);
     }
 
     fprintf(code, ".global main\n" "main:\n" "%s", function_header_x86_64);
@@ -339,7 +376,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     Node* last_expression = program->children;
     Node* expression = program->children;
     while (expression) {
-        codegen_expression_x86_64_mswin(code, r, cg_context, context, expression);
+        codegen_expression_x86_64_mswin(code, r, cg_context, context, &next_child_context, expression);
         last_expression = expression;
         expression = expression->next_child;
     }

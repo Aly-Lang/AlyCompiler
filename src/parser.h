@@ -121,7 +121,7 @@ typedef struct ParsingStack {
 	Node* result;
 } ParsingStack;
 
-// TODO: Shove ParsingContext within an AST node.
+// TODO: Shove ParsingContext within an AST Node.
 typedef struct ParsingContext {
 	/// Used for upward scope searching, mainly.
 	struct ParsingContext* parent;

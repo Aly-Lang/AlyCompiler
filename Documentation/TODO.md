@@ -121,6 +121,8 @@
 - [ ] **Have Compiler able to collect TODO comments and things from source**
   - This would allow compiler-aided software design in more scenarios.
 
+- [ ] Type check and valid variable accesses
+
 # Syntax
 
 - [ ] Support quick function declaration syntax, this could look something like the code sample below
@@ -149,3 +151,8 @@ Helpers:
 Syntaxes that make AST Nodes:
 - Integer :: <positive-or-negative-integer>
 - Variable Declaration :: <symbol> ":" <type>
+- Named Function :: <variable declaration> <parameter list> <expression list>
+- Function :: "[" <type> <parameter list> <expression list> "]"
+- Variable Access :: <symbol>
+- Binary Operator :: <expression> <operator> <expression>
+- Function Call :: <symbol> <parameter list>

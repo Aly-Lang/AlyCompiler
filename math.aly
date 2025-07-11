@@ -17,8 +17,7 @@ defun foo (x : integer) : integer {
 ; 2 * 3 / 5 + 1 / 5
 ; TODO: Something breaks here :^(
 
-2 * 3 + 1
-;2 * 3 / 2 + 1
+2 * 3 / 2 + 1
+
 
 ;2 * 3 + 1 + 2 + foo(5)
-
