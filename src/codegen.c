@@ -13,7 +13,8 @@ CodegenContext* codegen_context_create(CodegenContext* parent) {
     CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
     cg_ctx->parent = parent;
     cg_ctx->locals = environment_create(NULL);
-    cg_ctx->locals_offset = 0;
+    // TODO / FIXME: This is specific to x86_64 right now!
+    cg_ctx->locals_offset = -32;
     return cg_ctx;
 }
 
@@ -208,19 +209,20 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         if (!cg_context->parent) { break; }
+        // Allocate space on stack
+        //  Get the size in bytes of the type of the variable.
         while (context) {
             if (environment_get(*context->variables, expression->children, tmpnode)) { break; }
             context = context->parent;
         }
         err = parse_get_type(context, tmpnode, tmpnode);
         if (err.type) { return err; }
-        fprintf(code, "sub $%lld, %%rsp\n", tmpnode->children->value.integer);
-        // Allocate space on stack
-        //  Get the size in bytes of the type of the variable.
         //  Subtract type size in bytes from stack pointer.
+        fprintf(code, "sub $%lld, %%rsp\n", tmpnode->children->value.integer);
         // Keep track of RBP offset
         //  Kept in codegen context.
-        //cg_context->locals_offset
+        environment_set(cg_context->locals, expression->children, node_integer(cg_context->locals_offset));
+        cg_context->locals_offset -= tmpnode->children->value.integer;
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         if (cg_context->parent) {
@@ -258,7 +260,6 @@ const char* function_header_x86_64 =
 "mov %rsp, %rbp\n"
 "sub $32, %rsp\n";
 const char* function_footer_x86_64 =
-"add $32, %rsp\n"
 "pop %rbp\n"
 "ret\n";
 
@@ -319,6 +320,7 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     }
 
     // Function footer
+    fprintf(code, "add $%lld, %%rsp\n", -cg_context->locals_offset);
     fprintf(code, "%s", function_footer_x86_64);
 
     // Nested function execution jump label
