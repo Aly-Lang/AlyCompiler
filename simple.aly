@@ -4,9 +4,7 @@ b : integer
 b := 42
 
 defun foo(a : integer) : integer {
-    a
+    a + 10
 }
 
-foo(25)
-
-a
+foo(69)

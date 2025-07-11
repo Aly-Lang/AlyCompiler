@@ -36,6 +36,33 @@ Error expression_return_type(ParsingContext* context, Node* expression, int* typ
         // RESULT contains a function node.
         err = parse_get_type(original_context, result->children->next_child, result);
         break;
+    case NODE_TYPE_VARIABLE_ACCESS:
+        // Get type symbol from variables environment using variable symbol.
+        while (context) {
+            if (environment_get_by_symbol(*context->variables, expression->value.symbol, tmpnode)) {
+                break;
+            }
+            context = context->parent;
+        }
+        if (!context) {
+            printf("Variable: \"%s\"\n", result->value.symbol);
+            ERROR_PREP(err, ERROR_GENERIC, "Could not get variable within context for variable access return type");
+            break;
+        }
+        // Get type integer from types environment using type symbol.
+        context = original_context;
+        while (context) {
+            if (environment_get(*context->types, tmpnode, result)) {
+                break;
+            }
+            context = context->parent;
+        }
+        if (!context) {
+            printf("Type: \"%s\"\n", result->value.symbol);
+            ERROR_PREP(err, ERROR_GENERIC, "Could not get type within context for variable access return type");
+            break;
+        }
+        break;
     }
     free(tmpnode);
     *type = result->type;
