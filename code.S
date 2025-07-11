@@ -10,7 +10,7 @@ push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
 sub $8, %rsp
-mov -32(%rbp), %rax
+mov -40(%rbp), %rax
 mov $3, %rax
 mov %rax, 16(%rbp)
 mov 16(%rbp), %rax

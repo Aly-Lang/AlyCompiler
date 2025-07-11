@@ -255,9 +255,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         //  Subtract type size in bytes from stack pointer.
         fprintf(code, "sub $%lld, %%rsp\n", tmpnode->children->value.integer);
         // Keep track of RBP offset
+        cg_context->locals_offset -= tmpnode->children->value.integer;
         //  Kept in codegen context.
         environment_set(cg_context->locals, expression->children, node_integer(cg_context->locals_offset));
-        cg_context->locals_offset -= tmpnode->children->value.integer;
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         if (cg_context->parent) {
