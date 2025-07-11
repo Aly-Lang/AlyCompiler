@@ -157,8 +157,7 @@ Syntaxes that make AST Nodes:
 - Binary Operator :: <expression> <operator> <expression>
 - Function Call :: <symbol> <parameter list>
 
-
-- [ ] Separate parsing stack and parsing context
+- [x] Separate parsing stack and parsing context
   - The context is a hierarchy of environments that detail the different scopes of the program.
 
   - The stack is used internally to handle continuations while parsing.
@@ -167,7 +166,7 @@ Syntaxes that make AST Nodes:
 
   - To fix this, we will need to separate the stack and the context.
 
-- [ ] Begin to handle command line flags and options
+- [x] Begin to handle command line flags and options
 
   - Some common ones right away are:
     - `--help, -h` :: Print usage, version etc.
