@@ -107,7 +107,8 @@ int token_string_equalp(char* string, Token* token) {
 void print_token(Token t) {
     if (t.end - t.beginning < 1) {
         printf("INVALID TOKEN POINTERS");
-    } else {
+    }
+    else {
         printf("%.*s", (int)(t.end - t.beginning), t.beginning);
     }
 }
@@ -128,7 +129,8 @@ void node_add_child(Node* parent, Node* new_child) {
             child = child->next_child;
         }
         child->next_child = new_child;
-    } else {
+    }
+    else {
         parent->children = new_child;
     }
 }
@@ -151,7 +153,8 @@ int node_compare(Node* a, Node* b) {
         if (a->value.symbol && b->value.symbol) {
             if (strcmp(a->value.symbol, b->value.symbol) == 0) { return 1; }
             break;
-        } else if (!a->value.symbol && !b->value.symbol) {
+        }
+        else if (!a->value.symbol && !b->value.symbol) {
             return 1;
         }
         break;
@@ -331,7 +334,8 @@ void node_copy(Node* a, Node* b) {
         if (child_it) {
             child_it->next_child = new_child;
             child_it = child_it->next_child;
-        } else {
+        }
+        else {
             b->children = new_child;
             child_it = new_child;
         }
@@ -376,7 +380,8 @@ void parse_context_add_child(ParsingContext* parent, ParsingContext* child) {
             parent = parent->children;
             while (parent->next_child) { parent = parent->next_child; }
             parent->next_child = child;
-        } else {
+        }
+        else {
             parent->children = child;
         }
     }
@@ -501,10 +506,12 @@ int parse_integer(Token* token, Node* node) {
     if (token->end - token->beginning == 1 && *(token->beginning) == '0') {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
-    } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
+    }
+    else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
         if (end != token->end) { return 0; }
         node->type = NODE_TYPE_INTEGER;
-    } else { return 0; }
+    }
+    else { return 0; }
     return 1;
 }
 
@@ -572,7 +579,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
         if (parse_integer(&current_token, working_result)) {
 
-        } else {
+        }
+        else {
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
             // Parse lambda
             if (strcmp("[", symbol->value.symbol) == 0) {
@@ -855,7 +863,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     working_result = value_expression;
                     continue;
                 }
-            } else {
+            }
+            else {
                 // Symbol is not `defun` and it is not followed by an assignment operator `:`.
 
                 // Check if it's a function call (lookahead for symbol)
@@ -875,7 +884,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     context->operator = node_symbol("funcall");
                     context->result = working_result;
                     continue;
-                } else {
+                }
+                else {
                     ParsingContext* context_it = context;
                     Node* variable = node_allocate();
                     while (context_it) {
@@ -884,7 +894,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         }
                         context_it = context_it->parent;
                     }
-                    if (!context) {
+                    if (!context_it) {
                         printf("Symbol: \"%s\"\n", node_text(symbol));
                         ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
                         return err;
@@ -925,7 +935,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     if (!context->parent) {
                         break;
                     }
-                } else {
+                }
+                else {
                     ERROR_PREP(err, ERROR_SYNTAX, "Expected closing square bracket for following lambda body definition");
                     return err;
                 }

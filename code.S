@@ -1,4 +1,5 @@
 .section .data
+z: .space 8
 .section .text
 jmp afterfoo
 foo:
@@ -6,6 +7,7 @@ push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
 sub $8, %rsp
+mov 16(%rbp), %rax
 add $40, %rsp
 pop %rbp
 ret
@@ -21,5 +23,6 @@ imul %rax, %r10
 mov $2, %rax
 mov $1, %r11
 add %rax, %r11
+add $32, %rsp
 pop %rbp
 ret

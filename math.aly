@@ -2,7 +2,7 @@
 
 ;[integer (z : integer) { z }]
 
-;x : integer 
+z : integer
 
 defun foo (x : integer) : integer {
     bar : function = [integer (y : integer) { y }]
@@ -18,6 +18,5 @@ defun foo (x : integer) : integer {
 ; TODO: Something breaks here :^(
 
 2 * 3 / 2 + 1
-
 
 ;2 * 3 + 1 + 2 + foo(5)
