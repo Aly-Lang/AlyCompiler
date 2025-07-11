@@ -159,7 +159,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         break;
     case NODE_TYPE_FUNCTION_CALL:
         // Push arguments *in reverse order* on to the stack.
-        // TODO: In reverse order.
+        // TODO: In reverse order. Or just calculate same when accessing.
         iterator = expression->children->next_child->children;
         while (iterator) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, iterator);
