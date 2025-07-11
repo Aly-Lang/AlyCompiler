@@ -2,10 +2,17 @@
 
 ;[integer (z : integer) { z }]
 
+a : integer
+b : integer
 z : integer
+
+a := 420
+b := 42
+z := 120
 
 defun foo (x : integer) : integer {
     bar : function = [integer (y : integer) { y }]
+    x := 3
     x
 }
 
@@ -15,8 +22,14 @@ defun foo (x : integer) : integer {
 ;}
 
 ; 2 * 3 / 5 + 1 / 5
-; TODO: Something breaks here :^(
 
 2 * 3 / 2 + 1
 
 ;2 * 3 + 1 + 2 + foo(5)
+
+a
+
+z
+
+; TODO: Last expression of file is kind of just ignored for some reason
+b

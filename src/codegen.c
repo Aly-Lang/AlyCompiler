@@ -9,8 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-CodegenContext* codegen_context_create(CodegenContext* parent)
-{
+CodegenContext* codegen_context_create(CodegenContext* parent) {
     CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
     cg_ctx->parent = parent;
     cg_ctx->locals = environment_create(NULL);
@@ -21,8 +20,7 @@ CodegenContext* codegen_context_create(CodegenContext* parent)
 
 //================================================================ BEG REGISTER STUFF
 
-void print_registers(Register* base)
-{
+void print_registers(Register* base) {
     Register* it = base;
     while (it) {
         printf("%s:%i\n", it->name, it->in_use);
@@ -30,23 +28,20 @@ void print_registers(Register* base)
     }
 }
 
-Register* register_create(char* name)
-{
+Register* register_create(char* name) {
     Register* r = calloc(1, sizeof(Register));
     assert(r && "Could not allocate memory for new register");
     r->name = name;
     return r;
 }
 
-void register_add(Register* base, char* name)
-{
+void register_add(Register* base, char* name) {
     while (base->next) { base = base->next; }
     base->next = register_create(name);
 }
 
 // TODO: This is broken :^)
-void register_free(Register* base)
-{
+void register_free(Register* base) {
     Register* to_free = NULL;
     while (base) {
         to_free = base;
@@ -58,8 +53,7 @@ void register_free(Register* base)
     }
 }
 
-RegisterDescriptor register_allocate(Register* base)
-{
+RegisterDescriptor register_allocate(Register* base) {
     RegisterDescriptor register_descriptor = 0;
     while (base) {
         if (base->in_use == 0) {
@@ -74,8 +68,7 @@ RegisterDescriptor register_allocate(Register* base)
     return -1;
 }
 
-void register_deallocate(Register* base, RegisterDescriptor register_descriptor)
-{
+void register_deallocate(Register* base, RegisterDescriptor register_descriptor) {
     while (base) {
         if (register_descriptor == 0) {
             base->in_use = 0;
@@ -88,8 +81,7 @@ void register_deallocate(Register* base, RegisterDescriptor register_descriptor)
     exit(1);
 }
 
-char* register_name(Register* base, RegisterDescriptor register_descriptor)
-{
+char* register_name(Register* base, RegisterDescriptor register_descriptor) {
     while (base) {
         if (register_descriptor <= 0) {
             return base->name;
@@ -108,8 +100,7 @@ char* register_name(Register* base, RegisterDescriptor register_descriptor)
 char label_buffer[label_buffer_size];
 size_t label_index = 0;
 size_t label_count = 0;
-char* label_generate()
-{
+char* label_generate() {
     char* label = label_buffer + label_index;
     label_index += snprintf(label, label_buffer_size - label_index, ".L%zu:\n", label_count);
     label_index++;
@@ -127,8 +118,7 @@ char* label_generate()
 char symbol_buffer[label_buffer_size];
 size_t symbol_index = 0;
 size_t symbol_count = 0;
-char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol)
-{
+char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
     char* symbol_string = symbol_buffer + symbol_index;
     if (!cg_ctx->parent) {
         // Global variable access.
@@ -143,7 +133,6 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol)
         symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%lld(%%rbp)", stack_offset->value.integer);
         free(stack_offset);
     }
-
     symbol_index++;
     if (symbol_index >= label_buffer_size) {
         symbol_index = 0;
@@ -155,8 +144,7 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol)
 // Forward declare codegen_function for codegen_expression.
 Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code);
 
-Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, Node* expression)
-{
+Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, Node* expression) {
     Error err = ok;
     char* result = NULL;
     Node* tmpnode = node_allocate();
@@ -273,11 +261,13 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         if (cg_context->parent) {
-            //ERROR_PREP(err, ERROR_TODO, "codegen_expression_x86_64_mswin(): ""Can not do local variable codegen yet, sorry :p");
-            //break;
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
+            if (err.type) { break; }
+            result = register_name(r, expression->children->next_child->result_register);
+            fprintf(code, "mov %s, %s\n", result, symbol_to_address(cg_context, expression->children));
+            register_deallocate(r, expression->children->next_child->result_register);
         } else {
             // Global variable reassignment
-
             // Very simple optimization to handle plain integer node assignment.
             if (expression->children->next_child->type == NODE_TYPE_INTEGER) {
                 result = malloc(64);
@@ -310,8 +300,7 @@ const char* function_footer_x86_64 =
 "pop %rbp\n"
 "ret\n";
 
-Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code)
-{
+Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code) {
     Error err = ok;
 
     cg_context = codegen_context_create(cg_context);
@@ -377,8 +366,7 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     return ok;
 }
 
-Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, ParsingContext* context, Node* program)
-{
+Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, ParsingContext* context, Node* program) {
     Error err = ok;
 
     Register* r = register_create("%rax");
@@ -442,8 +430,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
 
 //================================================================ END CG_FMT_x86_64_MSWIN
 
-Error codegen_program(enum CodegenOutputFormat format, ParsingContext* context, Node* program)
-{
+Error codegen_program(enum CodegenOutputFormat format, ParsingContext* context, Node* program) {
     Error err = ok;
 
     CodegenContext* cg_context = codegen_context_create(NULL);
