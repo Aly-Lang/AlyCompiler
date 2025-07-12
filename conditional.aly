@@ -1,10 +1,18 @@
 a : integer
 a := 0
 
+;; IF
+;; `-- CONDITIONAL EXPR -> IF THEN BODY
+;;                               `-- IF THEN FIRST EXPR -> IF THEN NEXT EXPR
+;; Parse again into CONDITIONAL EXPR
+;; Catch result and handle stack.
+
 if 0 {
    69
+   42
+   if 1 { 69 }
 }
 
 if 1 {
-   420
+   42
 }
