@@ -49,9 +49,8 @@ typedef enum NodeType {
 	// Contains variable symbol in value.
 	NODE_TYPE_VARIABLE_ACCESS,
 
-	/// Contains two children.
+	/// Contains one child.
 	/// 1. SYMBOL (VARIABLE IDENTIFIER)
-	/// 2. VALUE EXPRESSION
 	NODE_TYPE_VARIABLE_REASSIGNMENT,
 
 	/// Contains two children.

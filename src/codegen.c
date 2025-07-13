@@ -102,7 +102,7 @@ size_t label_index = 0;
 size_t label_count = 0;
 char* label_generate() {
     char* label = label_buffer + label_index;
-    label_index += snprintf(label, label_buffer_size - label_index, ".L%zu:\n", label_count);
+    label_index += snprintf(label, label_buffer_size - label_index, ".L%zu", label_count);
     label_index++;
     if (label_index >= label_buffer_size) {
         label_index = 0;
@@ -180,6 +180,28 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context, result, expression, code);
         if (err.type) { break; }
         break;
+    case NODE_TYPE_IF:
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
+        if (err.type) { return err; }
+
+        // Generate code using result register from condition expression.
+        char* otherwise_label = label_generate();
+        char* conditional_register_name = register_name(r, expression->children->result_register);
+        fprintf(code, "test %s, %s\n", conditional_register_name, conditional_register_name);
+        fprintf(code, "jz %s\n", otherwise_label);
+        register_deallocate(r, expression->children->result_register);
+
+        // Generate code of if body
+        Node* expr = expression->children->next_child->children;
+        while (expr) {
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
+            if (err.type) { return err; }
+            register_deallocate(r, expression->result_register);
+            expr = expr->next_child;
+        }
+
+        fprintf(code, "%s:\n", otherwise_label);
+        break;
     case NODE_TYPE_BINARY_OPERATOR:
         while (context->parent) { context = context->parent; }
         // FIXME: Second argument is memory leaked! :^(
@@ -188,7 +210,10 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         //print_node(tmpnode, 0);
 
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
+        if (err.type) { return err; }
+
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
+        if (err.type) { return err; }
 
         if (strcmp(expression->value.symbol, "+") == 0) {
             // https://www.felixcloutier.com/x86/add
@@ -427,7 +452,8 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     Node* last_expression = program->children;
     Node* expression = program->children;
     while (expression) {
-        codegen_expression_x86_64_mswin(code, r, cg_context, context, &next_child_context, expression);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, &next_child_context, expression);
+        if (err.type) { return err; }
         register_deallocate(r, expression->result_register);
         last_expression = expression;
         expression = expression->next_child;
@@ -435,7 +461,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
 
     // TODO: Copy this code to the generic function for return value!
     char* name = register_name(r, last_expression->result_register);
-    if (strcmp(name, "%rax")) {
+    if (strcmp(name, "%rax") != 0) {
         fprintf(code, "mov %s, %%rax\n", name);
     }
 

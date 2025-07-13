@@ -11,6 +11,6 @@ a := 59
 a := foo(a)
 a
 
-c : integer = 69
+c : integer = 42
 
 c

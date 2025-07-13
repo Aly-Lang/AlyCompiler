@@ -186,3 +186,5 @@ Syntaxes that make AST Nodes:
 
 - [ ] Convert `{}` expression list into an expression itself, this would mean that we can have block return types:
   - `NODE_TYPE_BLOCK` :: Returns return value of last expression in body, or zero or some other default value when no expressions are present.
+
+- [ ] `if` is parsed basically, but context is still not handled. Shouldn't be too hard.
