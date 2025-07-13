@@ -172,6 +172,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // Emit call
         fprintf(code, "call %s\n", expression->children->value.symbol);
         fprintf(code, "add $%lld, %%rsp\n", count * 8);
+
+        expression->result_register = register_allocate(r);
+        fprintf(code, "mov %%rax, %s\n", register_name(r, expression->result_register));
         break;
     case NODE_TYPE_FUNCTION:
         if (!cg_context->parent) { break; }
@@ -202,7 +205,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             last_expr = expr;
             expr = expr->next_child;
         }
-
+        // TODO: Set return register of IF to last_expr result register.
+        register_deallocate(r, last_expr->result_register);
         fprintf(code, "%s:\n", otherwise_label);
         break;
     case NODE_TYPE_BINARY_OPERATOR:
