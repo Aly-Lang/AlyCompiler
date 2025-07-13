@@ -191,12 +191,15 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         fprintf(code, "jz %s\n", otherwise_label);
         register_deallocate(r, expression->children->result_register);
 
-        // Generate code of if body
+        Node* last_expr = NULL;
         Node* expr = expression->children->next_child->children;
         while (expr) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
             if (err.type) { return err; }
-            register_deallocate(r, expression->result_register);
+            if (last_expr) {
+                register_deallocate(r, last_expr->result_register);
+            }
+            last_expr = expr;
             expr = expr->next_child;
         }
 
