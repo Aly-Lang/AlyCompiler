@@ -529,7 +529,7 @@ int parse_integer(Token* token, Node* node) {
 }
 
 /// Set FOUND to 1 if an infix operator is found and parsing should continue, otherwise 0.
-Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* current, size_t* length, char** end, long long* working_precedence, Node* result, Node** working_result) {
+Error parse_binary_infix_operator(ParsingContext* context, ParsingStack* stack, int* found, Token* current, size_t* length, char** end, long long* working_precedence, Node* result, Node** working_result) {
     Error err = ok;
     // Look ahead for a binary infix operator.
     *found = 0;
@@ -554,6 +554,15 @@ Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* cu
         // TODO: Handle grouped expressions through parentheses using precedence stack.
 
         Node* result_pointer = precedence <= *working_precedence ? result : *working_result;
+        if (precedence <= *working_precedence) {
+            if (stack) {
+                result_pointer = stack->result;
+            } else {
+                result_pointer = result;
+            }
+        } else {
+            result_pointer = *working_result;
+        }
 
         Node* result_copy = node_allocate();
         node_copy(result_pointer, result_copy);
@@ -700,7 +709,7 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         if (expected.done || expected.found) {
             *stack = (*stack)->parent;
             int found = 0;
-            err = parse_binary_infix_operator(*context, &found, current, length, end, working_precedence, result, working_result);
+            err = parse_binary_infix_operator(*context, *stack, &found, current, length, end, working_precedence, result, working_result);
             if (found) {
                 *status = STACK_HANDLED_PARSE;
             } else {
@@ -1100,7 +1109,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         }
 
         int found = 0;
-        err = parse_binary_infix_operator(context, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
+        err = parse_binary_infix_operator(context, stack, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
         if (found) { continue; }
 
         // If no more parser stack, return with current result.
