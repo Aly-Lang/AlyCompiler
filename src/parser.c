@@ -575,21 +575,29 @@ Error parse_binary_infix_operator(ParsingContext* context, int* found, Token* cu
     return ok;
 }
 
+enum StackOperatorReturnValue {
+    STACK_HANDLED_INVALID = 0,
+    STACK_HANDLED_BREAK = 1,
+    STACK_HANDLED_PARSE = 2,
+    STACK_HANDLED_CHECK = 3
+};
+
 /*
  * @retval 1 Break (stack was NULL most likely)
- * @retval 2 Continue (working_result was updated, possibly stack as well)
-*/
-Error handle_stack_operator(int* status, ParsingContext* context, ParsingStack* stack, Node** working_result, Node* result, long long* working_precedence, Token* current, size_t* length, char** end) {
+ * @retval 2 Continue Parsing (working_result was updated, possibly stack as well)
+ * @retval 3 Continue Checking (stack was updated, may need to handle it as well)
+ */
+Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack** stack, Node** working_result, Node* result, long long* working_precedence, Token* current, size_t* length, char** end) {
+    if (!(*stack)) {
+        *status = STACK_HANDLED_BREAK;
+        return ok;
+    }
+
     Error err = ok;
     ExpectReturnValue expected;
     memset(&expected, 0, sizeof(ExpectReturnValue));
-    // If no more parser stack, return with current result.
-    if (!stack) {
-        *status = 1;
-        return ok;
-    }
-    // Otherwise, handle parser stack operator.
-    Node* operator = stack->operator;
+
+    Node* operator = (*stack)->operator;
     if (!operator || operator->type != NODE_TYPE_SYMBOL) {
         ERROR_PREP(err, ERROR_TYPE, "Parsing context operator must be symbol. Likely internal error :(");
         return err;
@@ -601,14 +609,15 @@ Error handle_stack_operator(int* status, ParsingContext* context, ParsingStack* 
         EXPECT(expected, "{", current, length, end);
         if (expected.found) {
             Node* if_then_body = node_allocate();
-            stack->result->next_child = if_then_body;
+            (*stack)->result->next_child = if_then_body;
             Node* if_then_first_expr = node_allocate();
             node_add_child(if_then_body, if_then_first_expr);
             *working_result = if_then_first_expr;
+            // TODO: Should new parsing context be created for scope of `if` body?
             // TODO: Don't leak stack->operator.
-            stack->operator = node_symbol("if-then-body");
-            stack->result = *working_result;
-            *status = 2;
+            (*stack)->operator = node_symbol("if-then-body");
+            (*stack)->result = *working_result;
+            *status = STACK_HANDLED_PARSE;
             return ok;
         }
         // TODO / FIXME: Ask the user how to proceed when if has no body.
@@ -620,17 +629,14 @@ Error handle_stack_operator(int* status, ParsingContext* context, ParsingStack* 
         // Evaluate next expression unless it's a closing brace.
         EXPECT(expected, "}", current, length, end);
         if (expected.done || expected.found) {
-            context = context->parent;
-            stack = stack->parent;
-            if (!stack) {
-                *status = 1;
-                return ok;
-            }
+            *stack = (*stack)->parent;
+            *status = STACK_HANDLED_CHECK;
+            return ok;
         }
-        stack->result->next_child = node_allocate();
-        *working_result = stack->result->next_child;
-        stack->result = *working_result;
-        *status = 2;
+        (*stack)->result->next_child = node_allocate();
+        *working_result = (*stack)->result->next_child;
+        (*stack)->result = *working_result;
+        *status = STACK_HANDLED_PARSE;
         return ok;
     }
 
@@ -640,22 +646,20 @@ Error handle_stack_operator(int* status, ParsingContext* context, ParsingStack* 
         if (expected.done || expected.found) {
             EXPECT(expected, "]", current, length, end);
             if (expected.done || expected.found) {
-                context = context->parent;
-                stack = stack->parent;
-                if (!stack) {
-                    *status = 1;
-                    return ok;
-                }
+                *context = (*context)->parent;
+                *stack = (*stack)->parent;
+                *status = STACK_HANDLED_CHECK;
+                return ok;
             } else {
                 ERROR_PREP(err, ERROR_SYNTAX, "Expected closing square bracket for following lambda body definition");
                 return err;
             }
         }
 
-        stack->result->next_child = node_allocate();
-        *working_result = stack->result->next_child;
-        stack->result = *working_result;
-        *status = 2;
+        (*stack)->result->next_child = node_allocate();
+        *working_result = (*stack)->result->next_child;
+        (*stack)->result = *working_result;
+        *status = STACK_HANDLED_PARSE;
         return ok;
     }
 
@@ -663,31 +667,33 @@ Error handle_stack_operator(int* status, ParsingContext* context, ParsingStack* 
         // Evaluate next expression unless it's a closing brace.
         EXPECT(expected, "}", current, length, end);
         if (expected.done || expected.found) {
-            context = context->parent;
-            stack = stack->parent;
-            if (!stack) {
-                *status = 1;
-                return ok;
+            *context = (*context)->parent;
+            *stack = (*stack)->parent;
+            if (!(*stack)) {
+                *status = STACK_HANDLED_BREAK;
+            } else {
+                *status = STACK_HANDLED_CHECK;
             }
+            return ok;
         }
 
-        stack->result->next_child = node_allocate();
-        *working_result = stack->result->next_child;
-        stack->result = *working_result;
-        *status = 2;
+        (*stack)->result->next_child = node_allocate();
+        *working_result = (*stack)->result->next_child;
+        (*stack)->result = *working_result;
+        *status = STACK_HANDLED_PARSE;
         return ok;
     }
 
     if (strcmp(operator->value.symbol, "funcall") == 0) {
         EXPECT(expected, ")", current, length, end);
         if (expected.done || expected.found) {
-            stack = stack->parent;
+            *stack = (*stack)->parent;
             int found = 0;
-            err = parse_binary_infix_operator(context, &found, current, length, end, working_precedence, result, working_result);
+            err = parse_binary_infix_operator(*context, &found, current, length, end, working_precedence, result, working_result);
             if (found) {
-                *status = 2;
+                *status = STACK_HANDLED_PARSE;
             } else {
-                *status = 1;
+                *status = STACK_HANDLED_CHECK;
             }
             return ok;
         }
@@ -700,12 +706,15 @@ Error handle_stack_operator(int* status, ParsingContext* context, ParsingStack* 
             return err;
         }
 
-        stack->result->next_child = node_allocate();
-        *working_result = stack->result->next_child;
-        stack->result = *working_result;
-        *status = 2;
+        (*stack)->result->next_child = node_allocate();
+        *working_result = (*stack)->result->next_child;
+        (*stack)->result = *working_result;
+        *status = STACK_HANDLED_PARSE;
         return ok;
     }
+    *status = STACK_HANDLED_INVALID;
+    ERROR_PREP(err, ERROR_GENERIC, "Internal error: Could not handle stack operator!");
+    return err;
 }
 
 Error parse_expr(ParsingContext* context, char* source, char** end, Node* result) {
@@ -849,7 +858,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 //   RETURN TYPE SYMBOL
                 //   PROGRAM/LIST of expressions
                 //     ...
-
                 working_result->type = NODE_TYPE_FUNCTION;
 
                 lex_advance(&current_token, &token_length, end);
@@ -1064,7 +1072,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // Variable access node
                 working_result->type = NODE_TYPE_VARIABLE_ACCESS;
                 working_result->value.symbol = strdup(symbol->value.symbol);
-
                 free(variable);
             }
         }
@@ -1073,11 +1080,28 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         err = parse_binary_infix_operator(context, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
         if (found) { continue; }
 
-        int status;
-        err = handle_stack_operator(&status, context, stack, &working_result, result, &working_precedence, &current_token, &token_length, end);
-        if (err.type) { return err; }
-        if (status == 1) { break; }
-        if (status == 2) { continue; }
+        // If no more parser stack, return with current result.
+        // Otherwise, handle parser stack operator.
+        if (!stack) { break; }
+
+        // Return Actions:
+        // 1 :: Break (stack was NULL most likely)
+        // 2 :: Continue Parsing (working_result was updated, possibly stack as well)
+        // 3 :: Continue Checking (stack was updated, may need to handle it as well)
+
+        int status = 1;
+        do {
+            err = handle_stack_operator(&status, &context, &stack, &working_result, result, &working_precedence, &current_token, &token_length, end);
+            if (err.type) { return err; }
+        }
+        while (status == STACK_HANDLED_CHECK);
+        if (status == STACK_HANDLED_BREAK) {
+            break;
+        }
+        if (status == STACK_HANDLED_PARSE) {
+            continue;
+        }
+        printf("status: %d\n", status);
         ERROR_PREP(err, ERROR_GENERIC, "Internal Compiler Error :(. Unhandled parse stack operator.");
         return err;
     }
