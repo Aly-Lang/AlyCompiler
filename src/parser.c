@@ -617,6 +617,7 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
             // TODO: Maybe warn?
             EXPECT(expected, "}", current, length, end);
             if (expected.found) {
+                // TODO: Lookahead for else then parse if-else-body.
                 *stack = (*stack)->parent;
                 *status = STACK_HANDLED_CHECK;
                 return ok;
@@ -965,7 +966,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 continue;
             }
-            // TODO: Check if valid symbol for variable environment, then
+
+            // Check if valid symbol for variable environment, then
             // attempt to pattern match variable access, assignment,
             // declaration, or declaration with initialization.
 
@@ -1023,11 +1025,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 working_result->type = NODE_TYPE_VARIABLE_DECLARATION;
 
-                Node* value_expression = node_none();
-
                 // `symbol` is now owned by working_result, a var. decl.
                 node_add_child(working_result, symbol);
-                node_add_child(working_result, value_expression);
 
                 // Context variables environment gains new binding.
                 Node* symbol_for_env = node_allocate();
@@ -1041,6 +1040,20 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 EXPECT(expected, "=", &current_token, &token_length, end);
                 if (expected.found) {
+                    working_result->next_child = node_allocate();
+
+                    Node** local_result = &result;
+                    if (stack) { local_result = &stack->result; }
+
+                    Node* reassign = node_allocate();
+                    reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
+                    Node* value_expression = node_allocate();
+                    node_add_child(reassign, node_symbol(symbol->value.symbol));
+                    node_add_child(reassign, value_expression);
+
+                    (*local_result)->next_child = reassign;
+                    *local_result = reassign;
+
                     working_result = value_expression;
                     continue;
                 }

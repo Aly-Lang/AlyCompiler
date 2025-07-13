@@ -7,26 +7,10 @@ defun foo(a : integer) : integer {
     a + 10
 }
 
-; A sketch on how Aly's conditional flow would look / work
-;if <conditional expression> {
-;    ...
-;} else {
-;    ...
-;}
-
-; AST of an IF NODE
-;;          IF------------------,
-;;        /  |                   \  
-;;      /    |                    \
-;;CONDITION  THEN BODY             OTHERWISE BODY
-;; Generate code for conditional expression
-;; Compare result register to zero and branch based on result to otherwise if necessary.
-;; Generate code for THEN BODY.
-;; At the end of THEN, jump to AFTER OTHERWISE.
-;; Generate label for OTHERWISE.
-;; Generate code for OTHERWISE BODY.
-;; Generate label for AFTER OTHERWISE.
-
 a := 59
 a := foo(a)
 a
+
+c : integer = 69
+
+c

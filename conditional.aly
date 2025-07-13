@@ -1,5 +1,25 @@
-;a : integer
-;a := 0
+; A sketch on how Aly's conditional flow would look / work
+;if <conditional expression> {
+;    ...
+;} else {
+;    ...
+;}
+
+; AST of an IF NODE
+;;          IF------------------,
+;;        /  |                   \  
+;;      /    |                    \
+;;CONDITION  THEN BODY             OTHERWISE BODY
+;; Generate code for conditional expression
+;; Compare result register to zero and branch based on result to otherwise if necessary.
+;; Generate code for THEN BODY.
+;; At the end of THEN, jump to AFTER OTHERWISE.
+;; Generate label for OTHERWISE.
+;; Generate code for OTHERWISE BODY.
+;; Generate label for AFTER OTHERWISE.
+
+a : integer = 69
+a := 0
 
 ;; Parse again into CONDITIONAL EXPR
 ;; Catch result and handle stack
@@ -7,7 +27,7 @@
 if 0 {
    69
    42
-   if 1 { 69 }
+   if 1 { 42 69 420 6969 1337 a + 10 }
 }
 
 if 1 { }

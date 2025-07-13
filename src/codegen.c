@@ -150,6 +150,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
     Node* tmpnode = node_allocate();
     Node* iterator = NULL;
     long long count = 0;
+    assert(NODE_TYPE_MAX == 11 && "codegen_expression_x86_64_mswin() must exhaustively handle node types!");
     switch (expression->type) {
     default:
         break;
