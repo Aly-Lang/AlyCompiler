@@ -612,6 +612,16 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
             (*stack)->result->next_child = if_then_body;
             Node* if_then_first_expr = node_allocate();
             node_add_child(if_then_body, if_then_first_expr);
+
+            // Empty if-then-body handling.
+            // TODO: Maybe warn?
+            EXPECT(expected, "}", current, length, end);
+            if (expected.found) {
+                *stack = (*stack)->parent;
+                *status = STACK_HANDLED_CHECK;
+                return ok;
+            }
+
             *working_result = if_then_first_expr;
             // TODO: Should new parsing context be created for scope of `if` body?
             // TODO: Don't leak stack->operator.
