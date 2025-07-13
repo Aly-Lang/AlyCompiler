@@ -218,7 +218,23 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
         if (err.type) { return err; }
 
-        if (strcmp(expression->value.symbol, "+") == 0) {
+        if (strcmp(expression->value.symbol, "=") == 0) {
+            // https://www.felixcloutier.com/x86/cmovcc
+
+            expression->result_register = register_allocate(r);
+
+            // TODO / FIXME: Get rid of this manual register-saving crap!
+            fprintf(code, "push %%rbx\n");
+            fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
+            fprintf(code, "mov $1, %%rbx\n");
+            fprintf(code, "test %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
+            fprintf(code, "cmove %%rbx, %s\n", register_name(r, expression->result_register));
+            fprintf(code, "pop %%rbx\n");
+
+            // Free no-longer-used left hand side result register.
+            register_deallocate(r, expression->children->result_register);
+            register_deallocate(r, expression->children->next_child->result_register);
+        } else if (strcmp(expression->value.symbol, "+") == 0) {
             // https://www.felixcloutier.com/x86/add
 
             // Use right hand side result register as our result since ADD is destructive!

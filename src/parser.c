@@ -435,14 +435,20 @@ ParsingContext* parse_context_default_create() {
     // TODO: Should we use type IDs vs type symbols?
     // FIXME: Use precedence enum!
     const char* binop_error_message = "ERROR: Failed to set builtin binary operator in environment.";
+
+    err = define_binary_operator(ctx, "=", 3, "integer", "integer", "integer");
+    if (err.type != ERROR_NONE) { puts(binop_error_message); }
+
     err = define_binary_operator(ctx, "+", 5, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
     err = define_binary_operator(ctx, "-", 5, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
+
     err = define_binary_operator(ctx, "*", 10, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
     err = define_binary_operator(ctx, "/", 10, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
+
     return ctx;
 }
 

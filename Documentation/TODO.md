@@ -106,6 +106,11 @@
 
 ## 📌 Miscellaneous
 
+- [ ] When out of scratch registers in codegen, use stack or something
+  - We should be able to never run out of scratch registers by using stack allocations and keeping track of memory address. Will require slightly different API/semantics, but overall it will help a lot.
+
+- [ ] **Conceptualize how do we deal with syntax `+= / -=` with reassignment symbol `:=`
+
 - [ ] **Finalize syntax for uninitialized variables**  
   - Deciding on a clean and consistent syntax for uninitialized variables will be important for clarity and user experience.
 
