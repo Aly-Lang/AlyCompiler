@@ -21,6 +21,13 @@
 a : integer = 69
 a := 0
 
+if 1 + 1 {
+    42
+    if a = 0 {
+    a + 69
+   }
+}
+
 ;; Parse again into CONDITIONAL EXPR
 ;; Catch result and handle stack
 
@@ -31,11 +38,3 @@ a := 0
 ;;}
 
 ;;if 1 { }
-
-if 1 + 1 {
-    a := 5
-    69
-    if a = 1337 {
-    a
-   }
-}

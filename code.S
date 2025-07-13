@@ -13,21 +13,21 @@ mov $1, %r10
 add %rax, %r10
 test %r10, %r10
 jz .L0
-movq $5, a(%rip)
-mov $69, %rax
-mov a(%rip), %rax
-mov $1337, %r10
-push %rbx
+mov $42, %rax
+mov a(%rip), %r10
 mov $0, %r11
-mov $1, %rbx
-test %rax, %r10
-cmove %rbx, %r11
-pop %rbx
-test %r11, %r11
+mov $0, %rbx
+mov $1, %rdi
+test %r10, %r11
+cmove %rdi, %rbx
+test %rbx, %rbx
 jz .L1
-mov a(%rip), %rax
+mov a(%rip), %r10
+mov $69, %r11
+add %r10, %r11
 .L1:
 .L0:
+mov %r11, %rax
 add $32, %rsp
 pop %rbp
 ret

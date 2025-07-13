@@ -173,8 +173,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         fprintf(code, "call %s\n", expression->children->value.symbol);
         fprintf(code, "add $%lld, %%rsp\n", count * 8);
 
-        expression->result_register = register_allocate(r);
-        fprintf(code, "mov %%rax, %s\n", register_name(r, expression->result_register));
+        // TODO: Come back to this!
+        //expression->result_register = register_allocate(r);
+        //fprintf(code, "mov %%rax, %s\n", register_name(r, expression->result_register));
         break;
     case NODE_TYPE_FUNCTION:
         if (!cg_context->parent) { break; }
@@ -194,6 +195,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         fprintf(code, "jz %s\n", otherwise_label);
         register_deallocate(r, expression->children->result_register);
 
+        // Generate THEN expression body.
         Node* last_expr = NULL;
         Node* expr = expression->children->next_child->children;
         while (expr) {
@@ -205,8 +207,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             last_expr = expr;
             expr = expr->next_child;
         }
-        // TODO: Set return register of IF to last_expr result register.
-        register_deallocate(r, last_expr->result_register);
+        expression->result_register = last_expr->result_register;
         fprintf(code, "%s:\n", otherwise_label);
         break;
     case NODE_TYPE_BINARY_OPERATOR:
@@ -226,16 +227,15 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // https://www.felixcloutier.com/x86/cmovcc
 
             expression->result_register = register_allocate(r);
+            RegisterDescriptor true_register = register_allocate(r);
 
-            // TODO / FIXME: Get rid of this manual register-saving crap!
-            fprintf(code, "push %%rbx\n");
             fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
-            fprintf(code, "mov $1, %%rbx\n");
+            fprintf(code, "mov $1, %s\n", register_name(r, true_register));
             fprintf(code, "test %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
-            fprintf(code, "cmove %%rbx, %s\n", register_name(r, expression->result_register));
-            fprintf(code, "pop %%rbx\n");
+            fprintf(code, "cmove %s, %s\n", register_name(r, true_register), register_name(r, expression->result_register));
 
             // Free no-longer-used left hand side result register.
+            register_deallocate(r, true_register);
             register_deallocate(r, expression->children->result_register);
             register_deallocate(r, expression->children->next_child->result_register);
         } else if (strcmp(expression->value.symbol, "+") == 0) {
@@ -393,6 +393,12 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     // Function header
     fprintf(code, "%s", function_header_x86_64);
 
+    // TODO/FIXME: Do not save/restore these registers unless they are used in function body.
+    fprintf(code,
+        "push %%rbx\n"
+        "push %%rsi\n"
+        "push %%rdi\n");
+
     // Function body
     ParsingContext* ctx = next_child_context ? *next_child_context : context;
     Node* last_expression = NULL;
@@ -419,6 +425,12 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
         }
     }
 
+    // TODO/FIXME: Only save/restore when register used in function.
+    fprintf(code,
+        "pop %%rbx\n"
+        "pop %%rsi\n"
+        "pop %%rdi\n");
+
     // Function footer
     fprintf(code, "add $%lld, %%rsp\n", -cg_context->locals_offset);
     fprintf(code, "%s", function_footer_x86_64);
@@ -439,6 +451,9 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     Register* r = register_create("%rax");
     register_add(r, "%r10");
     register_add(r, "%r11");
+    register_add(r, "%rbx");
+    register_add(r, "%rdi");
+    register_add(r, "%rsi");
 
     fprintf(code, "%s", ".section .data\n");
 
@@ -475,6 +490,10 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     Node* last_expression = program->children;
     Node* expression = program->children;
     while (expression) {
+        if (nonep(*expression)) {
+            expression = expression->next_child;
+            continue;
+        }
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, &next_child_context, expression);
         if (err.type) { return err; }
         register_deallocate(r, expression->result_register);
