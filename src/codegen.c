@@ -95,7 +95,6 @@ char* register_name(Register* base, RegisterDescriptor register_descriptor) {
 
 //================================================================ END REGISTER STUFF
 
-
 #define label_buffer_size 1024
 char label_buffer[label_buffer_size];
 size_t label_index = 0;
@@ -113,6 +112,9 @@ char* label_generate() {
 }
 
 //================================================================ BEG CG_FMT_x86_64_MSWIN
+
+// TODO / FIXME: Make this a parameter affectable by command line arguments.
+char verbose = 1;
 
 #define symbol_buffer_size 1024
 char symbol_buffer[label_buffer_size];
@@ -155,10 +157,16 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
     default:
         break;
     case NODE_TYPE_INTEGER:
+        if (verbose) {
+            fprintf(code, ";#; INTEGER: %lld\n", expression->value.integer);
+        }
         expression->result_register = register_allocate(r);
         fprintf(code, "mov $%lld, %s\n", expression->value.integer, register_name(r, expression->result_register));
         break;
     case NODE_TYPE_FUNCTION_CALL:
+        if (verbose) {
+            fprintf(code, ";#; Function Call: \"%s\"\n", expression->children->value.symbol);
+        }
         // Push arguments *in reverse order* on to the stack.
         // TODO: In reverse order. Or just calculate same when accessing.
         iterator = expression->children->next_child->children;
@@ -173,11 +181,14 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         fprintf(code, "call %s\n", expression->children->value.symbol);
         fprintf(code, "add $%lld, %%rsp\n", count * 8);
 
-        // TODO: Come back to this!
+        // TODO: Should we copy return value of function call to RAX?
         //expression->result_register = register_allocate(r);
         //fprintf(code, "mov %%rax, %s\n", register_name(r, expression->result_register));
         break;
     case NODE_TYPE_FUNCTION:
+        if (verbose) {
+            fprintf(code, ";#; Function\n");
+        }
         if (!cg_context->parent) { break; }
         // TODO: Keep track of local lambda label in environment or something.
         result = label_generate();
@@ -185,8 +196,15 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (err.type) { break; }
         break;
     case NODE_TYPE_IF:
+        if (verbose) {
+            fprintf(code, ";#; If\n");
+        }
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
         if (err.type) { return err; }
+
+        if (verbose) {
+            fprintf(code, ";#; If CONDITION\n");
+        }
 
         // Generate code using result register from condition expression.
         char* otherwise_label = label_generate();
@@ -195,6 +213,10 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         fprintf(code, "test %s, %s\n", conditional_register_name, conditional_register_name);
         fprintf(code, "jz %s\n", otherwise_label);
         register_deallocate(r, expression->children->result_register);
+
+        if (verbose) {
+            fprintf(code, ";#; If THEN\n");
+        }
 
         // Generate THEN expression body.
         Node* last_expr = NULL;
@@ -216,6 +238,10 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         register_deallocate(r, last_expr->result_register);
         fprintf(code, "jmp %s\n", after_otherwise_label);
 
+        if (verbose) {
+            fprintf(code, ";#; If OTHERWISE\n");
+        }
+
         // Generate OTHERWISE
         fprintf(code, "%s:\n", otherwise_label);
         // TODO / FIXME: What should implicit return of IF with failing condtion 
@@ -224,6 +250,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         fprintf(code, "%s:\n", after_otherwise_label);
         break;
     case NODE_TYPE_BINARY_OPERATOR:
+        if (verbose) {
+            fprintf(code, ";#; Binary Operator: \"%s\"\n", expression->value.symbol);
+        }
         while (context->parent) { context = context->parent; }
         // FIXME: Second argument is memory leaked! :^(
         environment_get(*context->binary_operators, node_symbol(expression->value.symbol), tmpnode);
@@ -293,6 +322,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         break;
     case NODE_TYPE_VARIABLE_ACCESS:
+        if (verbose) {
+            fprintf(code, ";#; Variable Access: \"%s\"\n", expression->value.symbol);
+        }
         expression->result_register = register_allocate(r);
         if (!cg_context->parent) {
             // Global variable
@@ -322,6 +354,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
+        if (verbose) {
+            fprintf(code, ";#; Variable Declaration\n");
+        }
         if (!cg_context->parent) { break; }
         // Allocate space on stack
         //  Get the size in bytes of the type of the variable.
@@ -339,6 +374,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         environment_set(cg_context->locals, expression->children, node_integer(cg_context->locals_offset));
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
+        if (verbose) {
+            fprintf(code, ";#; Variable Reassignment\n");
+        }
         if (cg_context->parent) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
             if (err.type) { break; }

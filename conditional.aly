@@ -18,17 +18,13 @@
 ;; Generate code for OTHERWISE BODY.
 ;; Generate label for AFTER OTHERWISE.
 
-a : integer = 42
-if a = 42 {
-    5
+a : integer = 30
+if 1 + 1 { 
+    69
+    if a = 42 {
+        5
+    }
 }
-
-;if 1 + 1 {
-;    69
-;    if a = 42 {
-;    5
-;   }
-;}
 
 ;; Parse again into CONDITIONAL EXPR
 ;; Catch result and handle stack
