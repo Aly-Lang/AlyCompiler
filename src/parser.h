@@ -124,6 +124,7 @@ typedef struct ParsingStack {
 	struct ParsingStack* parent;
 	Node* operator;
 	Node* result;
+	Node* body;
 } ParsingStack;
 
 // TODO: Shove ParsingContext within an AST Node.

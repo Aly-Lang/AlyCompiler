@@ -438,6 +438,10 @@ ParsingContext* parse_context_default_create() {
 
     err = define_binary_operator(ctx, "=", 3, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
+    err = define_binary_operator(ctx, "<", 3, "integer", "integer", "integer");
+    if (err.type != ERROR_NONE) { puts(binop_error_message); }
+    err = define_binary_operator(ctx, ">", 3, "integer", "integer", "integer");
+    if (err.type != ERROR_NONE) { puts(binop_error_message); }
 
     err = define_binary_operator(ctx, "+", 5, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
@@ -632,17 +636,18 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
             // TODO: Maybe warn?
             EXPECT(expected, "}", current, length, end);
             if (expected.found) {
-                // TODO: Lookahead for else then parse if-else-body.
+                // TODO: First check for else...
                 *stack = (*stack)->parent;
                 *status = STACK_HANDLED_CHECK;
                 return ok;
             }
 
-            *working_result = if_then_first_expr;
             // TODO: Should new parsing context be created for scope of `if` body?
             // TODO: Don't leak stack->operator.
             (*stack)->operator = node_symbol("if-then-body");
-            (*stack)->result = *working_result;
+            (*stack)->body = if_then_body;
+            (*stack)->result = if_then_first_expr;
+            *working_result = if_then_first_expr;
             *status = STACK_HANDLED_PARSE;
             return ok;
         }
@@ -655,13 +660,53 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         // Evaluate next expression unless it's a closing brace.
         EXPECT(expected, "}", current, length, end);
         if (expected.done || expected.found) {
+            // TODO: Lookahead for else then parse if-then-body.
+            EXPECT(expected, "else", current, length, end);
+            if (expected.found) {
+                EXPECT(expected, "{", current, length, end);
+                if (expected.found) {
+                    Node* if_else_body = node_allocate();
+                    Node* if_else_first_expr = node_allocate();
+                    node_add_child(if_else_body, if_else_first_expr);
+
+                    (*stack)->body->next_child = if_else_body;
+
+                    // TODO: Don't leak stack operator!
+                    (*stack)->operator = node_symbol("if-else-body");
+                    (*stack)->body = if_else_body;
+                    (*stack)->result = if_else_first_expr;
+                    *working_result = if_else_first_expr;
+                    *status = STACK_HANDLED_PARSE;
+                    return ok;
+                } else {
+                    ERROR_PREP(err, ERROR_SYNTAX, "`else` must be followed by body.");
+                    return err;
+                }
+            }
+
             *stack = (*stack)->parent;
             *status = STACK_HANDLED_CHECK;
             return ok;
         }
-        (*stack)->result->next_child = node_allocate();
-        *working_result = (*stack)->result->next_child;
-        (*stack)->result = *working_result;
+        Node* next_expr = node_allocate();
+        (*stack)->result->next_child = next_expr;
+        (*stack)->result = next_expr;
+        *working_result = next_expr;
+        *status = STACK_HANDLED_PARSE;
+        return ok;
+    }
+
+    if (strcmp(operator->value.symbol, "if-else-body") == 0) {
+        // Evaluate next expression unless it's a closing brace.
+        EXPECT(expected, "}", current, length, end);
+        if (expected.done || expected.found) {
+            *stack = (*stack)->parent;
+            *status = STACK_HANDLED_CHECK;
+            return ok;
+        }
+        Node* next_expr = node_allocate();
+        node_add_child((*stack)->result, next_expr);
+        *working_result = next_expr;
         *status = STACK_HANDLED_PARSE;
         return ok;
     }
