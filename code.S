@@ -6,28 +6,22 @@ main:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
-movq $69, a(%rip)
-movq $0, a(%rip)
-mov $1, %rax
-mov $1, %r10
-add %rax, %r10
-test %r10, %r10
-jz .L0
-mov $42, %rax
-mov a(%rip), %r10
+movq $42, a(%rip)
+mov a(%rip), %rax
+mov $42, %r10
 mov $0, %r11
-mov $0, %rbx
-mov $1, %rdi
-test %r10, %r11
-cmove %rdi, %rbx
-test %rbx, %rbx
-jz .L1
-mov a(%rip), %r10
-mov $69, %r11
-add %r10, %r11
-.L1:
+mov $1, %rbx
+cmp %rax, %r10
+cmove %rbx, %r11
+test %r11, %r11
+jz .L0
+mov $5, %rax
+mov %rax, %r10
+jmp .L1
 .L0:
-mov %r11, %rax
+mov $0, %r10
+.L1:
+mov %r10, %rax
 add $32, %rsp
 pop %rbp
 ret

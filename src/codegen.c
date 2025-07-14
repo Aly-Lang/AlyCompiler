@@ -190,6 +190,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
         // Generate code using result register from condition expression.
         char* otherwise_label = label_generate();
+        char* after_otherwise_label = label_generate();
         char* conditional_register_name = register_name(r, expression->children->result_register);
         fprintf(code, "test %s, %s\n", conditional_register_name, conditional_register_name);
         fprintf(code, "jz %s\n", otherwise_label);
@@ -200,6 +201,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         Node* expr = expression->children->next_child->children;
         while (expr) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
+            //register_deallocate(r, expr->result_register);
             if (err.type) { return err; }
             if (last_expr) {
                 register_deallocate(r, last_expr->result_register);
@@ -207,8 +209,19 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             last_expr = expr;
             expr = expr->next_child;
         }
-        expression->result_register = last_expr->result_register;
+
+        // Generate code to copy last expr result register to if result register.
+        expression->result_register = register_allocate(r);
+        fprintf(code, "mov %s, %s\n", register_name(r, last_expr->result_register), register_name(r, expression->result_register));
+        register_deallocate(r, last_expr->result_register);
+        fprintf(code, "jmp %s\n", after_otherwise_label);
+
+        // Generate OTHERWISE
         fprintf(code, "%s:\n", otherwise_label);
+        // TODO / FIXME: What should implicit return of IF with failing condtion 
+        //               with no else be?
+        fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
+        fprintf(code, "%s:\n", after_otherwise_label);
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         while (context->parent) { context = context->parent; }
@@ -231,7 +244,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
             fprintf(code, "mov $1, %s\n", register_name(r, true_register));
-            fprintf(code, "test %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
+            fprintf(code, "cmp %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
             fprintf(code, "cmove %s, %s\n", register_name(r, true_register), register_name(r, expression->result_register));
 
             // Free no-longer-used left hand side result register.
