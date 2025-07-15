@@ -13,7 +13,7 @@
 // TODO: Allow multi-byte comment delimiters.
 const char* comment_delimiters = ";#";
 const char* whitespace = " \r\n";
-const char* delimiters = " \r\n,{}()[]<>:";
+const char* delimiters = " \r\n,{}()[]<>:&@";
 
 /// @return Boolean-like value: 1 for success, 0 for failure.
 int comment_at_beginning(Token token) {
@@ -146,7 +146,7 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
-    assert(NODE_TYPE_MAX == 11 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 14 && "node_compare() must handle all node types");
     if (a->type != b->type) { return 0; }
     switch (a->type) {
     case NODE_TYPE_NONE:
@@ -180,6 +180,15 @@ int node_compare(Node* a, Node* b) {
         break;
     case NODE_TYPE_VARIABLE_ACCESS:
         printf("TODO: node_compare() VARIABLE ACCESS\n");
+        break;
+    case NODE_TYPE_ADDRESSOF:
+        printf("TODO: node_compare() ADDRESSOF\n");
+        break;
+    case NODE_TYPE_DEREFERENCE:
+        printf("TODO: node_compare() DEREFERENCE\n");
+        break;
+    case NODE_TYPE_POINTER:
+        printf("TODO: node_compare() POINTER\n");
         break;
     case NODE_TYPE_IF:
         printf("TODO: node_compare() IF\n");
@@ -249,7 +258,7 @@ Error define_type(Environment* types, int type, Node* type_symbol, long long byt
 #define NODE_TEXT_BUFFER_SIZE 512
 char node_text_buffer[512];
 char* node_text(Node* node) {
-    assert(NODE_TYPE_MAX == 11 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 14 && "print_node() must handle all node types");
     if (!node) {
         return "NULL";
     }
@@ -280,6 +289,15 @@ char* node_text(Node* node) {
         break;
     case NODE_TYPE_IF:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "IF");
+        break;
+    case NODE_TYPE_POINTER:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "POINTER");
+        break;
+    case NODE_TYPE_ADDRESSOF:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "ADDRESSOF");
+        break;
+    case NODE_TYPE_DEREFERENCE:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "DEREFERENCE");
         break;
     case NODE_TYPE_PROGRAM:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "PROGRAM");
@@ -511,7 +529,7 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
 Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
     Error err = ok;
     while (context) {
-        int status = environment_get(*context->types, id, result);
+        int status = environment_get_by_symbol(*context->types, id->value.symbol, result);
         if (status) { return ok; }
         context = context->parent;
     }
@@ -522,7 +540,7 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
 }
 
 #define EXPECT(expected, expected_string, current_token, current_length, end)      \
-    expected = lex_expect(expected_string, current_token, current_length, end);   \
+    expected = lex_expect(expected_string, current_token, current_length, end);     \
     if (expected.err.type) { return expected.err; }                                  
 
 int parse_integer(Token* token, Node* node) {
@@ -532,7 +550,9 @@ int parse_integer(Token* token, Node* node) {
         node->type = NODE_TYPE_INTEGER;
         node->value.integer = 0;
     } else if ((node->value.integer = strtoll(token->beginning, &end, 10)) != 0) {
-        if (end != token->end) { return 0; }
+        if (end != token->end) {
+            return 0;
+        }
         node->type = NODE_TYPE_INTEGER;
     } else { return 0; }
     return 1;
@@ -809,6 +829,22 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         } else {
             Node* symbol = node_symbol_from_buffer(current_token.beginning, token_length);
 
+            if (strcmp("@", symbol->value.symbol) == 0) {
+                working_result->type = NODE_TYPE_DEREFERENCE;
+                Node* child = node_allocate();
+                node_add_child(working_result, child);
+                working_result = child;
+                continue;
+            }
+
+            if (strcmp("&", symbol->value.symbol) == 0) {
+                working_result->type = NODE_TYPE_ADDRESSOF;
+                Node* child = node_allocate();
+                node_add_child(working_result, child);
+                working_result = child;
+                continue;
+            }
+
             if (strcmp("if", symbol->value.symbol) == 0) {
                 Node* if_conditional = working_result;
                 if_conditional->type = NODE_TYPE_IF;
@@ -1033,7 +1069,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             EXPECT(expected, ":", &current_token, &token_length, end);
             if (!expected.done && expected.found) {
-
                 // Re-assignment of existing variable (look for =)
                 EXPECT(expected, "=", &current_token, &token_length, end);
                 if (expected.found) {
@@ -1059,9 +1094,26 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 err = lex_advance(&current_token, &token_length, end);
                 if (err.type != ERROR_NONE) { return err; }
                 if (token_length == 0) { break; }
-                Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+
+                // TODO: parse_type() with ALL the arguments.
+
                 Node* type_value = node_allocate();
-                err = parse_get_type(context, type_symbol, type_value);
+                Node* type_value_it = type_value;
+                // Loop over all pointer declaration symbols.
+                while (current_token.beginning[0] == '@') {
+                    // Add one level of pointer indirection.
+                    type_value_it->type = NODE_TYPE_POINTER;
+                    Node* child = node_allocate();
+                    type_value->children = child;
+                    type_value_it = child;
+                    // Advance lexer.
+                    err = lex_advance(&current_token, &token_length, end);
+                    if (err.type != ERROR_NONE) { return err; }
+                    if (token_length == 0) { break; }
+                }
+
+                Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+                err = parse_get_type(context, type_symbol, type_value_it);
                 if (err.type) {
                     free(type_value);
                     return err;
@@ -1155,6 +1207,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // Variable access node
                 working_result->type = NODE_TYPE_VARIABLE_ACCESS;
                 working_result->value.symbol = strdup(symbol->value.symbol);
+
                 free(variable);
             }
         }
@@ -1166,11 +1219,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         // If no more parser stack, return with current result.
         // Otherwise, handle parser stack operator.
         if (!stack) { break; }
-
-        // Return Actions:
-        // 1 :: Break (stack was NULL most likely)
-        // 2 :: Continue Parsing (working_result was updated, possibly stack as well)
-        // 3 :: Continue Checking (stack was updated, may need to handle it as well)
 
         int status = 1;
         do {

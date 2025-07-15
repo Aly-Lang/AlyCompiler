@@ -13,7 +13,7 @@ CodegenContext* codegen_context_create(CodegenContext* parent) {
     CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
     cg_ctx->parent = parent;
     cg_ctx->locals = environment_create(NULL);
-    // TODO/FIXME: This is specific to x86_64 right now [2022-08-18 Thu 10:40]
+    // TODO/FIXME: This is specific to x86_64 right now
     cg_ctx->locals_offset = -32;
     return cg_ctx;
 }
@@ -68,8 +68,7 @@ RegisterDescriptor register_allocate(Register* base) {
     return -1;
 }
 
-void register_deallocate
-(Register* base, RegisterDescriptor register_descriptor) {
+void register_deallocate(Register* base, RegisterDescriptor register_descriptor) {
     while (base) {
         if (register_descriptor == 0) {
             base->in_use = 0;
@@ -83,8 +82,7 @@ void register_deallocate
     exit(1);
 }
 
-char* register_name
-(Register* base, RegisterDescriptor register_descriptor) {
+char* register_name(Register* base, RegisterDescriptor register_descriptor) {
     while (base) {
         if (register_descriptor <= 0) {
             return base->name;
@@ -106,8 +104,7 @@ size_t label_index = 0;
 size_t label_count = 0;
 char* label_generate() {
     char* label = label_buffer + label_index;
-    label_index += snprintf(label, label_buffer_size - label_index,
-        ".L%zu", label_count);
+    label_index += snprintf(label, label_buffer_size - label_index, ".L%zu", label_count);
     label_index++;
     if (label_index >= label_buffer_size) {
         label_index = 0;
@@ -119,7 +116,7 @@ char* label_generate() {
 
 //================================================================ BEG CG_FMT_x86_64_MSWIN
 
-// TODO/FIXME: Make this a parameter affectable by command line arguments.
+// TODO / FIXME: Make this a parameter affectable by command line arguments.
 char codegen_verbose = 1;
 
 #define symbol_buffer_size 1024
@@ -130,9 +127,7 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
     char* symbol_string = symbol_buffer + symbol_index;
     if (!cg_ctx->parent) {
         // Global variable access.
-        symbol_index += snprintf(symbol_string,
-            symbol_buffer_size - symbol_index,
-            "%s(%%rip)", symbol->value.symbol);
+        symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%s(%%rip)", symbol->value.symbol);
     } else {
         // Local variable access.
         Node* stack_offset = node_allocate();
@@ -140,9 +135,7 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
             printf("ERROR: Internal compiler error :^(\n");
             return NULL;
         }
-        symbol_index += snprintf(symbol_string,
-            symbol_buffer_size - symbol_index,
-            "%lld(%%rbp)", stack_offset->value.integer);
+        symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%lld(%%rbp)", stack_offset->value.integer);
         free(stack_offset);
     }
     symbol_index++;
@@ -154,14 +147,7 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
 }
 
 // Forward declare codegen_function for codegen_expression
-Error codegen_function_x86_64_att_asm_mswin
-(Register* r,
-    CodegenContext* cg_context,
-    ParsingContext* context,
-    ParsingContext** next_child_context,
-    char* name,
-    Node* function,
-    FILE* code);
+Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code);
 
 Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, Node* expression) {
     Error err = ok;
@@ -172,7 +158,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
     //expression->result_register = -1;
 
-    assert(NODE_TYPE_MAX == 11 && "codegen_expression_x86_64_mswin() must exhaustively handle node types!");
+    assert(NODE_TYPE_MAX == 14 && "codegen_expression_x86_64_mswin() must exhaustively handle node types!");
     switch (expression->type) {
     default:
         break;
@@ -219,7 +205,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         } else {
             fprintf(code, "add $8, %%rsp\n");
         }
-
         break;
     case NODE_TYPE_FUNCTION:
         if (codegen_verbose) {
@@ -228,19 +213,16 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (!cg_context->parent) { break; }
         // TODO: Keep track of local lambda label in environment or something.
         result = label_generate();
-        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context,
-            result, expression, code);
+        err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context, result, expression, code);
 
         // TODO: What should function return?
-
         break;
+
     case NODE_TYPE_IF:
         if (codegen_verbose) {
             fprintf(code, ";;#; If\n");
         }
-        err = codegen_expression_x86_64_mswin(code, r, cg_context,
-            context, next_child_context,
-            expression->children);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
         if (err.type) { return err; }
 
         if (codegen_verbose) {
@@ -263,12 +245,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         Node* last_expr = NULL;
         Node* expr = expression->children->next_child->children;
         while (expr) {
-            err = codegen_expression_x86_64_mswin(code, r, cg_context,
-                context, next_child_context,
-                expr);
-
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
             //register_deallocate(r, expr->result_register);
-
             if (err.type) { return err; }
             if (last_expr) {
                 register_deallocate(r, last_expr->result_register);
@@ -297,9 +275,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         expr = expression->children->next_child->next_child->children;
         while (expr) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
-
             //register_deallocate(r, expr->result_register);
-
             if (err.type) { return err; }
             if (last_expr) {
                 register_deallocate(r, last_expr->result_register);
@@ -313,7 +289,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         register_deallocate(r, last_expr->result_register);
 
         fprintf(code, "%s:\n", after_otherwise_label);
-
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         if (codegen_verbose) {
@@ -415,9 +390,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Quotient is in RAX, Remainder in RDX; we must save and
             // restore these registers before and after divide, sadly.
-
         }
-
         break;
     case NODE_TYPE_VARIABLE_ACCESS:
         if (codegen_verbose) {
@@ -426,9 +399,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         expression->result_register = register_allocate(r);
         if (!cg_context->parent) {
             // Global variable
-            fprintf(code, "mov %s(%%rip), %s\n",
-                expression->value.symbol,
-                register_name(r, expression->result_register));
+            fprintf(code, "mov %s(%%rip), %s\n", expression->value.symbol, register_name(r, expression->result_register));
         } else {
             // Local variable
             // TODO: Store base pointer offset from parent base pointer offset,
@@ -450,9 +421,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
                 ERROR_PREP(err, ERROR_GENERIC, "Could not get local base pointer offset of variable");
                 return err;
             }
-            fprintf(code, "mov %lld(%%rbp), %s\n",
-                tmpnode->value.integer,
-                register_name(r, expression->result_register));
+            fprintf(code, "mov %lld(%%rbp), %s\n", tmpnode->value.integer, register_name(r, expression->result_register));
         }
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
@@ -461,18 +430,18 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, ";;#; Variable Declaration\n");
         }
         // Allocate space on stack
-        //   Get the size in bytes of the type of the variable
+        // Get the size in bytes of the type of the variable
         while (context) {
             if (environment_get(*context->variables, expression->children, tmpnode)) { break; }
             context = context->parent;
         }
         err = parse_get_type(context, tmpnode, tmpnode);
         if (err.type) { return err; }
-        //   Subtract type size in bytes from stack pointer
+        // Subtract type size in bytes from stack pointer
         fprintf(code, "sub $%lld, %%rsp\n", tmpnode->children->value.integer);
         // Keep track of RBP offset.
         cg_context->locals_offset -= tmpnode->children->value.integer;
-        //   Kept in codegen context.
+        // Kept in codegen context.
         environment_set(cg_context->locals, expression->children, node_integer(cg_context->locals_offset));
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
@@ -498,8 +467,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
                 fprintf(code, "movq %s, %s\n", result, symbol_to_address(cg_context, expression->children));
                 free(result);
             } else {
-                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context,
-                    expression->children->next_child);
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
                 if (err.type) { break; }
                 result = register_name(r, expression->children->next_child->result_register);
                 fprintf(code, "mov %s, %s\n", result, symbol_to_address(cg_context, expression->children));
@@ -626,9 +594,8 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         Node* type_info = node_allocate();
         if (!environment_get(*context->types, type, type_info)) {
             printf("Type: \"%s\"\n", type->value.symbol);
-            ERROR_PREP(err, ERROR_GENERIC,
-                "Could not get type info from types environment!");
-            // TODO/FIXME: Should I return error here?
+            ERROR_PREP(err, ERROR_GENERIC, "Could not get type info from types environment!");
+            // TODO / FIXME: Should I return error here?
         }
         var_it = var_it->next;
         fprintf(code, "%s: .space %lld\n", var_id->value.symbol, type_info->children->value.integer);
@@ -647,10 +614,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, &next_child_context, function_id->value.symbol, function, code);
     }
 
-    fprintf(code,
-        ".global main\n"
-        "main:\n"
-        "%s", function_header_x86_64);
+    fprintf(code, ".global main\n"  "main:\n" "%s", function_header_x86_64);
 
     Node* last_expression = program->children;
     Node* expression = program->children;
@@ -690,6 +654,7 @@ Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingCo
         return err;
     }
     CodegenContext* cg_context = codegen_context_create(NULL);
+
     // Open file for writing.
     FILE* code = fopen(filepath, "w");
     if (!code) {
