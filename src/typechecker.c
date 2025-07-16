@@ -77,7 +77,7 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
             break;
         }
 
-        print_node(tmpnode, 0);
+        //print_node(tmpnode, 0);
 
         node_copy(tmpnode, type);
         // TYPE -> "integer"
@@ -145,7 +145,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
     case NODE_TYPE_DEREFERENCE:
         // Ensure children return type is at level one level of pointer indirection.
         err = expression_return_type(context, context_to_enter, expression->children, type);
-        print_node(type, 0);
+        //print_node(type, 0);
         if (type->type != NODE_TYPE_POINTER) {
             ERROR_PREP(err, ERROR_TYPE, "Dereference may only operate on pointers!");
             return err;

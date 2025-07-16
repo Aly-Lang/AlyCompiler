@@ -148,7 +148,14 @@ int node_compare(Node* a, Node* b) {
         return 0;
     }
     assert(NODE_TYPE_MAX == 14 && "node_compare() must handle all node types");
-    if (a->type != b->type) { return 0; }
+    // Variable access and symbol are not same type but share same comparison.
+    if (!((a->type == NODE_TYPE_SYMBOL || a->type == NODE_TYPE_VARIABLE_ACCESS)
+        && (b->type == NODE_TYPE_SYMBOL || b->type == NODE_TYPE_VARIABLE_ACCESS)))
+    {
+        if (a->type != b->type) {
+            return 0;
+        }
+    }
     switch (a->type) {
     case NODE_TYPE_NONE:
         if (nonep(*b)) { return 1; }
@@ -156,6 +163,7 @@ int node_compare(Node* a, Node* b) {
     case NODE_TYPE_INTEGER:
         if (a->value.integer == b->value.integer) { return 1; }
         break;
+    case NODE_TYPE_VARIABLE_ACCESS:
     case NODE_TYPE_SYMBOL:
         if (a->value.symbol && b->value.symbol) {
             if (strcmp(a->value.symbol, b->value.symbol) == 0) { return 1; }
@@ -178,9 +186,6 @@ int node_compare(Node* a, Node* b) {
         break;
     case NODE_TYPE_VARIABLE_DECLARATION:
         printf("TODO: node_compare() VARIABLE DECLARATION\n");
-        break;
-    case NODE_TYPE_VARIABLE_ACCESS:
-        printf("TODO: node_compare() VARIABLE ACCESS\n");
         break;
     case NODE_TYPE_ADDRESSOF:
         printf("TODO: node_compare() ADDRESSOF\n");

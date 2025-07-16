@@ -132,7 +132,10 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
         // Local variable access.
         Node* stack_offset = node_allocate();
         if (!environment_get(*cg_ctx->locals, symbol, stack_offset)) {
-            printf("ERROR: Internal compiler error :^(\n");
+            putchar('\n');
+            print_node(symbol, 0);
+            environment_print(*cg_ctx->locals, 0);
+            printf("ERROR: symbol_to_address() Could not find \"%s\" in locals environment.\n", symbol->value.symbol);
             return NULL;
         }
         symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%lld(%%rbp)", stack_offset->value.integer);
@@ -167,9 +170,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, ";;#; INTEGER: %lld\n", expression->value.integer);
         }
         expression->result_register = register_allocate(r);
-        fprintf(code, "mov $%lld, %s\n",
-            expression->value.integer,
-            register_name(r, expression->result_register));
+        fprintf(code, "mov $%lld, %s\n", expression->value.integer, register_name(r, expression->result_register));
         break;
     case NODE_TYPE_FUNCTION_CALL:
         if (codegen_verbose) {
@@ -465,7 +466,12 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (cg_context->parent) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
             if (err.type) { break; }
-            fprintf(code, "mov %s, %s\n", register_name(r, expression->children->next_child->result_register), symbol_to_address(cg_context, expression->children));
+            // iterator will end up pointing variable name symbol.
+            iterator = expression->children;
+            while (iterator->children && iterator->type != NODE_TYPE_VARIABLE_ACCESS) {
+                iterator = iterator->children;
+            }
+            fprintf(code, "mov %s, %s\n", register_name(r, expression->children->next_child->result_register), symbol_to_address(cg_context, iterator));
             register_deallocate(r, expression->children->next_child->result_register);
         } else {
             // Global variable reassignment

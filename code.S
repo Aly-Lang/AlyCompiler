@@ -15,19 +15,19 @@ sub $8, %rsp
 mov $0, %rax
 mov %rax, -40(%rbp)
 ;;#; Variable Declaration: "ptr"
-sub $2378485407760, %rsp
+sub $2025853165408, %rsp
 ;;#; Variable Reassignment
-mov %rax, (null)
+mov %rax, -2025853165448(%rbp)
 ;;#; Variable Reassignment
 ;;#; INTEGER: 4
 mov $4, %rax
-mov %rax, (null)
+mov %rax, -2025853165448(%rbp)
 ;;#; Variable Access: "a"
 mov -40(%rbp), %rax
 pop %rbx
 pop %rsi
 pop %rdi
-add $2378485407800, %rsp
+add $2025853165448, %rsp
 pop %rbp
 ret
 afterfoo:
