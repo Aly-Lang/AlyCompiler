@@ -130,6 +130,7 @@ Node* node_allocate() {
 
 void node_add_child(Node* parent, Node* new_child) {
     if (!parent || !new_child) { return; }
+    new_child->parent = parent;
     if (parent->children) {
         Node* child = parent->children;
         while (child->next_child) {
@@ -547,7 +548,7 @@ Error parse_get_variable(ParsingContext* context, Node* id, Node* result) {
         context = context->parent;
     }
     result->type = NODE_TYPE_NONE;
-    printf("Variable not found: \"%s\"\n", id->value.symbol);
+    //printf("Variable not found: \"%s\"\n", id->value.symbol);
     ERROR_PREP(err, ERROR_GENERIC, "Variable is not found in environment.");
     return err;
 }
@@ -833,6 +834,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     Node* working_result = result;
     long long working_precedence = 0;
 
+    Node* parent_expression = result;
+
     while ((err = lex_advance(&current_token, &token_length, end)).type == ERROR_NONE) {
         //printf("lexed: "); print_token(current_token); putchar('\n');
         if (token_length == 0) { return ok; }
@@ -1084,23 +1087,28 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             Node* var_binding = node_allocate();
             err = parse_get_variable(context, symbol, var_binding);
             if (!nonep(*var_binding)) {
-                // Create variable access node!
                 if (err.type) { return err; }
 
+                // Create variable access node!
                 working_result->type = NODE_TYPE_VARIABLE_ACCESS;
                 working_result->value.symbol = strdup(symbol->value.symbol);
 
                 // Lookahead for variable reassignment.
                 EXPECT(expected, ":", &current_token, &token_length, end);
-                if (!expected.done && expected.found) {
+                if (expected.found) {
                     EXPECT(expected, "=", &current_token, &token_length, end);
-                    if (!expected.done && expected.found) {
+                    if (expected.found) {
+                        Node* lhs_pointer = result;
+                        if (stack && stack->result) {
+                            lhs_pointer = stack->result;
+                        }
                         Node* lhs = node_allocate();
-                        node_copy(working_result, lhs);
-                        working_result->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
-                        node_add_child(working_result, lhs);
+                        node_copy(lhs_pointer, lhs);
+                        memset(lhs_pointer, 0, sizeof(Node));
+                        lhs_pointer->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
+                        node_add_child(lhs_pointer, lhs);
                         Node* reassign_expr = node_allocate();
-                        node_add_child(working_result, reassign_expr);
+                        node_add_child(lhs_pointer, reassign_expr);
                         working_result = reassign_expr;
                         continue;
                     }
@@ -1108,131 +1116,114 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             } else {
                 // Symbol is not a valid variable name. Check for function call
                 // or new variable declaration.
-
-            }
-            free(var_binding);
-
-            EXPECT(expected, ":", &current_token, &token_length, end);
-            if (!expected.done && expected.found) {
-
-                err = lex_advance(&current_token, &token_length, end);
-                if (err.type != ERROR_NONE) { return err; }
-                if (token_length == 0) { break; }
-
-                // TODO: parse_type() with ALL the arguments.
-
-                Node* type_value = node_allocate();
-                Node* type_value_it = type_value;
-                // Loop over all pointer declaration symbols.
-                while (current_token.beginning[0] == '@') {
-                    // Add one level of pointer indirection.
-                    type_value_it->type = NODE_TYPE_POINTER;
-                    Node* child = node_allocate();
-                    type_value->children = child;
-                    type_value_it = child;
-                    // Advance lexer.
+                EXPECT(expected, ":", &current_token, &token_length, end);
+                if (!expected.done && expected.found) {
                     err = lex_advance(&current_token, &token_length, end);
                     if (err.type != ERROR_NONE) { return err; }
                     if (token_length == 0) { break; }
-                }
 
-                Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-                err = parse_get_type(context, type_symbol, type_value_it);
-                if (err.type) {
-                    free(type_value);
-                    return err;
-                }
-                if (nonep(*type_value)) {
-                    ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
-                    printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
-                    return err;
-                }
-                free(type_value);
+                    // TODO: parse_type() with ALL the arguments.
 
-                Node* variable_binding = node_allocate();
-                if (environment_get(*context->variables, symbol, variable_binding)) {
-                    // TODO: Create new error type.
-                    printf("ID of redefined variable: \"%s\"\n", symbol->value.symbol);
-                    ERROR_PREP(err, ERROR_GENERIC, "Redefinition of variable!");
-                    return err;
-                }
-                // Variable binding is shell-node for environment value contents.
-                free(variable_binding);
-
-                working_result->type = NODE_TYPE_VARIABLE_DECLARATION;
-
-                // `symbol` is now owned by working_result, a var. decl.
-                node_add_child(working_result, symbol);
-
-                // Context variables environment gains new binding.
-                Node* symbol_for_env = node_allocate();
-                node_copy(symbol, symbol_for_env);
-                int status = environment_set(context->variables, symbol_for_env, type_symbol);
-                if (status != 1) {
-                    printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
-                    ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
-                    return err;
-                }
-
-                EXPECT(expected, "=", &current_token, &token_length, end);
-                if (expected.found) {
-                    working_result->next_child = node_allocate();
-
-                    Node** local_result = &result;
-                    if (stack) { local_result = &stack->result; }
-
-                    Node* reassign = node_allocate();
-                    reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
-                    Node* value_expression = node_allocate();
-                    node_add_child(reassign, node_symbol(symbol->value.symbol));
-                    node_add_child(reassign, value_expression);
-
-                    (*local_result)->next_child = reassign;
-                    *local_result = reassign;
-
-                    working_result = value_expression;
-                    continue;
-                }
-            } else {
-                // Symbol is not `defun` and it is not followed by an assignment operator `:`.
-                // Check if it's a function call (lookahead for symbol)
-                EXPECT(expected, "(", &current_token, &token_length, end);
-                if (!expected.done && expected.found) {
-                    working_result->type = NODE_TYPE_FUNCTION_CALL;
-                    node_add_child(working_result, symbol);
-                    Node* argument_list = node_allocate();
-                    Node* first_argument = node_allocate();
-                    node_add_child(argument_list, first_argument);
-                    node_add_child(working_result, argument_list);
-                    working_result = first_argument;
-                    // Create a parsing stack with function call operator IG,
-                    // and then start parsing function argument expressions.
-                    stack = parse_stack_create(stack);
-                    stack->operator = node_symbol("funcall");
-                    stack->result = working_result;
-                    continue;
-                }
-
-                ParsingContext* context_it = context;
-                Node* variable = node_allocate();
-                while (context_it) {
-                    if (environment_get(*context_it->variables, symbol, variable)) {
-                        break;
+                    Node* type_value = node_allocate();
+                    Node* type_value_it = type_value;
+                    // Loop over all pointer declaration symbols.
+                    while (current_token.beginning[0] == '@') {
+                        // Add one level of pointer indirection.
+                        type_value_it->type = NODE_TYPE_POINTER;
+                        Node* child = node_allocate();
+                        type_value->children = child;
+                        type_value_it = child;
+                        // Advance lexer.
+                        err = lex_advance(&current_token, &token_length, end);
+                        if (err.type != ERROR_NONE) { return err; }
+                        if (token_length == 0) { break; }
                     }
-                    context_it = context_it->parent;
-                }
-                if (!context_it) {
+
+                    Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
+                    err = parse_get_type(context, type_symbol, type_value_it);
+                    if (err.type) {
+                        free(type_value);
+                        return err;
+                    }
+                    if (nonep(*type_value)) {
+                        ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
+                        printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
+                        return err;
+                    }
+                    free(type_value);
+
+                    Node* variable_binding = node_allocate();
+                    if (environment_get(*context->variables, symbol, variable_binding)) {
+                        // TODO: Create new error type.
+                        printf("ID of redefined variable: \"%s\"\n", symbol->value.symbol);
+                        ERROR_PREP(err, ERROR_GENERIC, "Redefinition of variable!");
+                        return err;
+                    }
+                    // Variable binding is shell-node for environment value contents.
+                    free(variable_binding);
+
+                    working_result->type = NODE_TYPE_VARIABLE_DECLARATION;
+
+                    // `symbol` is now owned by working_result, a var. decl.
+                    node_add_child(working_result, symbol);
+
+                    // Context variables environment gains new binding.
+                    Node* symbol_for_env = node_allocate();
+                    node_copy(symbol, symbol_for_env);
+                    int status = environment_set(context->variables, symbol_for_env, type_symbol);
+                    if (status != 1) {
+                        printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
+                        ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
+                        return err;
+                    }
+
+                    // Check for initialization after declaration.
+                    EXPECT(expected, "=", &current_token, &token_length, end);
+                    if (expected.found) {
+                        working_result->next_child = node_allocate();
+
+                        Node** local_result = &result;
+                        if (stack) { local_result = &stack->result; }
+
+                        Node* reassign = node_allocate();
+                        reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
+                        Node* value_expression = node_allocate();
+                        // FIXME: This is a problem. We should use LHS copy.
+                        node_add_child(reassign, node_symbol(symbol->value.symbol));
+                        node_add_child(reassign, value_expression);
+
+                        (*local_result)->next_child = reassign;
+                        *local_result = reassign;
+
+                        working_result = value_expression;
+                        continue;
+                    }
+                } else {
+                    // Symbol is not `defun` and it is not followed by an assignment operator `:`.
+                    // Check if it's a function call (lookahead for symbol)
+                    EXPECT(expected, "(", &current_token, &token_length, end);
+                    if (!expected.done && expected.found) {
+                        working_result->type = NODE_TYPE_FUNCTION_CALL;
+                        node_add_child(working_result, symbol);
+                        Node* argument_list = node_allocate();
+                        Node* first_argument = node_allocate();
+                        node_add_child(argument_list, first_argument);
+                        node_add_child(working_result, argument_list);
+                        working_result = first_argument;
+                        // Create a parsing stack with function call operator IG,
+                        // and then start parsing function argument expressions.
+                        stack = parse_stack_create(stack);
+                        stack->operator = node_symbol("funcall");
+                        stack->result = working_result;
+                        continue;
+                    }
+
                     printf("Symbol: \"%s\"\n", node_text(symbol));
                     ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
                     return err;
                 }
-
-                // Variable access node
-                working_result->type = NODE_TYPE_VARIABLE_ACCESS;
-                working_result->value.symbol = strdup(symbol->value.symbol);
-
-                free(variable);
             }
+            free(var_binding);
         }
 
         int found = 0;

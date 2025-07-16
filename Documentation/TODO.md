@@ -11,6 +11,18 @@
 
 ## 🚧 Compiler Pipeline
 
+# Pointers
+bash```
+
+: @
+
+: DEREFERENCE
+: `-- PARSE INTO HERE NOW
+
+But, upon lookahead for variable reassignment, we need that entire result, starting at chain of dereferences, on the left hand side.
+
+```
+
 ### 🔁 Lexing / Parsing
 - [x] **Parse tokens into AST**  
   The AST should represent the structure of the program, containing relevant data.

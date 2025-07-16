@@ -83,6 +83,7 @@ typedef struct Node {
 		long long integer;
 		char* symbol;
 	} value;
+	struct Node* parent;
 	struct Node* children;
 	struct Node* next_child;
 	/// Used during codegen to store result RegisterDescriptor.

@@ -1,7 +1,11 @@
-a : integer = 0
 
-ptr : @integer
-ptr := &a
-@ptr := 4
 
-a
+defun foo () : integer {
+    a : integer = 0
+
+    ptr : @integer
+    ptr := &a
+    @ptr := 4
+    
+    a
+}
