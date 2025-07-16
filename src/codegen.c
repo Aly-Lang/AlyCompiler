@@ -432,7 +432,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
     case NODE_TYPE_VARIABLE_DECLARATION:
         if (!cg_context->parent) { break; }
         if (codegen_verbose) {
-            fprintf(code, ";;#; Variable Declaration\n");
+            fprintf(code, ";;#; Variable Declaration: \"%s\"\n", expression->children->value.symbol);
         }
         // Allocate space on stack
         // Get the size in bytes of the type of the variable
@@ -456,8 +456,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (cg_context->parent) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
             if (err.type) { break; }
-            result = register_name(r, expression->children->next_child->result_register);
-            fprintf(code, "mov %s, %s\n", result, symbol_to_address(cg_context, expression->children));
+            fprintf(code, "mov %s, %s\n", register_name(r, expression->children->next_child->result_register), symbol_to_address(cg_context, expression->children));
             register_deallocate(r, expression->children->next_child->result_register);
         } else {
             // Global variable reassignment

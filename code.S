@@ -8,13 +8,13 @@ sub $32, %rsp
 push %rbx
 push %rsi
 push %rdi
-;;#; Variable Declaration
+;;#; Variable Declaration: "a"
 sub $8, %rsp
 ;;#; Variable Reassignment
 ;;#; INTEGER: 0
 mov $0, %rax
 mov %rax, -40(%rbp)
-;;#; Variable Declaration
+;;#; Variable Declaration: "ptr"
 sub $8, %rsp
 ;;#; Variable Reassignment
 mov %rax, (null)
