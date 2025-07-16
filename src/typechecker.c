@@ -137,18 +137,18 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         // Get expected return type of LHS in tmpnode->type.
         err = parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
         if (err.type) { return err; }
-        if (type->type != tmpnode->type) {
+        if (type_compare(type, tmpnode) == 0) {
             print_node(expression, 0);
             ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
             return err;
         }
         // Get return type of RHS in type integer.
-        err = expression_return_type(original_context, context_to_enter, expression->children->next_child, &type);
+        err = expression_return_type(original_context, context_to_enter, expression->children->next_child, type);
         if (err.type) { return err; }
         // Get expected return type of RHS in tmpnode->type.
         err = parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
         if (err.type) { return err; }
-        if (type != tmpnode->type) {
+        if (type_compare(type, tmpnode) == 0) {
             print_node(expression, 0);
             ERROR_PREP(err, ERROR_TYPE, "Return type of RHS expression of binary operator does not match declared RHS return type");
             return err;
@@ -169,9 +169,9 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         while (iterator && tmpnode) {
             err = parse_get_type(original_context, tmpnode->children->next_child, result);
             if (err.type) { break; }
-            err = expression_return_type(original_context, context_to_enter, iterator, &type);
+            err = expression_return_type(original_context, context_to_enter, iterator, type);
             if (err.type) { return err; }
-            if (type != result->type) {
+            if (type_compare(result, type) == 0) {
                 printf("Function:%s\n", expression->children->value.symbol);
                 ERROR_PREP(err, ERROR_TYPE, "Argument type does not match declared parameter type");
                 break;
