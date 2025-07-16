@@ -529,13 +529,26 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
 Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
     Error err = ok;
     while (context) {
-        int status = environment_get_by_symbol(*context->types, id->value.symbol, result);
+        int status = environment_get(*context->types, id, result);
         if (status) { return ok; }
         context = context->parent;
     }
     result->type = NODE_TYPE_NONE;
     printf("Type not found: \"%s\"\n", id->value.symbol);
     ERROR_PREP(err, ERROR_GENERIC, "Type is not found in environment.");
+    return err;
+}
+
+Error parse_get_variable(ParsingContext* context, Node* id, Node* result) {
+    Error err = ok;
+    while (context) {
+        int status = environment_get(*context->variables, id, result);
+        if (status) { return ok; }
+        context = context->parent;
+    }
+    result->type = NODE_TYPE_NONE;
+    printf("Variable not found: \"%s\"\n", id->value.symbol);
+    ERROR_PREP(err, ERROR_GENERIC, "Variable is not found in environment.");
     return err;
 }
 
@@ -1067,29 +1080,40 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             // attempt to pattern match variable access, assignment,
             // declaration, or declaration with initialization.
 
+            // Check for variable access here.
+            Node* var_binding = node_allocate();
+            err = parse_get_variable(context, symbol, var_binding);
+            if (!nonep(*var_binding)) {
+                // Create variable access node!
+                if (err.type) { return err; }
+
+                working_result->type = NODE_TYPE_VARIABLE_ACCESS;
+                working_result->value.symbol = strdup(symbol->value.symbol);
+
+                // Lookahead for variable reassignment.
+                EXPECT(expected, ":", &current_token, &token_length, end);
+                if (!expected.done && expected.found) {
+                    EXPECT(expected, "=", &current_token, &token_length, end);
+                    if (!expected.done && expected.found) {
+                        Node* lhs = node_allocate();
+                        node_copy(working_result, lhs);
+                        working_result->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
+                        node_add_child(working_result, lhs);
+                        Node* reassign_expr = node_allocate();
+                        node_add_child(working_result, reassign_expr);
+                        working_result = reassign_expr;
+                        continue;
+                    }
+                }
+            } else {
+                // Symbol is not a valid variable name. Check for function call
+                // or new variable declaration.
+
+            }
+            free(var_binding);
+
             EXPECT(expected, ":", &current_token, &token_length, end);
             if (!expected.done && expected.found) {
-                // Re-assignment of existing variable (look for =)
-                EXPECT(expected, "=", &current_token, &token_length, end);
-                if (expected.found) {
-                    Node* variable_binding = node_allocate();
-                    if (!environment_get(*context->variables, symbol, variable_binding)) {
-                        // TODO: Add source location or something to the error.
-                        // TODO: Create new error type.
-                        printf("ID of undeclared variable: \"%s\"\n", symbol->value.symbol);
-                        ERROR_PREP(err, ERROR_GENERIC, "Reassignment of a variable that has not been declared!");
-                        return err;
-                    }
-                    free(variable_binding);
-
-                    working_result->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
-                    node_add_child(working_result, symbol);
-                    Node* reassign_expr = node_allocate();
-                    node_add_child(working_result, reassign_expr);
-
-                    working_result = reassign_expr;
-                    continue;
-                }
 
                 err = lex_advance(&current_token, &token_length, end);
                 if (err.type != ERROR_NONE) { return err; }
@@ -1171,7 +1195,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 }
             } else {
                 // Symbol is not `defun` and it is not followed by an assignment operator `:`.
-
                 // Check if it's a function call (lookahead for symbol)
                 EXPECT(expected, "(", &current_token, &token_length, end);
                 if (!expected.done && expected.found) {

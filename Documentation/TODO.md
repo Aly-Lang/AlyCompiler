@@ -187,7 +187,7 @@ Syntaxes that make AST Nodes:
 
 - [x] FIX BUG: Where variable declaration with assignment are not code generated properly.
 
-- [ ] Work on parsing and codegenning of `if` conditional statements.
+- [ ] Work on parsing and code-genning of `if` conditional statements.
 
 - [ ] Convert `{}` expression list into an expression itself, this would mean that we can have block return types:
   - `NODE_TYPE_BLOCK` :: Returns return value of last expression in body, or zero or some other default value when no expressions are present.

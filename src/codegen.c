@@ -217,7 +217,12 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
         // TODO: What should function return?
         break;
-
+    case NODE_TYPE_DEREFERENCE:
+        printf("TODO: Dereference\n");
+        break;
+    case NODE_TYPE_ADDRESSOF:
+        printf("TODO: Addressof\n");
+        break;
     case NODE_TYPE_IF:
         if (codegen_verbose) {
             fprintf(code, ";;#; If\n");

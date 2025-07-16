@@ -1,6 +1,6 @@
 a : integer = 0
 
-ptr : integer
+ptr : @integer
 ptr := &a
 @ptr := 4
 
