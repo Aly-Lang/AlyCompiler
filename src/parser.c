@@ -839,8 +839,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
     Node* working_result = result;
     long long working_precedence = 0;
 
-    Node* parent_expression = result;
-
     while ((err = lex_advance(&current_token, &token_length, end)).type == ERROR_NONE) {
         //printf("lexed: "); print_token(current_token); putchar('\n');
         if (token_length == 0) { return ok; }
@@ -1103,17 +1101,17 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 if (expected.found) {
                     EXPECT(expected, "=", &current_token, &token_length, end);
                     if (expected.found) {
-                        Node* lhs_pointer = result;
+                        Node* result_pointer = result;
                         if (stack && stack->result) {
-                            lhs_pointer = stack->result;
+                            result_pointer = stack->result;
                         }
                         Node* lhs = node_allocate();
-                        node_copy(lhs_pointer, lhs);
-                        memset(lhs_pointer, 0, sizeof(Node));
-                        lhs_pointer->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
-                        node_add_child(lhs_pointer, lhs);
+                        node_copy(result_pointer, lhs);
+                        memset(result_pointer, 0, sizeof(Node));
+                        result_pointer->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
+                        node_add_child(result_pointer, lhs);
                         Node* reassign_expr = node_allocate();
-                        node_add_child(lhs_pointer, reassign_expr);
+                        node_add_child(result_pointer, reassign_expr);
                         working_result = reassign_expr;
                         continue;
                     }
@@ -1207,7 +1205,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         reassign->type = NODE_TYPE_VARIABLE_REASSIGNMENT;
                         Node* value_expression = node_allocate();
                         // FIXME: This is a problem. We should use LHS copy.
-                        node_add_child(reassign, node_symbol(symbol->value.symbol));
+                        Node* lhs = node_allocate();
+                        lhs->type = NODE_TYPE_VARIABLE_ACCESS;
+                        lhs->value.symbol = strdup(symbol->value.symbol);
+                        node_add_child(reassign, lhs);
                         node_add_child(reassign, value_expression);
 
                         (*local_result)->next_child = reassign;
