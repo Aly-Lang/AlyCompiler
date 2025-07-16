@@ -63,7 +63,7 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
         memcpy(type, type->children, sizeof(Node));
         break;
     case NODE_TYPE_VARIABLE_ACCESS:
-        parse_context_print(context, 0);
+        //parse_context_print(context, 0);
         // Get type symbol from variables environment using variable symbol.
         while (context) {
             if (environment_get_by_symbol(*context->variables, expression->value.symbol, tmpnode)) {
@@ -90,8 +90,6 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
         while (iterator->children) {
             iterator = iterator->children;
         }
-        print_node(iterator, 0);
-        exit(1);
         // Get type node from types environment using type symbol.
         context = original_context;
         while (context) {
@@ -138,7 +136,6 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
     ParsingContext* to_enter;
 
     // @a 
-
     // DEREFERENCE
     // `--VAR. ACCESS ("a")
 
@@ -167,7 +164,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         // TODO: Get type of LHS variable, dereference adjusted.
-        print_node(expression, 0);
+        //print_node(expression, 0);
         err = expression_return_type(context, context_to_enter, expression->children, tmpnode);
         if (err.type) { return err; }
 
@@ -199,8 +196,8 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
         break;
     case NODE_TYPE_FUNCTION_CALL:
-        // TODO: Ensure function call arguments are of correct type.
-        //       Get function info from functions environment.
+        // Ensure function call arguments are of correct type.
+        // Get function info from functions environment.
         while (context) {
             if (environment_get(*context->functions, expression->children, value)) {
                 break;

@@ -184,8 +184,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // TODO: In reverse order. Or just calculate same when accessing.
         iterator = expression->children->next_child->children;
         while (iterator) {
-            err = codegen_expression_x86_64_mswin
-            (code, r, cg_context, context, next_child_context, iterator);
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, iterator);
+            if (err.type) { return err; }
             fprintf(code, "pushq %s\n", register_name(r, iterator->result_register));
             register_deallocate(r, iterator->result_register);
             iterator = iterator->next_child;
@@ -214,7 +214,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // TODO: Keep track of local lambda label in environment or something.
         result = label_generate();
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context, result, expression, code);
-
+        if (err.type) { return err; }
         // TODO: What should function return?
         break;
     case NODE_TYPE_DEREFERENCE:
@@ -436,12 +436,21 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         // Allocate space on stack
         // Get the size in bytes of the type of the variable
+        size_t size_in_bytes = 0;
         while (context) {
-            if (environment_get(*context->variables, expression->children, tmpnode)) { break; }
+            if (environment_get(*context->variables, expression->children, tmpnode)) {
+                break;
+            }
             context = context->parent;
         }
-        err = parse_get_type(context, tmpnode, tmpnode);
-        if (err.type) { return err; }
+        if (tmpnode->type == NODE_TYPE_POINTER) {
+            size_in_bytes = 8;
+        } else {
+            print_node(tmpnode, 0);
+            err = parse_get_type(context, tmpnode, tmpnode);
+            if (err.type) { return err; }
+            size_in_bytes = tmpnode->children->value.integer;
+        }
         // Subtract type size in bytes from stack pointer
         fprintf(code, "sub $%lld, %%rsp\n", tmpnode->children->value.integer);
         // Keep track of RBP offset.
@@ -592,10 +601,10 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
 
     // Generate global variables
     Binding* var_it = context->variables->bind;
+    Node* type_info = node_allocate();
     while (var_it) {
         Node* var_id = var_it->id;
         Node* type = var_it->value;
-        Node* type_info = node_allocate();
         if (!environment_get(*context->types, type, type_info)) {
             printf("Type: \"%s\"\n", type->value.symbol);
             ERROR_PREP(err, ERROR_GENERIC, "Could not get type info from types environment!");
@@ -603,8 +612,8 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         }
         var_it = var_it->next;
         fprintf(code, "%s: .space %lld\n", var_id->value.symbol, type_info->children->value.integer);
-        free(type_info);
     }
+    free(type_info);
 
     fprintf(code, ".section .text\n");
 
@@ -616,6 +625,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         Node* function = function_it->value;
         function_it = function_it->next;
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, &next_child_context, function_id->value.symbol, function, code);
+        if (err.type) { return err; }
     }
 
     fprintf(code, ".global main\n"  "main:\n" "%s", function_header_x86_64);
@@ -668,6 +678,8 @@ Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingCo
     }
     if (format == CG_FMT_DEFAULT || format == CG_FMT_x86_64_MSWIN) {
         err = codegen_program_x86_64_mswin(code, cg_context, context, program);
+    } else {
+        printf("ERROR: Unrecognized codegne format\n");
     }
     fclose(code);
     return err;

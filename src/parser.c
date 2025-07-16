@@ -1089,7 +1089,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             if (!nonep(*var_binding)) {
                 if (err.type) { return err; }
 
-                // Create variable access node!
+                // Create variable access node.
                 working_result->type = NODE_TYPE_VARIABLE_ACCESS;
                 working_result->value.symbol = strdup(symbol->value.symbol);
 
@@ -1139,13 +1139,19 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         if (token_length == 0) { break; }
                     }
 
+                    // Variable Symbol Mapped Value in Variables Environment
+                    // POINTER
+                    // `-- "integer"
+
                     Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-                    err = parse_get_type(context, type_symbol, type_value_it);
+                    // WHY ARE WE DOING THIS?
+                    Node* type_validator = node_allocate();
+                    err = parse_get_type(context, type_symbol, type_validator);
                     if (err.type) {
                         free(type_value);
                         return err;
                     }
-                    if (nonep(*type_value)) {
+                    if (nonep(*type_validator)) {
                         ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
                         printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
                         return err;
