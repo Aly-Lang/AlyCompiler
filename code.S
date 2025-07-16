@@ -22,6 +22,10 @@ mov %rax, (null)
 ;;#; INTEGER: 4
 mov $4, %rax
 mov %rax, (null)
+;;#; Variable Reassignment
+;;#; INTEGER: 4
+mov $4, %rax
+mov %rax, (null)
 ;;#; Variable Access: "a"
 mov -40(%rbp), %rax
 pop %rbx

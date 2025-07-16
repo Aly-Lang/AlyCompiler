@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int type_compare(Node* a, Node* b) {
     if (a->type != b->type) { return 0; }
@@ -28,6 +29,7 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
     Error err = ok;
     ParsingContext* original_context = context;
     Node* tmpnode = node_allocate();
+    Node* iterator = node_allocate();
     type->type = -1;
     switch (expression->type) {
     default:
@@ -51,6 +53,15 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
         // TMPNODE contains a function node.
         err = parse_get_type(original_context, tmpnode->children->next_child, type);
         break;
+    case NODE_TYPE_DEREFERENCE:
+        err = typecheck_expression(context, context_to_enter, expression);
+        if (err.type) { return err; }
+        err = typecheck_expression(context, context_to_enter, expression->children);
+        if (err.type) { return err; }
+        err = expression_return_type(context, context_to_enter, expression->children, type);
+        if (err.type) { return err; }
+        memcpy(type, type->children, sizeof(Node));
+        break;
     case NODE_TYPE_VARIABLE_ACCESS:
         parse_context_print(context, 0);
         // Get type symbol from variables environment using variable symbol.
@@ -65,20 +76,37 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
             ERROR_PREP(err, ERROR_GENERIC, "Could not get variable within context for variable access return type");
             break;
         }
-        // Get type integer from types environment using type symbol.
+
+        print_node(tmpnode, 0);
+
+        node_copy(tmpnode, type);
+        // TYPE -> "integer"
+        // TYPE -> POINTER
+        //         `-- "integer"
+
+        // TYPE -> POINTER
+        //         `-- INT:0
+        iterator = type;
+        while (iterator->children) {
+            iterator = iterator->children;
+        }
+        print_node(iterator, 0);
+        exit(1);
+        // Get type node from types environment using type symbol.
         context = original_context;
         while (context) {
-            if (environment_get(*context->types, tmpnode, type)) {
+            if (environment_get(*context->types, iterator, tmpnode)) {
                 break;
             }
             context = context->parent;
         }
         if (!context) {
             printf("Variable: \"%s\"\n", expression->value.symbol);
-            printf("Type: \"%s\"\n", tmpnode->value.symbol);
+            printf("Type: \"%s\"\n", iterator->value.symbol);
             ERROR_PREP(err, ERROR_GENERIC, "Could not get type within context for variable access return type");
             break;
         }
+        *iterator = *tmpnode;
         break;
     }
     free(tmpnode);
@@ -109,8 +137,22 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
 
     ParsingContext* to_enter;
 
+    // @a 
+
+    // DEREFERENCE
+    // `--VAR. ACCESS ("a")
+
     switch (expression->type) {
     default:
+        break;
+    case NODE_TYPE_DEREFERENCE:
+        // Ensure children return type is at level one level of pointer indirection.
+        err = expression_return_type(context, context_to_enter, expression->children, type);
+        print_node(type, 0);
+        if (type->type != NODE_TYPE_POINTER) {
+            ERROR_PREP(err, ERROR_TYPE, "Dereference may only operate on pointers!");
+            return err;
+        }
         break;
     case NODE_TYPE_FUNCTION:
         // Typecheck body of function in proper context.
@@ -125,8 +167,10 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         // TODO: Get type of LHS variable, dereference adjusted.
+        print_node(expression, 0);
         err = expression_return_type(context, context_to_enter, expression->children, tmpnode);
         if (err.type) { return err; }
+
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         while (context->parent) { context = context->parent; }

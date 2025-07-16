@@ -1,5 +1,4 @@
 
-
 defun foo () : integer {
     a : integer = 0
 

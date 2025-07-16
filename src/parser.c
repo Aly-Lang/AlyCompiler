@@ -1150,7 +1150,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
                         return err;
                     }
-                    free(type_value);
 
                     Node* variable_binding = node_allocate();
                     if (environment_get(*context->variables, symbol, variable_binding)) {
@@ -1170,7 +1169,15 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     // Context variables environment gains new binding.
                     Node* symbol_for_env = node_allocate();
                     node_copy(symbol, symbol_for_env);
-                    int status = environment_set(context->variables, symbol_for_env, type_symbol);
+                    Node* type_for_env = node_allocate();
+                    node_copy(type_value, type_for_env);
+                    Node* type_child = type_for_env;
+                    while (type_child->children) {
+                        type_child = type_child->children;
+                    }
+                    *type_child = *type_symbol;
+
+                    int status = environment_set(context->variables, symbol_for_env, type_for_env);
                     if (status != 1) {
                         printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
                         ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");
