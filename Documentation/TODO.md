@@ -11,7 +11,7 @@
 
 ## 🚧 Compiler Pipeline
 
-# Pointers
+[x] - TODO: Pointers
 bash```
 
 : @
@@ -22,6 +22,18 @@ bash```
 But, upon lookahead for variable reassignment, we need that entire result, starting at chain of dereferences, on the left hand side.
 
 ```
+
+[ ] - TODO: Allow external functions/symbols to be defined
+  - This would allow the use of `printf` or `putc` for example. Not to mention `fopen` and friends! IO is very important...
+
+  - To do this, we would at least want some way of type checking an external function, so I think we should declare external functions with `: ext <function_name> ([<parameter>]...)`
+  Or, something similar. `ext? extfun`?
+
+  - Maybe we should make it necessary to specify calling convention... `: ext <function_name> ([<parameter>]....) : <mswin | linux>`
+
+  - This doesn't really match what calling conventions actually are, and wouldn't really would if we every try to cross compile or anything. Maybe though?
+
+  - We would also need some way to pass format strings to `printf`, so strings and pointers to them would be necessary. I think I want a byte and byte pointer type of abstraction at first. But I also just want pointers allowed to any type... Complexity.
 
 ### 🔁 Lexing / Parsing
 - [x] **Parse tokens into AST**  
