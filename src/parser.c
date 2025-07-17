@@ -787,10 +787,11 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         // Evaluate next expression unless it's a closing parenthesis.
         EXPECT(expected, ")", current, length, end);
         if (expected.found) {
-            // First lex/parse function return type.
 
+            // First lex/parse function return type.
             EXPECT(expected, ":", current, length, end);
             if (expected.found) {
+
                 err = lex_advance(current, length, end);
                 if (err.type != ERROR_NONE) { return err; }
                 if (*length == 0) {
@@ -799,45 +800,10 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
                     return err;
                 }
 
-                // TODO: parse_type() with ALL the arguments.
-
-                Node* type_value = node_allocate();
-                Node* type_value_it = type_value;
-                // Loop over all pointer declaration symbols.
-                while (current->beginning[0] == '@') {
-                    // Add one level of pointer indirection.
-                    type_value_it->type = NODE_TYPE_POINTER;
-                    Node* child = node_allocate();
-                    type_value->children = child;
-                    type_value_it = child;
-                    // Advance lexer.
-                    err = lex_advance(current, length, end);
-                    if (err.type != ERROR_NONE) { return err; }
-                    if (*length == 0) {
-                        ERROR_PREP(err, ERROR_SYNTAX, "There must be a valid type following pointer type declaration symbol");
-                        return err;
-                    }
-                }
-
-                Node* type_symbol = node_symbol_from_buffer(current->beginning, *length);
-                *type_value_it = *type_symbol;
-
-                Node* type_validator = node_allocate();
-                err = parse_get_type(*context, type_symbol, type_validator);
-                if (err.type) {
-                    free(type_value);
-                    return err;
-                }
-                if (nonep(*type_validator)) {
-                    ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
-                    printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
-                    return err;
-                }
-                free(type_validator);
-
-                node_add_child((*stack)->body, type_value);
-
-                // END return type parsing
+                // PARSE RETURN TYPE.
+                Node* type = node_allocate();
+                parse_type(*context, current, length, end, type);
+                node_add_child((*stack)->body, type);
 
                 // Ensure curly open brace for function body start.
                 EXPECT(expected, "{", current, length, end);
@@ -964,6 +930,44 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
     }
     *status = STACK_HANDLED_INVALID;
     ERROR_PREP(err, ERROR_GENERIC, "Internal error: Could not handle stack operator!");
+    return err;
+}
+
+Error parse_type(ParsingContext* context, Token* current, size_t* length, char** end, Node* type) {
+    Error err = ok;
+    Node* type_it = type;
+    // Loop over all pointer declaration symbols.
+    while (current->beginning[0] == '@') {
+        // Add one level of pointer indirection.
+        type_it->type = NODE_TYPE_POINTER;
+        Node* child = node_allocate();
+        type_it->children = child;
+        type_it = child;
+        // Advance lexer.
+        err = lex_advance(current, length, end);
+        if (err.type != ERROR_NONE) { return err; }
+        if (*length == 0) {
+            // FIXME: This error message SUCKS!
+            ERROR_PREP(err, ERROR_SYNTAX, "There must be a valid type following pointer type declaration symbol");
+            return err;
+        }
+    }
+
+    Node* type_symbol = node_symbol_from_buffer(current->beginning, *length);
+    *type_it = *type_symbol;
+
+    Node* type_validator = node_allocate();
+    err = parse_get_type(context, type_symbol, type_validator);
+    if (err.type) {
+        return err;
+    }
+    if (nonep(*type_validator)) {
+        ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
+        printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
+        return err;
+    }
+    free(type_validator);
+
     return err;
 }
 
@@ -1163,45 +1167,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                             return err;
                         }
 
-                        // TODO: parse_type() with ALL the arguments.
-
-                        Node* type_value = node_allocate();
-                        Node* type_value_it = type_value;
-                        // Loop over all pointer declaration symbols.
-                        while (current_token.beginning[0] == '@') {
-                            // Add one level of pointer indirection.
-                            type_value_it->type = NODE_TYPE_POINTER;
-                            Node* child = node_allocate();
-                            type_value->children = child;
-                            type_value_it = child;
-                            // Advance lexer.
-                            err = lex_advance(&current_token, &token_length, end);
-                            if (err.type != ERROR_NONE) { return err; }
-                            if (token_length == 0) {
-                                ERROR_PREP(err, ERROR_SYNTAX, "There must be a valid type following pointer type declaration symbol");
-                                return err;
-                            }
-                        }
-
-                        Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-                        *type_value_it = *type_symbol;
-
-                        Node* type_validator = node_allocate();
-                        err = parse_get_type(context, type_symbol, type_validator);
-                        if (err.type) {
-                            free(type_value);
-                            return err;
-                        }
-                        if (nonep(*type_validator)) {
-                            ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
-                            printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
-                            return err;
-                        }
-                        free(type_validator);
-
-                        node_add_child(function, type_value);
-
-                        // END return type parsing
+                        // PARSE RETURN TYPE.
+                        Node* type = node_allocate();
+                        parse_type(context, &current_token, &token_length, end, type);
+                        node_add_child(function, type);
 
                         EXPECT(expected, "{", &current_token, &token_length, end);
                         if (!expected.found) {
@@ -1280,38 +1249,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     if (err.type != ERROR_NONE) { return err; }
                     if (token_length == 0) { break; }
 
-                    // TODO: parse_type() with ALL the arguments.
-
-                    Node* type_value = node_allocate();
-                    Node* type_value_it = type_value;
-                    // Loop over all pointer declaration symbols.
-                    while (current_token.beginning[0] == '@') {
-                        // Add one level of pointer indirection.
-                        type_value_it->type = NODE_TYPE_POINTER;
-                        Node* child = node_allocate();
-                        type_value_it->children = child;
-                        type_value_it = child;
-                        // Advance lexer.
-                        err = lex_advance(&current_token, &token_length, end);
-                        if (err.type != ERROR_NONE) { return err; }
-                        if (token_length == 0) { break; }
-                        print_token(current_token);
-                        putchar('\n');
-                    }
-
-                    Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
-                    Node* type_validator = node_allocate();
-                    err = parse_get_type(context, type_symbol, type_validator);
-                    if (err.type) {
-                        free(type_value);
-                        return err;
-                    }
-                    if (nonep(*type_validator)) {
-                        ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
-                        printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
-                        return err;
-                    }
-                    free(type_validator);
+                    Node* type = node_allocate();
+                    err = parse_type(context, &current_token, &token_length, end, type);
+                    if (err.type) { return err; }
 
                     Node* variable_binding = node_allocate();
                     if (environment_get(*context->variables, symbol, variable_binding)) {
@@ -1332,15 +1272,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     // Context variables environment gains new binding.
                     Node* symbol_for_env = node_allocate();
                     node_copy(symbol, symbol_for_env);
-                    Node* type_for_env = node_allocate();
-                    node_copy(type_value, type_for_env);
-                    Node* type_child = type_for_env;
-                    while (type_child->children) {
-                        type_child = type_child->children;
-                    }
-                    *type_child = *type_symbol;
 
-                    int status = environment_set(context->variables, symbol_for_env, type_for_env);
+                    int status = environment_set(context->variables, symbol_for_env, type);
                     if (status != 1) {
                         printf("Variable: \"%s\", status: %d\n", symbol_for_env->value.symbol, status);
                         ERROR_PREP(err, ERROR_GENERIC, "Failed to define variable!");

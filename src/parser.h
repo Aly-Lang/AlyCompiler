@@ -169,6 +169,18 @@ void parse_context_add_child(ParsingContext* parent, ParsingContext* child);
 
 Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type);
 
+
+/**
+ * type has this form
+ * POINTER
+ * `-- NODE WITH PROPER TYPE IN NODE TYPE
+ *
+ * type_name has this form
+ * POINTER
+ * `-- SYMBOL WITH THE NAME OF TYPE
+*/
+Error parse_type(ParsingContext* context, Token* current, size_t* length, char** end, Node* type);
+
 Error parse_get_type(ParsingContext* context, Node* id, Node* result);
 
 ParsingContext* parse_context_create(ParsingContext* parent);
