@@ -54,6 +54,12 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
   * **AST Node Token Information:** To significantly enhance error reporting, we'll add source **token information** to each AST node. This includes token span (start/end positions), file path, line number, and column number.
 
+ - [x] DONE: Make parsing a type easier.
+  - Currently we handle pointers in some places but not in others, and everything is kind of a mess. I think if we just parse variable declarations as an expression, we can then just parse that and in type-checking ensure that function parameters are all var. decl. The thing is we already do parse variable declarations as expressions, we just don't take advantage of the code because we don't use the parser stack continuation to do it, currently. The way to do it now is kind of code-duplicity, where we have the code to parse a type written separately everyway it's needed.
+
+  My instinct is to just get a quick fix done in the form of duplicating the pointer type code everything it's needed, but I should probably just use parser stack continuation to handle function parameters and have that transform into function body stack handler. This way we will just parse any expression in a function parameter list and continue on doing so until we reach a closing parenthesis. Then, in type-checking, we can ensure all of the nodes in teh parameter list are var. decl. nodes, which means they all have valid type annotations.
+
+
 -----
 
 ## ⚙️ Code Generation Improvements
@@ -70,6 +76,9 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 ## 🔥 High Priority Features
 
 -----
+
+  - [ ] Within the typechecker handle function calls better.
+    - We somehow need to access the type of each parameter as we iterate them, but we recently changed how functions parameters are parsed, and because of this we no longer store type symbols / information in the function AST itself. This means, while typechecking a function call, we would have to somehow know which context it pertain to. We could just store an extra node that points to the function environment node somehow, but I don't think that's the best solution.
 
   * **LISP Runtime in Aly:** We'll implement a **LISP runtime** written in the compiled language itself. This will serve as a significant dogfooding exercise and demonstrate the language's capabilities.
   * **Line/Column Tracking in AST:** We'll fully integrate **line and column tracking** into the AST to significantly improve the precision and helpfulness of error reporting and debugging.

@@ -181,6 +181,10 @@ Error define_binary_operator(ParsingContext* context, char* operator, int preced
 */
 Error parse_type(ParsingContext* context, Token* current, size_t* length, char** end, Node* type);
 
+
+/** Get the value of a type symbol/ID in types environment.
+* Return an error if type is not a valid symbol/ID found in context.
+*/
 Error parse_get_type(ParsingContext* context, Node* id, Node* result);
 
 ParsingContext* parse_context_create(ParsingContext* parent);
