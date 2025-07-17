@@ -34,6 +34,16 @@ But, upon lookahead for variable reassignment, we need that entire result, start
 
   - We would also need some way to pass format strings to `printf`, so strings and pointers to them would be necessary. I think I want a byte and byte pointer type of abstraction at first. But I also just want pointers allowed to any type... Complexity.
 
+- [ ] TODO: Write some more examples
+- Some interesting things that shouldn't require too much re-working to implement:
+  - [ ] gcd :: Greatest Common Divisor (requires division codegen)
+
+    - Given two integers `\ (a\)`  and `\ (b\)` such that `\(a > b\)`, the common divisors of `( a \)` and `\(b \)` are the same as the common divisors of `\( a - b\)` and `\( b \)`.
+
+    - Euclid's method to get the GCD is to replace the larger number, `\( a \)`, with the difference between the two, `\( a - b \)`, until the two numbers are equal.  
+
+
+
 ### 🔁 Lexing / Parsing
 - [x] **Parse tokens into AST**  
   The AST should represent the structure of the program, containing relevant data.

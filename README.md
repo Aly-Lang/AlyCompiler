@@ -7,7 +7,7 @@
 
 ![Aly-Lang LOGO](/Resources/Branding/LOGO.png)
 
-I don't really have a plan, I just want to make a compiler; it sounds fun. There's an example of some code that should be valid and able to be compile in [`example`](example.aly) file.
+I don't really have a plan, I just want to make a compiler; it sounds fun. There's an example of some code that should be valid and able to be compile in [`example`](examples/example.aly) file.
 
 NOTE: Shell commands shown assume a working directory of this repository.
 
