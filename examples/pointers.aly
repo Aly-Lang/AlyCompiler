@@ -10,4 +10,8 @@ defun foo () : integer {
     a
 }
 
+;defun bar (ptr : @integer) : integer {
+;    0
+;}
+
 foo()
