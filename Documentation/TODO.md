@@ -15,7 +15,7 @@
       * Type-checked and validated variable accesses.
       * Fixed a bug where variable declarations with assignments were not code-generated properly.
       * Achieved initial compilation of the AST into **x86\_64 assembly**.
-      * Worked on parsing and code generation for `if` conditional statements.
+      * **Worked on parsing and code generation for `if` conditional statements.** (Updated)
   * **Compiler Infrastructure:**
       * Compiling with **`-Wall`** and **`-WExtra`** is enabled, and all associated warnings have been fixed, ensuring cleaner compilation.
   * **Examples:**
@@ -63,6 +63,7 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
   * **Modular Code Generation:** We'll create a `CodeGen` structure that utilizes **function pointers** to modularize the code generation process. This will move away from large `switch` statements, allowing different backends to define their specific code generation behaviors consistently.
   * **Register Allocation and Stack Usage:** When scratch registers are exhausted during code generation, we'll implement mechanisms to utilize the **stack for temporary storage**. This will ensure the compiler can handle complex expressions without running out of registers.
   * **Block Return Types:** We'll convert expression lists (`{}`) into a standalone **expression type** (`NODE_TYPE_BLOCK`). This will enable blocks to have return values, specifically the return value of the last expression within the block, or a default value if no expressions are present.
+  * **`if` Conditional Statement Context Handling:** The basic parsing of `if` statements is in place, but proper **context handling** for these statements still needs to be fully implemented. This should be a straightforward task. (Added)
 
 -----
 

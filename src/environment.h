@@ -22,12 +22,19 @@ void environment_print(Environment env, long long ident);
 
 Environment* environment_create(Environment* parent);
 
-/**
+/** Exactly like environment_set() expect it adds the child to the end.
 * @retval 0 Failure.
 * @retval 1 Creation of new binding.
 * @retval 2 Existing binding value overwrite (ID unused).
 */
 int environment_set(Environment* env, Node* id, Node* value);
+
+/**
+* @retval 0 Failure.
+* @retval 1 Creation of new binding.
+* @retval 2 Existing binding value overwrite (ID unused).
+*/
+int environment_set_end(Environment* env, Node* id, Node* value);
 
 /** Fill RESULT with value bound to ID in ENV, if successful.
 *

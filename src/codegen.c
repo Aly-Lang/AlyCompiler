@@ -451,10 +451,20 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // Get the size in bytes of the type of the variable
         long long size_in_bytes = 0;
         while (context) {
+
+            // parse_context_print(context, 0);
+            //print_node(expression->children, 0);
+
             if (environment_get(*context->variables, expression->children, tmpnode)) {
                 break;
             }
             context = context->parent;
+        }
+        if (!context) {
+            // BIG FUCKING ERRORS THAT I WITH A FIERY PASSION!
+            printf("Variable Symbol: \%s\"\n", expression->children->value.symbol);
+            ERROR_PREP(err, ERROR_GENERIC, "Invalid AST/context fed to codegen. Could not find variable declaration in environment.");
+            return err;
         }
         if (tmpnode->type == NODE_TYPE_POINTER) {
             size_in_bytes = 8;

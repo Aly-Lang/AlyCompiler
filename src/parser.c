@@ -410,6 +410,8 @@ void parse_context_print(ParsingContext* top, size_t indent) {
 
 void parse_context_add_child(ParsingContext* parent, ParsingContext* child) {
     if (parent) {
+        //child->next_child = parent->children;
+        //parent->children = child;
         if (parent->children) {
             parent = parent->children;
             while (parent->next_child) { parent = parent->next_child; }
@@ -534,6 +536,13 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
 
 Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
     Error err = ok;
+
+    // DEBUG
+    //printf("Searching following context for ");
+    //print_node(id, 0);
+    //environment_print(*context->types, 0);
+    //putchar('\n');
+
     while (context) {
         int status = environment_get(*context->types, id, result);
         if (status) { return ok; }
@@ -1097,7 +1106,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 stack = parse_stack_create(stack);
                 stack->operator = node_symbol("lambda");
                 stack->result = working_result;
-
                 continue;
             }
 
@@ -1123,7 +1131,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 Node* function_name = node_symbol_from_buffer(current_token.beginning, token_length);
 
                 // TODO: Check return value for redefinition of function!
-                environment_set(context->functions, function_name, function);
+                environment_set_end(context->functions, function_name, function);
 
                 Node* parameter_list = node_allocate();
                 node_add_child(function, parameter_list);
@@ -1136,6 +1144,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 }
 
                 stack = parse_stack_create(stack);
+                // Create new parsing context (scope) for function body.
+                context = parse_context_create(context);
 
                 EXPECT(expected, ")", &current_token, &token_length, end);
                 if (expected.done) {
@@ -1201,9 +1211,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                             return err;
                         }
 
-                        // Create new parsing context (scope) for function body.
-                        context = parse_context_create(context);
-
                         // Setup stack for defun-body, no param parsing needed.
                         Node* function_body = node_allocate();
                         node_add_child(function, function_body);
@@ -1221,9 +1228,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     return err;
                 }
 
-                // Create new parsing context (scope) for function body.
-                context = parse_context_create(context);
-
                 // Setup stack for defun-params to parse all parameters.
                 Node* first_parameter = node_allocate();
                 node_add_child(parameter_list, first_parameter);
@@ -1232,83 +1236,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 stack->result = first_parameter;
                 stack->body = function;
                 working_result = first_parameter;
-                continue;
-
-                for (;;) {
-                    EXPECT(expected, ")", &current_token, &token_length, end);
-                    if (expected.found) { break; }
-                    if (expected.done) {
-                        ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis for parameter list");
-                        return err;
-                    }
-                    err = lex_advance(&current_token, &token_length, end);
-                    if (err.type) { return err; }
-                    Node* parameter_name = node_symbol_from_buffer(current_token.beginning, token_length);
-
-                    EXPECT(expected, ":", &current_token, &token_length, end);
-                    if (expected.done || !expected.found) {
-                        ERROR_PREP(err, ERROR_SYNTAX, "Parameter declaration requires a type annotation");
-                        return err;
-                    }
-
-                    lex_advance(&current_token, &token_length, end);
-                    Node* parameter_type = node_symbol_from_buffer(current_token.beginning, token_length);
-
-                    Node* parameter = node_allocate();
-                    node_add_child(parameter, parameter_name);
-                    node_add_child(parameter, parameter_type);
-
-                    node_add_child(parameter_list, parameter);
-
-                    EXPECT(expected, ",", &current_token, &token_length, end);
-                    if (expected.found) { continue; }
-
-                    EXPECT(expected, ")", &current_token, &token_length, end);
-                    if (!expected.found) {
-                        ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis following parameter list");
-                        return err;
-                    }
-                    break;
-                }
-
-                // Parse return type.
-                EXPECT(expected, ":", &current_token, &token_length, end);
-                // TODO/FIXME: Should we allow implicit return type?
-                if (expected.done || !expected.found) {
-                    ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires return type annotation following parameter list");
-                    return err;
-                }
-
-                lex_advance(&current_token, &token_length, end);
-                Node* function_return_type = node_symbol_from_buffer(current_token.beginning, token_length);
-                node_add_child(function, function_return_type);
-
-                // Bind function to function name in functions environment.
-                environment_set(context->functions, function_name, function);
-
-                // Parse function body.
-                EXPECT(expected, "{", &current_token, &token_length, end);
-                if (expected.done || !expected.found) {
-                    ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires body following return type");
-                    return err;
-                }
-
-                context = parse_context_create(context);
-                Node* param_it = function->children->children;
-                while (param_it) {
-                    environment_set(context->variables, param_it->children, param_it->children->next_child);
-                    param_it = param_it->next_child;
-                }
-
-                Node* function_body = node_allocate();
-                Node* function_first_expression = node_allocate();
-                node_add_child(function_body, function_first_expression);
-                node_add_child(function, function_body);
-                working_result = function_first_expression;
-
-                stack = parse_stack_create(stack);
-                stack->operator = node_symbol("defun");
-                stack->result = working_result;
                 continue;
             }
 
