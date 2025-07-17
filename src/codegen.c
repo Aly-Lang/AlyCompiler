@@ -459,13 +459,14 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (tmpnode->type == NODE_TYPE_POINTER) {
             size_in_bytes = 8;
         } else {
-            print_node(tmpnode, 0);
+            //print_node(tmpnode, 0);
+            // TODO / FIXME: The following line causes errors when it really shouldn't!
             err = parse_get_type(context, tmpnode, tmpnode);
             if (err.type) { return err; }
             size_in_bytes = tmpnode->children->value.integer;
         }
         // Subtract type size in bytes from stack pointer
-        fprintf(code, "sub $%zu, %%rsp\n", size_in_bytes);
+        fprintf(code, "sub $%lld, %%rsp\n", size_in_bytes);
         // Keep track of RBP offset.
         cg_context->locals_offset -= size_in_bytes;
         // Kept in codegen context.

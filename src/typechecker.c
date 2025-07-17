@@ -262,6 +262,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
         //print_node(value,0);
         iterator = expression->children->next_child->children;
+        tmpnode = value->children->children;
 
         //printf("Iterator:\n");
         //print_node(iterator, 2);

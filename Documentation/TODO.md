@@ -1,177 +1,137 @@
-# AlyCompiler TODO
+# AlyCompiler Development Roadmap
 
----
+-----
 
 ## ✅ Completed
 
-- [x] Lex source into tokens  
-- [x] Lex past comments
+  * **Lexical Analysis:**
+      * Lexed source into tokens.
+      * Lexed past comments.
+  * **AST Parsing:**
+      * Parsed tokens into an Abstract Syntax Tree (AST).
+      * Separated the **parsing stack** from the **parsing context**. The parsing context now manages scope hierarchies, while the stack handles internal parsing continuations. This separation prevents extraneous child contexts during function calls, which previously led to incorrect context management.
+  * **Code Generation Fundamentals:**
+      * Implemented **Address-of** (`&`) and **Dereference** (`*`) operators for pointers. This involved using the `lea` mnemonic for address-of and loading/dereferencing memory addresses for dereference.
+      * Type-checked and validated variable accesses.
+      * Fixed a bug where variable declarations with assignments were not code-generated properly.
+      * Achieved initial compilation of the AST into **x86\_64 assembly**.
+      * Worked on parsing and code generation for `if` conditional statements.
+  * **Compiler Infrastructure:**
+      * Compiling with **`-Wall`** and **`-WExtra`** is enabled, and all associated warnings have been fixed, ensuring cleaner compilation.
+  * **Examples:**
+      * Implemented **Greatest Common Divisor (GCD)**, which required division codegen.
+  * **Command Line Interface:**
+      * Began handling command-line flags, including:
+          * `--help, -h`: Prints usage and version information.
+          * `--output, -o`: Sets the name of the output file.
+          * `--format, -f`: Sets the target output format for generated code.
+          * `--formats`: Lists all supported output formats.
+          * `--notypecheck, -nt`: Skips type checking after parsing.
+          * `--nocodegen, -nc`: Stops after type checking, without generating any code.
 
----
+-----
 
-## 🚧 Compiler Pipeline
+## 🚧 Compiler Pipeline: Next Steps
 
-[x] - TODO: Pointers
-```bash
+-----
 
-: @
+### External Function Support
 
-: DEREFERENCE
-: `-- PARSE INTO HERE NOW
+We need to allow **external functions and symbols** to be defined. This will enable the use of standard library functions like `printf` or `fopen` for input/output operations.
 
-But, upon lookahead for variable reassignment, we need that entire result, starting at chain of dereferences, on the left hand side.
-```
+  * **Declaration Syntax:** We'll define a clear syntax for declaring external functions, possibly `: ext <function_name> ([<parameter>]...)`. We also need to consider how to handle calling conventions (e.g., `: ext <function_name> ([<parameter>]....) : <mswin | linux>`), though this might add complexity for cross-compilation.
+  * **String and Pointer Types:** Implementing **string types** and **pointers to them** is crucial for functions like `printf` that require format strings. Initially, we can consider a byte and byte pointer abstraction, eventually expanding to general pointers for any type.
 
-[ ] - TODO: Allow external functions/symbols to be defined
-  - This would allow the use of `printf` or `putc` for example. Not to mention `fopen` and friends! IO is very important...
+### Expanded Examples
 
-  - To do this, we would at least want some way of type checking an external function, so I think we should declare external functions with `: ext <function_name> ([<parameter>]...)`
-  Or, something similar. `ext? | extfun`?
+We'll develop additional examples to thoroughly test and demonstrate the compiler's capabilities.
 
-  - Maybe we should make it necessary to specify calling convention... `: ext <function_name> ([<parameter>]....) : <mswin | linux>`
+  * **Least Common Multiple (LCM):** Implement the LCM function.
+  * **Square Root (sqrt):** Implement a square root function.
+  * **Perfect Square:** Implement a function to check for perfect squares, leveraging the integer square root implementation.
 
-  - This doesn't really match what calling conventions actually are, and wouldn't really would if we every try to cross compile or anything. Maybe though?
+### Lexing / Parsing Enhancements
 
-  - We would also need some way to pass format strings to `printf`, so strings and pointers to them would be necessary. I think I want a byte and byte pointer type of abstraction at first. But I also just want pointers allowed to any type... Complexity.
+  * **AST Node Token Information:** To significantly enhance error reporting, we'll add source **token information** to each AST node. This includes token span (start/end positions), file path, line number, and column number.
 
-- [ ] TODO: Write some more examples
-- Some interesting things that shouldn't require too much re-working to implement:
-  - [x] gcd :: Greatest Common Divisor (requires division codegen)
+-----
 
-    - Given two integers `\ (a\)`  and `\ (b\)` such that `\(a > b\)`, the common divisors of `( a \)` and `\(b \)` are the same as the common divisors of `\( a - b\)` and `\( b \)`.
+## ⚙️ Code Generation Improvements
 
-    - Euclid's method to get the GCD is to replace the larger number, `\( a \)`, with the difference between the two, `\( a - b \)`, until the two numbers are equal.
+-----
 
-  - [ ] lcm :: Least Common Multiple
+  * **Modular Code Generation:** We'll create a `CodeGen` structure that utilizes **function pointers** to modularize the code generation process. This will move away from large `switch` statements, allowing different backends to define their specific code generation behaviors consistently.
+  * **Register Allocation and Stack Usage:** When scratch registers are exhausted during code generation, we'll implement mechanisms to utilize the **stack for temporary storage**. This will ensure the compiler can handle complex expressions without running out of registers.
+  * **Block Return Types:** We'll convert expression lists (`{}`) into a standalone **expression type** (`NODE_TYPE_BLOCK`). This will enable blocks to have return values, specifically the return value of the last expression within the block, or a default value if no expressions are present.
 
-  - [ ] sqrt :: Square Root
+-----
 
-  - [ ] perfect_square :: In terms of integer square root.
+## 🔥 High Priority Features
 
-### 🔁 Lexing / Parsing
-- [x] **Parse tokens into AST**  
-  The AST should represent the structure of the program, containing relevant data.
+-----
 
-- [ ] **Add token member to AST nodes**  
-  To improve error reporting, each AST node should store information about its source token:  
-  - Token span (start and end positions)  
-  - File path (if applicable)  
-  - Line number and column number
+  * **LISP Runtime in Aly:** We'll implement a **LISP runtime** written in the compiled language itself. This will serve as a significant dogfooding exercise and demonstrate the language's capabilities.
+  * **Line/Column Tracking in AST:** We'll fully integrate **line and column tracking** into the AST to significantly improve the precision and helpfulness of error reporting and debugging.
+  * **`environment_free` Method:** We'll create a method named **`environment_free`** for proper memory management and cleanup of environment-related data structures.
 
----
-
-### ⚙️ Code Generation
-- [x] **Compile AST into assembly** (Start with x86_64?)  
-  Initially, we could compile directly to assembly or consider an intermediate step like transpiling to C, which can then be compiled.  
-
-- [ ] **Create a `CodeGen` structure with function pointers**  
-  - This would allow the code generation process to be modular and consistent, with different backends having their own semantic adjustments.  
-  - Move away from switch cases in functions by defining code generation behaviors using a structure.
-
----
-
-## 🔥 High Priority
-
-- [ ] **Write a LISP runtime** in the compiled language  
-  - A runtime for executing LISP-style code in the generated language would be essential.
-
-- [ ] **Add support for line/column tracking in the AST**  
-  - Having this information would greatly enhance error reporting and debugging.
-
-- [x] **Compile with `-Wall` and `-WExtra`**, fix warnings  
-  - Ensure clean compilation and fix any existing warnings.
-
-- [ ] **TODO: Create a method called `environment_free`**
----
+-----
 
 ## 🧠 Language Features
 
-### 🔧 Type System & Variables
-- [ ] **Support `=Any=` type**  
-  - A special type that can accept any other type as its value.  
-  - We may need a way to query the type of a value at runtime, but it's doable.
+-----
 
-- [ ] **Automatic type deduction**  
-  - Allow the compiler to automatically deduce types for variables.  
-  - If the return type of an expression can be inferred, do not require explicit type annotations for variables.
+### Type System & Variables
 
-- [ ] **Uninitialized variables**  
-  - Decide on syntax for uninitialized variables:  
-    - Example: `a : integer !`  
-    - Alternatively: `a : integer = None` (or any other sentinel value).
+  * **`=Any=` Type Support:** Introduce a special **`=Any=` type** capable of accepting any other type as its value. This may necessitate runtime type querying.
+  * **Automatic Type Deduction:** Enable the compiler to automatically **deduce variable types** where inference is possible, reducing the need for explicit type annotations.
+  * **Uninitialized Variables Syntax:** Decide on a clear and consistent syntax for **uninitialized variables**, for example, `a : integer !` or `a : integer = None`.
+  * **Universal Type Representation:** Explore a type that could represent ***any*** type. This could be useful for dynamic handling of types in advanced scenarios.
+  * **Unnamed Variable Declarations:** Support declaring variables without an explicit identifier, referring to a singular unnamed variable in the environment (e.g., `some_value = 10` could be treated as an unnamed variable).
 
-- [ ] **A type that represents all other types**  
-  - Allow a type that could represent *any* type. This could be useful for dynamic handling of types in advanced cases.
+### Function Calls
 
-- [ ] **Unnamed variable declarations**  
-  - Support for declaring variables without an explicit identifier, which could refer to a singular unnamed variable in the environment.  
-    - Example: `some_value = 10` could be treated as an unnamed variable.
+  * **Named Arguments in Any Order:** Allow the ability to pass arguments in any order if they are named (e.g., `diff(y: 9, 6)` could be re-ordered during parsing to `diff(9, 6)`).
 
----
-
-### 📞 Function Calls
-- [ ] **Allow named arguments in any order**  
-  - The ability to pass arguments in any order if they are named.  
-  - Example: `diff(y: 9, 6)` could be re-ordered during parsing to `diff(9, 6)`.
-
----
+-----
 
 ## 🤯 Crazy / Fun Ideas
 
-- [ ] **Compile to Brainfuck**  
-  - Just for fun—compile Aly code into Brainfuck. Not sure if it’s practical, but it’d be an interesting challenge.
+-----
 
-- [ ] **Compile to CHIP-8 assembly**  
-  - Someone is working on a CHIP-8 virtual machine, assembler, and disassembler in PHP. It could be cool to collaborate with them and get Aly to target CHIP-8.
+  * **Compile to Brainfuck:** Just for fun, explore compiling Aly code into Brainfuck. This would be an interesting, albeit potentially impractical, challenge.
+  * **Compile to CHIP-8 Assembly:** Collaborate with someone working on a CHIP-8 virtual machine to target CHIP-8 assembly.
+  * **End-to-End Tests in Algol:** Write end-to-end tests in Algol. This could be a fun learning experience, exploring a classic language while testing the compiler.
 
-- [ ] **Write end-to-end tests in Algol**  
-  - This could be a fun learning experience, exploring a classic language while testing the compiler.
-
----
+-----
 
 ## 🛠️ Structural Changes & Refactors
 
-- [ ] **Convert `Environment` type into an AST node**  
-  - This change would make the environment more flexible and allow it to be managed similarly to other AST nodes (e.g., for garbage collection or memory management).  
-  - It would also make the code more LISP-like, improving consistency with the rest of the system.
+-----
 
-- [ ] **Consider using a state machine for the parser**  
-  - As the parser grows more complex, a state machine could help handle edge cases and improve maintainability.  
-  - Currently, we are handling special cases directly in the parser, but a state machine could help separate concerns and improve scalability.
+  * **Convert `Environment` Type to AST Node:** This change would make the environment more flexible, allowing it to be managed similarly to other AST nodes (e.g., for garbage collection or memory management). It would also make the code more LISP-like, improving consistency.
+  * **State Machine for Parser:** As the parser grows more complex, consider using a **state machine** to handle edge cases and improve maintainability. Currently, special cases are handled directly in the parser, but a state machine could help separate concerns and improve scalability.
 
----
+-----
 
 ## 📌 Miscellaneous
 
-- [ ] TODO: Implement division and bit-shifting binary operators
-  - This would mean that we can do some more powerful / advanced examples such as 'sqrt' and 'perfect_square' as aforementioned above.
+-----
 
-- [ ] When out of scratch registers in codegen, use stack or something
-  - We should be able to never run out of scratch registers by using stack allocations and keeping track of memory address. Will require slightly different API/semantics, but overall it will help a lot.
+  * **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
+  * **`+= / -=` with Reassignment `:=`:** Conceptualize how to handle the interaction between compound assignment operators (`+=`, `-=`) and the reassignment symbol (`:=`).
+  * **Refactor Type Inference:** Continue to improve the type inference system, particularly in cases where types can be automatically deduced.
+  * **Finalize Type Referencing Approach:** Define how types should reference other types. This could help with creating meta-types or dealing with more complex type systems.
+  * **Compiler-Aided TODO Collection:** Have the compiler collect TODO comments and other directives from the source code, allowing for compiler-aided software design.
 
-- [ ] **Conceptualize how do we deal with syntax `+= / -=` with reassignment symbol `:=`
+-----
 
-- [ ] **Finalize syntax for uninitialized variables**  
-  - Deciding on a clean and consistent syntax for uninitialized variables will be important for clarity and user experience.
+## Syntax
 
-- [ ] **Refactor type inference**  
-  - Continue to improve the type inference system, particularly in cases where types can be automatically deduced.
+-----
 
-- [ ] **Finalize approach for referencing types**  
-  - Define how types should reference other types. This could help with creating meta-types or dealing with more complex type systems.
+We need to support a **quick function declaration syntax**, which could look something like this:
 
-- [x] **Fix warnings during compilation**  
-  - Enable `-Wall` and `-WExtra` in the compiler, and fix any warnings that are outputted to ensure clean, production-quality code.
-
-- [ ] **Have Compiler able to collect TODO comments and things from source**
-  - This would allow compiler-aided software design in more scenarios.
-
-- [x] Type check and validate variable accesses
-
-# Syntax
-
-- [ ] Support quick function declaration syntax, this could look something like the code sample below
-```bash
+```
 integer_identity : integer (x : integer) { x }
 
 void foo () {}
@@ -179,57 +139,26 @@ void foo () {}
 foo : None () {}
 
 foo :[None() {}]
-foo :[None() {}]
-foo :None() {}
 foo :None() {}
 ```
 
-Basic syntax as of now:
-`...` means any amount repeated.
-Surrounded by `[]` means it is optional.
-Inside `""` means string is compared against literally.
+### Current Basic Syntax:
 
-Helpers:
-  - Parameter List :: "(" < variable declaration> ["," <variable declaration>]... ")"
-  - Expression List :: "{" <expression> [<expression>]... "}"
+  * `...` means any amount repeated.
+  * Surrounded by `[]` means it is optional.
+  * Inside `""` means the string is compared literally.
 
-Syntaxes that make AST Nodes:
-- Integer :: <positive-or-negative-integer>
-- Variable Declaration :: <symbol> ":" <type>
-- Named Function :: <variable declaration> <parameter list> <expression list>
-- Function :: "[" <type> <parameter list> <expression list> "]"
-- Variable Access :: <symbol>
-- Binary Operator :: <expression> <operator> <expression>
-- Function Call :: <symbol> <parameter list>
+**Helpers:**
 
-- [x] Separate parsing stack and parsing context
-  - The context is a hierarchy of environments that detail the different scopes of the program.
+  * **Parameter List:** `( <variable declaration> ["," <variable declaration>]... )`
+  * **Expression List:** `{ <expression> [<expression>]... }`
 
-  - The stack is used internally to handle continuations while parsing.
+**Syntaxes that make AST Nodes:**
 
-  - Currently, these are one in the same, and this causes major issues when it comes to function calls. Function calls require a continuation, but do not require a new context to be created. With our current system, this isn't possible, so our parsing context get's too many children added to it that aren't needed and that messes things up pretty bad.
-
-  - To fix this, we will need to separate the stack and the context.
-
-- [x] Begin to handle command line flags and options
-
-  - Some common ones right away are:
-    - `--help, -h` :: Print usage, version etc.
-    - `--output, -o` :: Set name of output file.
-
-    - `--format, -f` :: Set target output format. All code is generated.
-    - `--formats` :: List all supported output formats.
-
-  - Are these helpful at all? They seem interesting, though.
-    - `--notypecheck, -nt` :: Do not typecheck after parsing.
-    - `--nocodegen, nc` :: Do not generate any code, stop after typechecking.
-
-
-- [x] FIX BUG: Where variable declaration with assignment are not code generated properly.
-
-- [x] Work on parsing and code-genning of `if` conditional statements.
-
-- [ ] Convert `{}` expression list into an expression itself, this would mean that we can have block return types:
-  - `NODE_TYPE_BLOCK` :: Returns return value of last expression in body, or zero or some other default value when no expressions are present.
-
-- [ ] `if` is parsed basically, but context is still not handled. Shouldn't be too hard.
+  * **Integer:** `<positive-or-negative-integer>`
+  * **Variable Declaration:** `<symbol> ":" <type>`
+  * **Named Function:** `<variable declaration> <parameter list> <expression list>`
+  * **Function:** `[ <type> <parameter list> <expression list> ]`
+  * **Variable Access:** `<symbol>`
+  * **Binary Operator:** `<expression> <operator> <expression>`
+  * **Function Call:** `<symbol> <parameter list>`
