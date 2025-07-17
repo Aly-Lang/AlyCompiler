@@ -12,7 +12,7 @@
 ## 🚧 Compiler Pipeline
 
 [x] - TODO: Pointers
-bash```
+```bash
 
 : @
 
@@ -20,7 +20,6 @@ bash```
 : `-- PARSE INTO HERE NOW
 
 But, upon lookahead for variable reassignment, we need that entire result, starting at chain of dereferences, on the left hand side.
-
 ```
 
 [ ] - TODO: Allow external functions/symbols to be defined
