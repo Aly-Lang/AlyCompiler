@@ -36,11 +36,11 @@ But, upon lookahead for variable reassignment, we need that entire result, start
 
 - [ ] TODO: Write some more examples
 - Some interesting things that shouldn't require too much re-working to implement:
-  - [ ] gcd :: Greatest Common Divisor (requires division codegen)
+  - [x] gcd :: Greatest Common Divisor (requires division codegen)
 
     - Given two integers `\ (a\)`  and `\ (b\)` such that `\(a > b\)`, the common divisors of `( a \)` and `\(b \)` are the same as the common divisors of `\( a - b\)` and `\( b \)`.
 
-    - Euclid's method to get the GCD is to replace the larger number, `\( a \)`, with the difference between the two, `\( a - b \)`, until the two numbers are equal.  
+    - Euclid's method to get the GCD is to replace the larger number, `\( a \)`, with the difference between the two, `\( a - b \)`, until the two numbers are equal.
 
 
 
