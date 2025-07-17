@@ -451,8 +451,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // Get the size in bytes of the type of the variable
         long long size_in_bytes = 0;
         while (context) {
-
-            // parse_context_print(context, 0);
+            //parse_context_print(context, 0);
             //print_node(expression->children, 0);
 
             if (environment_get(*context->variables, expression->children, tmpnode)) {
@@ -462,7 +461,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         if (!context) {
             // BIG FUCKING ERRORS THAT I WITH A FIERY PASSION!
-            printf("Variable Symbol: \%s\"\n", expression->children->value.symbol);
+            printf("Variable Symbol: \"%s\"\n", expression->children->value.symbol);
             ERROR_PREP(err, ERROR_GENERIC, "Invalid AST/context fed to codegen. Could not find variable declaration in environment.");
             return err;
         }
@@ -488,25 +487,19 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         if (cg_context->parent) {
             // Codegen RHS
-            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context,
-                expression->children->next_child);
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
             if (err.type) { break; }
 
             if (expression->children->type == NODE_TYPE_DEREFERENCE) {
                 // Dereference is there! It will return address in result register to dereference.
-                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context,
-                    expression->children);
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
                 if (err.type) { break; }
-                fprintf(code, "mov %s, (%s)\n",
-                    register_name(r, expression->children->next_child->result_register),
-                    register_name(r, expression->children->result_register));
+                fprintf(code, "mov %s, (%s)\n", register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
                 // TODO: Set result register or something.
                 register_deallocate(r, expression->children->next_child->result_register);
                 register_deallocate(r, expression->children->result_register);
             } else {
-                fprintf(code, "mov %s, %s\n",
-                    register_name(r, expression->children->next_child->result_register),
-                    symbol_to_address(cg_context, expression->children));
+                fprintf(code, "mov %s, %s\n", register_name(r, expression->children->next_child->result_register), symbol_to_address(cg_context, expression->children));
                 // TODO: Set result register or something.
                 register_deallocate(r, expression->children->next_child->result_register);
             }
@@ -585,10 +578,19 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
         "push %%rdi\n");
 
     // Function body
-    ParsingContext* ctx = next_child_context ? *next_child_context : context;
+    ParsingContext* ctx = context;
+    if (next_child_context) {
+        ctx = *next_child_context;
+        *next_child_context = (*next_child_context)->next_child;
+    }
+
     Node* last_expression = NULL;
     Node* expression = function->children->next_child->next_child->children;
     while (expression) {
+        //printf("\nCodegenning expression with context:\n");
+        //print_node(expression, 0);
+        //parse_context_print(ctx, 0);
+
         err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, next_child_context, expression);
         register_deallocate(r, expression->result_register);
         if (err.type) {
@@ -597,9 +599,6 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
         }
         last_expression = expression;
         expression = expression->next_child;
-    }
-    if (next_child_context) {
-        *next_child_context = (*next_child_context)->next_child;
     }
 
     // Copy last expression result register to RAX
