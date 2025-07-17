@@ -15,21 +15,24 @@ sub $8, %rsp
 mov $0, %rax
 mov %rax, -40(%rbp)
 ;;#; Variable Declaration: "ptr"
-sub $2544769179728, %rsp
+sub $8, %rsp
 ;;#; Variable Reassignment
-mov %rax, -2544769179768(%rbp)
+;;#; Addressof
+lea -40(%rbp), %rax
+mov %rax, -48(%rbp)
 ;;#; Variable Reassignment
 ;;#; INTEGER: 4
 mov $4, %rax
-mov %rax, -2544769179768(%rbp)
-;;#; Variable Reassignment
-mov %rax, -40(%rbp)
+;;#; Dereference
+;;#; Variable Access: "ptr"
+mov -48(%rbp), %r10
+mov %rax, (%r10)
 ;;#; Variable Access: "a"
 mov -40(%rbp), %rax
 pop %rbx
 pop %rsi
 pop %rdi
-add $2544769179768, %rsp
+add $48, %rsp
 pop %rbp
 ret
 afterfoo:
@@ -39,6 +42,10 @@ push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
 ;;#; Function
+;;#; Function Call: "foo"
+pushq %rax
+call foo
+add $8, %rsp
 add $32, %rsp
 pop %rbp
 ret

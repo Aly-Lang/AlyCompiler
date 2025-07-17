@@ -984,7 +984,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 //   RETURN TYPE SYMBOL
                 //   PROGRAM/LIST of expressions
                 //     ...
-                working_result->type = NODE_TYPE_FUNCTION;
+
+                Node* function = working_result;
+                function->type = NODE_TYPE_FUNCTION;
 
                 lex_advance(&current_token, &token_length, end);
                 Node* function_name = node_symbol_from_buffer(current_token.beginning, token_length);
@@ -997,7 +999,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 }
 
                 Node* parameter_list = node_allocate();
-                node_add_child(working_result, parameter_list);
+                node_add_child(function, parameter_list);
 
                 // FIXME?: Should we possibly create a parser stack and evaluate the
                 // next expression, then ensure return value is var. decl. in stack
@@ -1050,7 +1052,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 lex_advance(&current_token, &token_length, end);
                 Node* function_return_type = node_symbol_from_buffer(current_token.beginning, token_length);
-                node_add_child(working_result, function_return_type);
+                node_add_child(function, function_return_type);
 
                 // Bind function to function name in functions environment.
                 environment_set(context->functions, function_name, working_result);
@@ -1063,7 +1065,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 }
 
                 context = parse_context_create(context);
-                Node* param_it = working_result->children->children;
+                Node* param_it = function->children->children;
                 while (param_it) {
                     environment_set(context->variables, param_it->children, param_it->children->next_child);
                     param_it = param_it->next_child;
@@ -1072,7 +1074,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 Node* function_body = node_allocate();
                 Node* function_first_expression = node_allocate();
                 node_add_child(function_body, function_first_expression);
-                node_add_child(working_result, function_body);
+                node_add_child(function, function_body);
                 working_result = function_first_expression;
 
                 stack = parse_stack_create(stack);
@@ -1225,10 +1227,26 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         working_result->type = NODE_TYPE_FUNCTION_CALL;
                         node_add_child(working_result, symbol);
                         Node* argument_list = node_allocate();
+                        node_add_child(working_result, argument_list);
+
+                        EXPECT(expected, ")", &current_token, &token_length, end);
+                        if (expected.done || expected.found) {
+                            // Done parsing function call.
+                            int found = 0;
+                            err = parse_binary_infix_operator(context, stack, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
+                            if (found) {
+                                // Parse RHS of binary infix operator.
+                                continue;
+                            } else {
+                                // Parsed function call, check for stack continuation.
+                                break;
+                            }
+                        }
+
                         Node* first_argument = node_allocate();
                         node_add_child(argument_list, first_argument);
-                        node_add_child(working_result, argument_list);
                         working_result = first_argument;
+
                         // Create a parsing stack with function call operator IG,
                         // and then start parsing function argument expressions.
                         stack = parse_stack_create(stack);
@@ -1237,14 +1255,18 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         continue;
                     }
 
-                    printf("Symbol: \"%s\"\n", node_text(symbol));
-                    ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
-                    return err;
+                    if (!stack) {
+                        printf("Symbol: \"%s\"\n", node_text(symbol));
+                        ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
+                        return err;
+                    }
+
                 }
             }
             free(var_binding);
         }
 
+        // NOTE: We often need to continue from here.
         int found = 0;
         err = parse_binary_infix_operator(context, stack, &found, &current_token, &token_length, end, &working_precedence, result, &working_result);
         if (found) { continue; }

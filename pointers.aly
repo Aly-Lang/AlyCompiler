@@ -6,7 +6,9 @@ defun foo () : integer {
     ptr := &a
     @ptr := 4
     
-    a := @ptr
+    ;a := @ptr
 
     a
 }
+
+foo()

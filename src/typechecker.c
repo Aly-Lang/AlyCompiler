@@ -26,12 +26,7 @@ int type_compare(Node* a, Node* b) {
     return 0;
 }
 
-Error expression_return_type
-(ParsingContext* context,
-    ParsingContext** context_to_enter,
-    Node* expression,
-    Node* type
-) {
+Error expression_return_type(ParsingContext* context, ParsingContext** context_to_enter, Node* expression, Node* type) {
     Error err = ok;
     ParsingContext* original_context = context;
     Node* tmpnode = node_allocate();
@@ -58,12 +53,8 @@ Error expression_return_type
         if (err.type) { break; }
         while (context->parent) { context = context->parent; }
         // FIXME: Handle return value!
-        environment_get_by_symbol(*context->binary_operators,
-            expression->value.symbol,
-            tmpnode);
-        err = parse_get_type(original_context,
-            tmpnode->children->next_child,
-            type);
+        environment_get_by_symbol(*context->binary_operators, expression->value.symbol, tmpnode);
+        err = parse_get_type(original_context, tmpnode->children->next_child, type);
         break;
     case NODE_TYPE_FUNCTION_CALL:
         while (context) {
@@ -135,8 +126,7 @@ Error expression_return_type
         if (!context) {
             printf("Variable: \"%s\"\n", expression->value.symbol);
             printf("Type: \"%s\"\n", iterator->value.symbol);
-            ERROR_PREP(err, ERROR_GENERIC,
-                "Could not get type within context for variable access return type");
+            ERROR_PREP(err, ERROR_GENERIC, "Could not get type within context for variable access return type");
             break;
         }
         *iterator = *tmpnode;
@@ -146,11 +136,7 @@ Error expression_return_type
     return err;
 }
 
-Error typecheck_expression
-(ParsingContext* context,
-    ParsingContext** context_to_enter,
-    Node* expression
-) {
+Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_enter, Node* expression) {
     Error err = ok;
     if (!context || !expression) {
         ERROR_PREP(err, ERROR_ARGUMENTS, "typecheck_expression(): Arguments must not be NULL!");
@@ -212,8 +198,7 @@ Error typecheck_expression
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
         // Get type of left hand side variable, dereference adjusted.
-        err = expression_return_type(context, context_to_enter,
-            expression->children, tmpnode);
+        err = expression_return_type(context, context_to_enter, expression->children, tmpnode);
         if (err.type) { return err; }
 
         // tmpnode now contains expected type of RHS.
@@ -225,9 +210,7 @@ Error typecheck_expression
         //print_node(tmpnode,0);
 
         // Get return type of right hand side expression.
-        err = expression_return_type(context, context_to_enter,
-            expression->children->next_child,
-            result);
+        err = expression_return_type(context, context_to_enter, expression->children->next_child, result);
         if (err.type) { return err; }
 
         if (type_compare(tmpnode, result) == 0) {
@@ -244,35 +227,27 @@ Error typecheck_expression
         break;
     case NODE_TYPE_BINARY_OPERATOR:
         while (context->parent) { context = context->parent; }
-        environment_get_by_symbol(*context->binary_operators,
-            expression->value.symbol,
-            value);
+        environment_get_by_symbol(*context->binary_operators, expression->value.symbol, value);
         // Get return type of LHS.
         err = expression_return_type(original_context, context_to_enter, expression->children, type);
         if (err.type) { return err; }
         // Get expected return type of LHS in tmpnode->type.
-        err = parse_get_type(original_context,
-            value->children->next_child->next_child,
-            tmpnode);
+        err = parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
         if (err.type) { return err; }
         if (type_compare(type, tmpnode) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE,
-                "Return type of left hand side expression of binary operator does not match declared left hand side return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
             return err;
         }
         // Get return type of RHS in type integer.
         err = expression_return_type(original_context, context_to_enter, expression->children->next_child, type);
         if (err.type) { return err; }
         // Get expected return type of RHS in tmpnode->type.
-        err = parse_get_type(original_context,
-            value->children->next_child->next_child,
-            tmpnode);
+        err = parse_get_type(original_context, value->children->next_child->next_child, tmpnode);
         if (err.type) { return err; }
         if (type_compare(type, tmpnode) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE,
-                "Return type of right hand side expression of binary operator does not match declared right hand side return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of RHS expression of binary operator does not match declared RHS return type");
             return err;
         }
         break;
@@ -287,13 +262,13 @@ Error typecheck_expression
         }
         //print_node(value,0);
         iterator = expression->children->next_child->children;
-        tmpnode = value->children->children;
 
         //printf("Iterator:\n");
-        //print_node(iterator,2);
+        //print_node(iterator, 2);
         //printf("Tmpnode:\n");
-        //print_node(tmpnode,2);
+        //print_node(tmpnode, 2);
 
+        tmpnode = value->children->children;
         while (iterator && tmpnode) {
             err = parse_get_type(original_context, tmpnode->children->next_child, result);
             if (err.type) { break; }

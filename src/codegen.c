@@ -195,7 +195,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
         // Emit call
         fprintf(code, "call %s\n", expression->children->value.symbol);
-        fprintf(code, "add $%lld, %%rsp\n", count * 8);
+        if (count) {
+            fprintf(code, "add $%lld, %%rsp\n", count * 8);
+        }
 
         // Copy return value of function call from RAX to result register
         expression->result_register = register_allocate(r);
@@ -219,10 +221,20 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // TODO: What should function return?
         break;
     case NODE_TYPE_DEREFERENCE:
-        printf("TODO: Dereference\n");
+        if (codegen_verbose) {
+            fprintf(code, ";;#; Dereference\n");
+        }
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
+        if (err.type) { return err; }
+        expression->result_register = expression->children->result_register;
         break;
     case NODE_TYPE_ADDRESSOF:
-        printf("TODO: Addressof\n");
+        if (codegen_verbose) {
+            fprintf(code, ";;#; Addressof\n");
+        }
+        expression->result_register = register_allocate(r);
+        fprintf(code, "lea %s, %s\n", symbol_to_address(cg_context, expression->children), register_name(r, expression->result_register));
+        if (err.type) { return err; }
         break;
     case NODE_TYPE_IF:
         if (codegen_verbose) {
@@ -437,7 +449,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         // Allocate space on stack
         // Get the size in bytes of the type of the variable
-        size_t size_in_bytes = 0;
+        long long size_in_bytes = 0;
         while (context) {
             if (environment_get(*context->variables, expression->children, tmpnode)) {
                 break;
@@ -453,9 +465,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             size_in_bytes = tmpnode->children->value.integer;
         }
         // Subtract type size in bytes from stack pointer
-        fprintf(code, "sub $%lld, %%rsp\n", tmpnode->children->value.integer);
+        fprintf(code, "sub $%zu, %%rsp\n", size_in_bytes);
         // Keep track of RBP offset.
-        cg_context->locals_offset -= tmpnode->children->value.integer;
+        cg_context->locals_offset -= size_in_bytes;
         // Kept in codegen context.
         environment_set(cg_context->locals, expression->children, node_integer(cg_context->locals_offset));
         break;
@@ -464,15 +476,29 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, ";;#; Variable Reassignment\n");
         }
         if (cg_context->parent) {
-            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children->next_child);
+            // Codegen RHS
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context,
+                expression->children->next_child);
             if (err.type) { break; }
-            // iterator will end up pointing variable name symbol.
-            iterator = expression->children;
-            while (iterator->children && iterator->type != NODE_TYPE_VARIABLE_ACCESS) {
-                iterator = iterator->children;
+
+            if (expression->children->type == NODE_TYPE_DEREFERENCE) {
+                // Dereference is there! It will return address in result register to dereference.
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context,
+                    expression->children);
+                if (err.type) { break; }
+                fprintf(code, "mov %s, (%s)\n",
+                    register_name(r, expression->children->next_child->result_register),
+                    register_name(r, expression->children->result_register));
+                // TODO: Set result register or something.
+                register_deallocate(r, expression->children->next_child->result_register);
+                register_deallocate(r, expression->children->result_register);
+            } else {
+                fprintf(code, "mov %s, %s\n",
+                    register_name(r, expression->children->next_child->result_register),
+                    symbol_to_address(cg_context, expression->children));
+                // TODO: Set result register or something.
+                register_deallocate(r, expression->children->next_child->result_register);
             }
-            fprintf(code, "mov %s, %s\n", register_name(r, expression->children->next_child->result_register), symbol_to_address(cg_context, iterator));
-            register_deallocate(r, expression->children->next_child->result_register);
         } else {
             // Global variable reassignment
             // Very simple optimization to handle plain integer node assignment.
