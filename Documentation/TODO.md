@@ -26,7 +26,7 @@ But, upon lookahead for variable reassignment, we need that entire result, start
   - This would allow the use of `printf` or `putc` for example. Not to mention `fopen` and friends! IO is very important...
 
   - To do this, we would at least want some way of type checking an external function, so I think we should declare external functions with `: ext <function_name> ([<parameter>]...)`
-  Or, something similar. `ext? extfun`?
+  Or, something similar. `ext? | extfun`?
 
   - Maybe we should make it necessary to specify calling convention... `: ext <function_name> ([<parameter>]....) : <mswin | linux>`
 
@@ -42,7 +42,11 @@ But, upon lookahead for variable reassignment, we need that entire result, start
 
     - Euclid's method to get the GCD is to replace the larger number, `\( a \)`, with the difference between the two, `\( a - b \)`, until the two numbers are equal.
 
+  - [ ] lcm :: Least Common Multiple
 
+  - [ ] sqrt :: Square Root
+
+  - [ ] perfect_square :: In terms of integer square root.
 
 ### 🔁 Lexing / Parsing
 - [x] **Parse tokens into AST**  
@@ -139,6 +143,9 @@ But, upon lookahead for variable reassignment, we need that entire result, start
 
 ## 📌 Miscellaneous
 
+- [ ] TODO: Implement division and bit-shifting binary operators
+  - This would mean that we can do some more powerful / advanced examples such as 'sqrt' and 'perfect_square' as aforementioned above.
+
 - [ ] When out of scratch registers in codegen, use stack or something
   - We should be able to never run out of scratch registers by using stack allocations and keeping track of memory address. Will require slightly different API/semantics, but overall it will help a lot.
 
@@ -220,7 +227,7 @@ Syntaxes that make AST Nodes:
 
 - [x] FIX BUG: Where variable declaration with assignment are not code generated properly.
 
-- [ ] Work on parsing and code-genning of `if` conditional statements.
+- [x] Work on parsing and code-genning of `if` conditional statements.
 
 - [ ] Convert `{}` expression list into an expression itself, this would mean that we can have block return types:
   - `NODE_TYPE_BLOCK` :: Returns return value of last expression in body, or zero or some other default value when no expressions are present.
