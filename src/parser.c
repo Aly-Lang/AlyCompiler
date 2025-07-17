@@ -782,7 +782,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
 
             EXPECT(expected, ":", current, length, end);
             if (expected.found) {
-
                 err = lex_advance(current, length, end);
                 if (err.type != ERROR_NONE) { return err; }
                 if (*length == 0) {
@@ -836,8 +835,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
                 if (expected.found) {
                     // Update the stack to handle defun-body and continue.
 
-                    // Create new parsing context (scope) for function body.
-                    *context = parse_context_create(*context);
                     // Bind parameters as variables in function body scope.
                     // TODO: This assumes that variable declarations were parsed, but
                     // we may not have any variable declarations. Do minimal type-checking.
@@ -1125,6 +1122,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 lex_advance(&current_token, &token_length, end);
                 Node* function_name = node_symbol_from_buffer(current_token.beginning, token_length);
 
+                // TODO: Check return value for redefinition of function!
                 environment_set(context->functions, function_name, function);
 
                 Node* parameter_list = node_allocate();
@@ -1197,6 +1195,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                         // END return type parsing
 
+                        EXPECT(expected, "{", &current_token, &token_length, end);
+                        if (!expected.found) {
+                            ERROR_PREP(err, ERROR_SYNTAX, "Expected open curly brace to begin function body following function return type.");
+                            return err;
+                        }
+
                         // Create new parsing context (scope) for function body.
                         context = parse_context_create(context);
 
@@ -1216,6 +1220,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     ERROR_PREP(err, ERROR_SYNTAX, "Type annotation required following parameter list for return value of function.");
                     return err;
                 }
+
+                // Create new parsing context (scope) for function body.
+                context = parse_context_create(context);
 
                 // Setup stack for defun-params to parse all parameters.
                 Node* first_parameter = node_allocate();

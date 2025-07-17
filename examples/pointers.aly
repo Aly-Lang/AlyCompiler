@@ -1,3 +1,4 @@
+
 ; We now have syntax highlighting of comments in Emacs :^)
 
 defun foo () : integer {
@@ -10,8 +11,8 @@ defun foo () : integer {
     a
 }
 
-;defun bar (ptr : @integer) : integer {
-;    0
-;}
+defun bar (ptr : @integer) : integer {
+    0
+}
 
 foo()
