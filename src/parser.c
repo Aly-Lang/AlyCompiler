@@ -1111,8 +1111,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
             // TODO: Parse strings and other literal types.
 
-            // TODO: Check for unary prefix operators.
-
             if (strcmp("defun", symbol->value.symbol) == 0) {
                 // Begin function definition.
                 // FUNCTION
@@ -1291,12 +1289,14 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         // Add one level of pointer indirection.
                         type_value_it->type = NODE_TYPE_POINTER;
                         Node* child = node_allocate();
-                        type_value->children = child;
+                        type_value_it->children = child;
                         type_value_it = child;
                         // Advance lexer.
                         err = lex_advance(&current_token, &token_length, end);
                         if (err.type != ERROR_NONE) { return err; }
                         if (token_length == 0) { break; }
+                        print_token(current_token);
+                        putchar('\n');
                     }
 
                     Node* type_symbol = node_symbol_from_buffer(current_token.beginning, token_length);
