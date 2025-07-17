@@ -147,6 +147,13 @@ int node_compare(Node* a, Node* b) {
         if (!a && !b) { return 1; }
         return 0;
     }
+
+    // NOTE: Actually really nice debug output for when you need it.
+    //printf("Comparing nodes:\n");
+    //print_node(a, 2);
+    //print_node(b, 2);
+    //putchar('\n');
+
     assert(NODE_TYPE_MAX == 14 && "node_compare() must handle all node types");
     // Variable access and symbol are not same type but share same comparison.
     if (!((a->type == NODE_TYPE_SYMBOL || a->type == NODE_TYPE_VARIABLE_ACCESS)

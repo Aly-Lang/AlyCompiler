@@ -23,13 +23,14 @@ defun foo () : @integer {
 
 foo()
 
-;defun bar (ptr : @integer) : integer {
-;    @ptr := 69
-;    0
-;}
+defun bar (ptr : @integer) : integer {
+    @ptr := 69
+    0
+}
 
-;number : integer = 0
-;numptr : @integer
-;numptr := &number
+number : integer = 0
+numptr : @integer
+numptr := &number
+@numptr := 69
 ;bar(numptr)
-;number
+number

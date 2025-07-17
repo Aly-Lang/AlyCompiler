@@ -1,4 +1,6 @@
 .section .data
+numptr: .space 8
+number: .space 8
 .section .text
 jmp afterfoo
 foo:
@@ -68,6 +70,30 @@ add $72, %rsp
 pop %rbp
 ret
 afterfoo:
+jmp afterbar
+bar:
+push %rbp
+mov %rsp, %rbp
+sub $32, %rsp
+push %rbx
+push %rsi
+push %rdi
+;;#; Variable Reassignment
+;;#; INTEGER: 69
+mov $69, %rax
+;;#; Dereference
+;;#; Variable Access: "ptr"
+mov 16(%rbp), %r10
+mov %rax, (%r10)
+;;#; INTEGER: 0
+mov $0, %rax
+pop %rbx
+pop %rsi
+pop %rdi
+add $32, %rsp
+pop %rbp
+ret
+afterbar:
 .global main
 main:
 push %rbp
@@ -78,6 +104,24 @@ sub $32, %rsp
 pushq %rax
 call foo
 add $8, %rsp
+;;#; Function
+;;#; Variable Reassignment
+;;#; INTEGER: 0
+mov $0, %rax
+mov %rax, number(%rip)
+;;#; Variable Reassignment
+;;#; Addressof
+lea number(%rip), %rax
+mov %rax, numptr(%rip)
+;;#; Variable Reassignment
+;;#; INTEGER: 69
+mov $69, %rax
+;;#; Dereference
+;;#; Variable Access: "numptr"
+mov numptr(%rip), %r10
+mov %rax, (%r10)
+;;#; Variable Access: "number"
+mov number(%rip), %rax
 add $32, %rsp
 pop %rbp
 ret
