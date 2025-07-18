@@ -15,11 +15,11 @@ jz .L0
 ;;#; If THEN
 ;;#; Variable Access: "some_number"
 mov some_number(%rip), %rax
-mov %rax, %r10
+mov %rax, %rax
 jmp .L1
 ;;#; If OTHERWISE
 .L0:
-mov $0, %r10
+mov $0, %rax
 .L1:
 ;;#; Variable Access: "some_number"
 mov some_number(%rip), %rax

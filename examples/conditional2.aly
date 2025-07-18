@@ -1,7 +1,8 @@
-some_number : integer
-
 if 1 {
-    some_number
+    some_number : integer
+} else { 
+    some_other_number : integer
 }
 
+;; This shouldn't work, but it does!
 some_number

@@ -481,7 +481,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             size_in_bytes = 8;
         } else {
             //print_node(tmpnode, 0);
-            // TODO / FIXME: The following line causes errors when it really shouldn't!
             err = parse_get_type(context, tmpnode, tmpnode);
             if (err.type) { return err; }
             size_in_bytes = tmpnode->children->value.integer;
