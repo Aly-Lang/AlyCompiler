@@ -1,5 +1,4 @@
 .section .data
-some_number: .space 8
 .section .text
 .global main
 main:
@@ -13,16 +12,18 @@ mov $1, %rax
 test %rax, %rax
 jz .L0
 ;;#; If THEN
-;;#; Variable Access: "some_number"
-mov some_number(%rip), %rax
-mov %rax, %rax
+;;#; INTEGER: 42
+mov $42, %rax
+mov %rax, %r10
 jmp .L1
 ;;#; If OTHERWISE
 .L0:
-mov $0, %rax
+mov $0, %r10
+;;#; INTEGER: 69
+mov $69, %rax
+mov %rax, %r10
 .L1:
-;;#; Variable Access: "some_number"
-mov some_number(%rip), %rax
+mov %r10, %rax
 add $32, %rsp
 pop %rbp
 ret

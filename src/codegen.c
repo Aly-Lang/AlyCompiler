@@ -298,7 +298,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // TODO/FIXME: What should implicit return of IF with failing condition
         //             with no else be?
 
-        fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
         last_expr = NULL;
         if (expression->children->next_child->next_child) {
             expr = expression->children->next_child->next_child->children;
@@ -316,6 +315,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
                 // Copy last_expr result register to if result register.
                 fprintf(code, "mov %s, %s\n", register_name(r, last_expr->result_register), register_name(r, expression->result_register));
                 register_deallocate(r, last_expr->result_register);
+            } else {
+                // Set the result register, if within else.
+                fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
             }
         }
 
