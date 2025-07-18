@@ -1,0 +1,7 @@
+some_number : integer
+
+if 1 {
+    some_number
+}
+
+some_number
