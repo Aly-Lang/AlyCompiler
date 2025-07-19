@@ -19,7 +19,7 @@
 ;; Generate label for AFTER OTHERWISE.
 
 if 1 {
-   42
+   4
 } else {
    69
 }
