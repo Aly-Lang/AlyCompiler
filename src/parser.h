@@ -31,10 +31,9 @@ typedef enum NodeType {
 
 	/// Contains three children.
 	/// 1. Parameter List
-	///      Var. Decl.
-	///        <name symbol>
-	///        <type symbol>
-	/// 2. Return Type
+	///    1. Name Symbol
+	///    2. Type Symbol
+	/// 2. Return Type Symbol
 	/// 3. Expression List (Program)
 	NODE_TYPE_FUNCTION,
 	/// Contains two children

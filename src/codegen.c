@@ -13,7 +13,7 @@ CodegenContext* codegen_context_create(CodegenContext* parent) {
     CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
     cg_ctx->parent = parent;
     cg_ctx->locals = environment_create(NULL);
-    // TODO / FIXME: This is specific to x86_64 right now
+    // TODO/FIXME: This is specific to x86_64 right now
     cg_ctx->locals_offset = -32;
     return cg_ctx;
 }
@@ -298,28 +298,23 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // TODO/FIXME: What should implicit return of IF with failing condition
         //             with no else be?
 
+        fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
         last_expr = NULL;
-        if (expression->children->next_child->next_child) {
-            expr = expression->children->next_child->next_child->children;
-            while (expr) {
-                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
-                //register_deallocate(r, expr->result_register);
-                if (err.type) { return err; }
-                if (last_expr) {
-                    register_deallocate(r, last_expr->result_register);
-                }
-                last_expr = expr;
-                expr = expr->next_child;
-            }
+        expr = expression->children->next_child->next_child->children;
+        while (expr) {
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
+            //register_deallocate(r, expr->result_register);
+            if (err.type) { return err; }
             if (last_expr) {
-                // Copy last_expr result register to if result register.
-                fprintf(code, "mov %s, %s\n", register_name(r, last_expr->result_register), register_name(r, expression->result_register));
                 register_deallocate(r, last_expr->result_register);
-            } else {
-                // Set the result register, if within else
-                fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
             }
+            last_expr = expr;
+            expr = expr->next_child;
         }
+
+        // Generate code to copy last expr result register to if result register.
+        fprintf(code, "mov %s, %s\n", register_name(r, last_expr->result_register), register_name(r, expression->result_register));
+        register_deallocate(r, last_expr->result_register);
 
         fprintf(code, "%s:\n", after_otherwise_label);
         break;
@@ -483,6 +478,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             size_in_bytes = 8;
         } else {
             //print_node(tmpnode, 0);
+            // TODO / FIXME: The following line causes errors when it really shouldn't!
             err = parse_get_type(context, tmpnode, tmpnode);
             if (err.type) { return err; }
             size_in_bytes = tmpnode->children->value.integer;

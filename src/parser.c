@@ -677,7 +677,7 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         return err;
     }
 
-    if (strcmp(operator->value.symbol, "if-condition") == 0) {
+    if (strcmp(operator->value.symbol, "if-cond") == 0) {
         // TODO: Maybe eventually allow multiple expression in an if
         // condition, or something like that.
         EXPECT(expected, "{", current, length, end);
@@ -691,69 +691,52 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
             // TODO: Maybe warn?
             EXPECT(expected, "}", current, length, end);
             if (expected.found) {
-
-                // TODO / FIXME: This branch of control flow kind of breaks
-                // contexts, right?
-
                 // TODO: First check for else...
-
-                *context = (*context)->parent;
-
                 *stack = (*stack)->parent;
                 *status = STACK_HANDLED_CHECK;
                 return ok;
             }
 
             // TODO: Should new parsing context be created for scope of `if` body?
-            // FIXME: Don't leak stack->operator.
+            // TODO: Don't leak stack->operator.
             (*stack)->operator = node_symbol("if-then-body");
             (*stack)->body = if_then_body;
             (*stack)->result = if_then_first_expr;
-
             *working_result = if_then_first_expr;
             *status = STACK_HANDLED_PARSE;
             return ok;
         }
         // TODO / FIXME: Ask the user how to proceed when if has no body.
-        ERROR_PREP(err, ERROR_SYNTAX, "Expected `{` after `if` condition. `if` expression requires a \"then\" body.");
+        ERROR_PREP(err, ERROR_SYNTAX, "`if` expression requires a \"then\" body.");
         return err;
     }
 
     if (strcmp(operator->value.symbol, "if-then-body") == 0) {
         // Evaluate next expression unless it's a closing brace.
         EXPECT(expected, "}", current, length, end);
-        if (expected.done) {
-            ERROR_PREP(err, ERROR_SYNTAX, "EOF reached before end of if-then-body.");
-            return err;
-        }
-        if (expected.found) {
-            // Eat if-then-body context.
-            *context = (*context)->parent;
-
-            // Lookahead for else then parse if-then-body.
+        if (expected.done || expected.found) {
+            // TODO: Lookahead for else then parse if-then-body.
             EXPECT(expected, "else", current, length, end);
             if (expected.found) {
                 EXPECT(expected, "{", current, length, end);
                 if (expected.found) {
-
-                    *context = parse_context_create(*context);
-
                     Node* if_else_body = node_allocate();
                     Node* if_else_first_expr = node_allocate();
                     node_add_child(if_else_body, if_else_first_expr);
 
                     (*stack)->body->next_child = if_else_body;
 
-                    // FIXME: Don't leak stack operator!
+                    // TODO: Don't leak stack operator!
                     (*stack)->operator = node_symbol("if-else-body");
                     (*stack)->body = if_else_body;
                     (*stack)->result = if_else_first_expr;
                     *working_result = if_else_first_expr;
                     *status = STACK_HANDLED_PARSE;
                     return ok;
+                } else {
+                    ERROR_PREP(err, ERROR_SYNTAX, "`else` must be followed by body.");
+                    return err;
                 }
-                ERROR_PREP(err, ERROR_SYNTAX, "`else` must be followed by body.");
-                return err;
             }
 
             *stack = (*stack)->parent;
@@ -772,7 +755,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         // Evaluate next expression unless it's a closing brace.
         EXPECT(expected, "}", current, length, end);
         if (expected.done || expected.found) {
-            *context = (*context)->parent;
             *stack = (*stack)->parent;
             *status = STACK_HANDLED_CHECK;
             return ok;
@@ -808,17 +790,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
     }
 
     if (strcmp(operator->value.symbol, "defun-params") == 0) {
-        if ((*working_result)->type != NODE_TYPE_VARIABLE_DECLARATION) {
-            ERROR_PREP(err, ERROR_SYNTAX, "Function parameter definition must be a variable declaration expression");
-            return err;
-        }
-
-        // Lookup variable declaration symbol in environment to get it's type symbol node thing.
-        Node* type = node_allocate();
-        err = parse_get_variable(*context, (*working_result)->children, type);
-        if (err.type) { return err; }
-        node_add_child(*working_result, type);
-
         // TODO: Handle `done` cases.
         // Evaluate next expression unless it's a closing parenthesis.
         EXPECT(expected, ")", current, length, end);
@@ -886,11 +857,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
             return err;
         }
 
-        if ((*working_result)->type != NODE_TYPE_VARIABLE_DECLARATION) {
-            ERROR_PREP(err, ERROR_SYNTAX, "Function parameter definition must be variable declaration expression");
-            return err;
-        }
-
         Node* next_expr = node_allocate();
         (*stack)->result->next_child = next_expr;
         *working_result = next_expr;
@@ -916,6 +882,27 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         (*stack)->result->next_child = next_expr;
         *working_result = next_expr;
         (*stack)->result = next_expr;
+        *status = STACK_HANDLED_PARSE;
+        return ok;
+    }
+
+    if (strcmp(operator->value.symbol, "defun") == 0) {
+        // Evaluate next expression unless it's a closing brace.
+        EXPECT(expected, "}", current, length, end);
+        if (expected.done || expected.found) {
+            *context = (*context)->parent;
+            *stack = (*stack)->parent;
+            if (!(*stack)) {
+                *status = STACK_HANDLED_BREAK;
+            } else {
+                *status = STACK_HANDLED_CHECK;
+            }
+            return ok;
+        }
+
+        (*stack)->result->next_child = node_allocate();
+        *working_result = (*stack)->result->next_child;
+        (*stack)->result = *working_result;
         *status = STACK_HANDLED_PARSE;
         return ok;
     }
@@ -1033,14 +1020,11 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 if_conditional->type = NODE_TYPE_IF;
                 Node* condition_expression = node_allocate();
                 node_add_child(if_conditional, condition_expression);
-
-                context = parse_context_create(context);
+                working_result = condition_expression;
 
                 stack = parse_stack_create(stack);
-                stack->operator = node_symbol("if-condition");
-                stack->result = condition_expression;
-
-                working_result = condition_expression;
+                stack->operator = node_symbol("if-cond");
+                stack->result = working_result;
                 continue;
             }
 
@@ -1268,14 +1252,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 // or new variable declaration.
                 EXPECT(expected, ":", &current_token, &token_length, end);
                 if (!expected.done && expected.found) {
-
-                    EXPECT(expected, "=", &current_token, &token_length, end);
-                    if (!expected.done && expected.found) {
-                        printf("Invalid Variable Symbol: \"%s\"\n", symbol->value.symbol);
-                        ERROR_PREP(err, ERROR_SYNTAX, "Reassignment of undeclared variable is not allowed!");
-                        return err;
-                    }
-
                     err = lex_advance(&current_token, &token_length, end);
                     if (err.type != ERROR_NONE) { return err; }
                     if (token_length == 0) { break; }

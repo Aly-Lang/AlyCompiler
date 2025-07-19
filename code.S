@@ -1,50 +1,28 @@
 .section .data
-bar: .space 4294967295
+some_other_number: .space 8
+some_number: .space 8
 .section .text
-jmp afterfoo
-foo:
-push %rbp
-mov %rsp, %rbp
-sub $32, %rsp
-push %rbx
-push %rsi
-push %rdi
-;;#; Variable Reassignment
-;;#; INTEGER: 69
-mov $69, %rax
-;;#; Dereference
-;;#; Variable Access: "x"
-mov 16(%rbp), %r10
-mov %rax, (%r10)
-;;#; INTEGER: 0
-mov $0, %rax
-pop %rbx
-pop %rsi
-pop %rdi
-add $32, %rsp
-pop %rbp
-ret
-afterfoo:
 .global main
 main:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
-;;#; Function
-;;#; Variable Reassignment
-;;#; INTEGER: 42
-mov $42, %rax
-mov %rax, bar(%rip)
-;;#; Function Call: "foo"
-pushq %rax
-;;#; Addressof
-lea bar(%rip), %rax
-pushq %rax
-call foo
-add $8, %rsp
-add $8, %rsp
-;;#; Variable Access: "bar"
-mov bar(%rip), %rax
+;;#; If
+;;#; INTEGER: 1
+mov $1, %rax
+;;#; If CONDITION
+test %rax, %rax
+jz .L0
+;;#; If THEN
+mov %rax, %rax
+jmp .L1
+;;#; If OTHERWISE
+.L0:
+mov $0, %rax
+mov %rax, %rax
+.L1:
+;;#; Variable Access: "some_number"
+mov some_number(%rip), %rax
 add $32, %rsp
 pop %rbp
 ret

@@ -1,8 +1,0 @@
-if 1 {
-    some_number : integer
-} else { 
-    some_other_number : integer
-}
-
-;; This shouldn't work, but it no longer does!
-some_number

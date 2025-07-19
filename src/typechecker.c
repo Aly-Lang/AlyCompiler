@@ -37,7 +37,7 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
         type->type = expression->type;
         break;
     case NODE_TYPE_INTEGER:
-        // FIXME: Lookup in types environment instead!
+        // FIXME: Lookup in types env. instead!
         type->type = NODE_TYPE_INTEGER;
         type->children = node_allocate();
         type->children->type = NODE_TYPE_INTEGER;
@@ -187,39 +187,13 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         break;
     case NODE_TYPE_FUNCTION:
         // Typecheck body of function in proper context.
-
-        // TODO: Handle functions with empty body.
-
         to_enter = (*context_to_enter)->children;
         Node* body_expression = expression->children->next_child->next_child->children;
-        Node* last_expression = body_expression;
         while (body_expression) {
             err = typecheck_expression(*context_to_enter, &to_enter, body_expression);
             if (err.type) { return err; }
-            last_expression = body_expression;
             body_expression = body_expression->next_child;
         }
-
-        // TODO: Compare return type of function to return type of last
-        // expression in the body.
-        if (last_expression) {
-            Node* return_type_id = expression->children->next_child;
-            while (return_type_id->type != NODE_TYPE_SYMBOL) {
-                return_type_id = return_type_id->children;
-            }
-            Node* return_type = node_allocate();
-            parse_get_type(*context_to_enter, return_type_id, return_type);
-
-            Node* last_type = node_allocate();
-            err = expression_return_type(*context_to_enter, &to_enter, last_expression, last_type);
-            if (err.type) { return err; }
-
-            if (type_compare(return_type, last_type) == 0) {
-                ERROR_PREP(err, ERROR_TYPE, "Return type of last expression in function does not match function return type.");
-                return err;
-            }
-        }
-
         *context_to_enter = (*context_to_enter)->next_child;
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
@@ -288,58 +262,42 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
         //print_node(value,0);
         iterator = expression->children->next_child->children;
-        Node* expected_parameter = value->children->children;
+        tmpnode = value->children->children;
 
         //printf("Iterator:\n");
         //print_node(iterator, 2);
         //printf("Tmpnode:\n");
         //print_node(tmpnode, 2);
 
-        while (iterator && expected_parameter) {
-            // Get return type of given parameter.
-            err = expression_return_type(original_context, context_to_enter, iterator, type);
-            if (err.type) { return err; }
+        while (iterator && tmpnode) {
+            // Get expected type of parameter from tmpnode.
 
-            // Expected type symbol of parameter found in expected_parameter->children->next_child.
-            Node* expected_type_symbol = expected_parameter->children->next_child;
-            Node* type_result_it = result;
-            while (expected_type_symbol->children && expected_type_symbol->type != NODE_TYPE_SYMBOL) {
-                result->type = NODE_TYPE_POINTER;
-
-                Node* one_more_level_of_pointer_indirection = node_allocate();
-                one_more_level_of_pointer_indirection->type = NODE_TYPE_POINTER;
-                type_result_it->children = one_more_level_of_pointer_indirection;
-                type_result_it = one_more_level_of_pointer_indirection;
-
-                expected_type_symbol = expected_type_symbol->children;
+            // Lookup tmpnode->children in variables environment for expected parameter type.
+            context = original_context;
+            while (context) {
+                if (environment_get(*context->variables, tmpnode->children, result)) {
+                    break;
+                }
+                context = context->parent;
             }
-            err = parse_get_type(context, expected_type_symbol, type_result_it);
-            if (err.type) { return err; }
-
-            //printf("Iterator:\n");
-            //print_node(iterator,2);
-            //printf("Expected parameter:\n");
-            //print_node(expected_parameter,2);
-
-            if (type_compare(result, type) == 0) {
-                printf("Function:%s\n", expression->children->value.symbol);
-                printf("Invalid argument:\n");
-                print_node(iterator, 2);
-                printf("Expected argument:\n");
-                print_node(expected_parameter, 2);
-                ERROR_PREP(err, ERROR_TYPE, "Argument type does not match declared parameter type");
+            if (!context) {
+                ERROR_PREP(err, ERROR_GENERIC, "Malformed or mishapen parsing cotnext encountered during typechecking");
                 return err;
             }
 
-            node_free(result->children);
-
+            // Get return type of given parameter.
+            err = expression_return_type(original_context, context_to_enter, iterator, type);
+            if (err.type) { return err; }
+            if (type_compare(result, type) == 0) {
+                printf("Function:%s\n", expression->children->value.symbol);
+                ERROR_PREP(err, ERROR_TYPE, "Argument type does not match declared parameter type");
+                break;
+            }
             iterator = iterator->next_child;
-            expected_parameter = expected_parameter->next_child;
+            tmpnode = tmpnode->next_child;
         }
-        if (expected_parameter != NULL) {
+        if (tmpnode != NULL) {
             printf("Function:%s\n", expression->children->value.symbol);
-            printf("Expected argument:\n");
-            print_node(expected_parameter, 2);
             ERROR_PREP(err, ERROR_ARGUMENTS, "Not enough arguments passed to function!");
             break;
         }
@@ -355,7 +313,6 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
     free(tmpnode);
     return err;
 }
-
 
 Error typecheck_program(ParsingContext* context, Node* program) {
     Error err = ok;
