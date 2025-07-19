@@ -316,7 +316,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
                 fprintf(code, "mov %s, %s\n", register_name(r, last_expr->result_register), register_name(r, expression->result_register));
                 register_deallocate(r, last_expr->result_register);
             } else {
-                // Set the result register, if within else.
+                // Set the result register, if within else
                 fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
             }
         }

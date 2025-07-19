@@ -52,6 +52,9 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
 ### Lexing / Parsing Enhancements
 
+  - TODO: Compiler recognizes use of uninitialized variables
+    - Could even not allow use of uninitialized pointers and also warn on other uninitialized uses.
+
   * **AST Node Token Information:** To significantly enhance error reporting, we'll add source **token information** to each AST node. This includes token span (start/end positions), file path, line number, and column number.
 
  - [x] DONE: Make parsing a type easier.
