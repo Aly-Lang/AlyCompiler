@@ -677,7 +677,7 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         return err;
     }
 
-    if (strcmp(operator->value.symbol, "if-cond") == 0) {
+    if (strcmp(operator->value.symbol, "if-condition") == 0) {
         // TODO: Maybe eventually allow multiple expression in an if
         // condition, or something like that.
         EXPECT(expected, "{", current, length, end);
@@ -697,25 +697,31 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
                 return ok;
             }
 
-            // TODO: Should new parsing context be created for scope of `if` body?
+            // TODO: Should new parsing context be created for scope of if body?
             // TODO: Don't leak stack->operator.
             (*stack)->operator = node_symbol("if-then-body");
+            // TODO: Is this needed?
             (*stack)->body = if_then_body;
             (*stack)->result = if_then_first_expr;
+
             *working_result = if_then_first_expr;
             *status = STACK_HANDLED_PARSE;
             return ok;
         }
         // TODO / FIXME: Ask the user how to proceed when if has no body.
-        ERROR_PREP(err, ERROR_SYNTAX, "`if` expression requires a \"then\" body.");
+        ERROR_PREP(err, ERROR_SYNTAX, "Expected `{` after `if` condition. `if` expression requires a \"then\" body.");
         return err;
     }
 
     if (strcmp(operator->value.symbol, "if-then-body") == 0) {
         // Evaluate next expression unless it's a closing brace.
         EXPECT(expected, "}", current, length, end);
-        if (expected.done || expected.found) {
-            // TODO: Lookahead for else then parse if-then-body.
+        if (expected.done) {
+            ERROR_PREP(err, ERROR_SYNTAX, "EOF reached before end of if-then-body.");
+            return err;
+        }
+        if (expected.found) {
+            // Lookahead for else then parse if-then-body.
             EXPECT(expected, "else", current, length, end);
             if (expected.found) {
                 EXPECT(expected, "{", current, length, end);
@@ -733,10 +739,9 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
                     *working_result = if_else_first_expr;
                     *status = STACK_HANDLED_PARSE;
                     return ok;
-                } else {
-                    ERROR_PREP(err, ERROR_SYNTAX, "`else` must be followed by body.");
-                    return err;
                 }
+                ERROR_PREP(err, ERROR_SYNTAX, "`else` must be followed by body.");
+                return err;
             }
 
             *stack = (*stack)->parent;
@@ -1020,11 +1025,12 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 if_conditional->type = NODE_TYPE_IF;
                 Node* condition_expression = node_allocate();
                 node_add_child(if_conditional, condition_expression);
-                working_result = condition_expression;
 
                 stack = parse_stack_create(stack);
-                stack->operator = node_symbol("if-cond");
-                stack->result = working_result;
+                stack->operator = node_symbol("if-condition");
+                stack->result = condition_expression;
+
+                working_result = condition_expression;
                 continue;
             }
 
@@ -1047,7 +1053,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
                 Node* parameter_list = node_allocate();
 
-                // FIXME: Should we possibly create a parser stack and evaluate the
+                // TODO / FIXME: Should we possibly create a parser stack and evaluate the
                 // next expression, then ensure return value is var. decl. in stack
                 // handling below?
                 for (;;) {

@@ -281,7 +281,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
                 context = context->parent;
             }
             if (!context) {
-                ERROR_PREP(err, ERROR_GENERIC, "Malformed or mishapen parsing cotnext encountered during typechecking");
+                ERROR_PREP(err, ERROR_GENERIC, "Malformed or mishapen parsing context encountered during typechecking");
                 return err;
             }
 

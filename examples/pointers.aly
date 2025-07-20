@@ -1,6 +1,6 @@
 ; We now have syntax highlighting of comments in Emacs :^)
 
-defun foo () : @integer {
+defun foo () : integer {
     a : integer = 0
     b : integer = 42
 
@@ -32,5 +32,5 @@ number : integer = 0
 numptr : @integer
 numptr := &number
 @numptr := 69
-bar(numptr)
+;bar(numptr)
 number

@@ -300,21 +300,24 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
         fprintf(code, "mov $0, %s\n", register_name(r, expression->result_register));
         last_expr = NULL;
-        expr = expression->children->next_child->next_child->children;
-        while (expr) {
-            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
-            //register_deallocate(r, expr->result_register);
-            if (err.type) { return err; }
+        if (expression->children->next_child->next_child) {
+            expr = expression->children->next_child->next_child->children;
+            while (expr) {
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
+                //register_deallocate(r, expr->result_register);
+                if (err.type) { return err; }
+                if (last_expr) {
+                    register_deallocate(r, last_expr->result_register);
+                }
+                last_expr = expr;
+                expr = expr->next_child;
+            }
+            // Copy last_expr result register to if result register.
             if (last_expr) {
+                fprintf(code, "mov %s, %s\n", register_name(r, last_expr->result_register), register_name(r, expression->result_register));
                 register_deallocate(r, last_expr->result_register);
             }
-            last_expr = expr;
-            expr = expr->next_child;
         }
-
-        // Generate code to copy last expr result register to if result register.
-        fprintf(code, "mov %s, %s\n", register_name(r, last_expr->result_register), register_name(r, expression->result_register));
-        register_deallocate(r, last_expr->result_register);
 
         fprintf(code, "%s:\n", after_otherwise_label);
         break;
