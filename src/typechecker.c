@@ -98,8 +98,7 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
         }
         if (!context) {
             printf("Variable: \"%s\"\n", expression->value.symbol);
-            ERROR_PREP(err, ERROR_GENERIC,
-                "Could not get variable within context for variable access return type");
+            ERROR_PREP(err, ERROR_GENERIC,  "Could not get variable within context for variable access return type");
             break;
         }
 
