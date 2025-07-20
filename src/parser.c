@@ -545,10 +545,10 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
     Error err = ok;
 
     // DEBUG
-    printf("Searching following context for ");
-    print_node(id, 0);
-    environment_print(*context->types, 0);
-    putchar('\n');
+    //printf("Searching following context for ");
+    //print_node(id, 0);
+    //environment_print(*context->types, 0);
+    //putchar('\n');
 
     while (context) {
         int status = environment_get(*context->types, id, result);
@@ -808,6 +808,17 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
     }
 
     if (strcmp(operator->value.symbol, "defun-params") == 0) {
+        if ((*working_result)->type != NODE_TYPE_VARIABLE_DECLARATION) {
+            ERROR_PREP(err, ERROR_SYNTAX, "Function parameter definition must be variable declaration expression");
+            return err;
+        }
+
+        // Lookup variable declaration symbol in environment to get it's type symbol node thing.
+        Node* type = node_allocate();
+        err = parse_get_variable(*context, (*working_result)->children, type);
+        if (err.type) { return err; }
+        node_add_child(*working_result, type);
+
         // TODO: Handle `done` cases.
         // Evaluate next expression unless it's a closing parenthesis.
         EXPECT(expected, ")", current, length, end);
@@ -816,7 +827,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
             // First lex/parse function return type.
             EXPECT(expected, ":", current, length, end);
             if (expected.found) {
-
                 err = lex_advance(current, length, end);
                 if (err.type != ERROR_NONE) { return err; }
                 if (*length == 0) {
@@ -1253,8 +1263,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 EXPECT(expected, ":", &current_token, &token_length, end);
                 if (!expected.done && expected.found) {
 
-                    // Reassignment of something that is not a valid variable
-                    // symbol is not allowed!
                     EXPECT(expected, "=", &current_token, &token_length, end);
                     if (!expected.done && expected.found) {
                         printf("Invalid Variable Symbol: \"%s\"\n", symbol->value.symbol);
@@ -1383,12 +1391,10 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
             if (err.type) { return err; }
         }
         while (status == STACK_HANDLED_CHECK);
-        if (status == STACK_HANDLED_BREAK) {
-            break;
-        }
-        if (status == STACK_HANDLED_PARSE) {
-            continue;
-        }
+
+        if (status == STACK_HANDLED_BREAK) { break; }
+        if (status == STACK_HANDLED_PARSE) { continue; }
+
         printf("status: %d\n", status);
         ERROR_PREP(err, ERROR_GENERIC, "Internal Compiler Error :(. Unhandled parse stack operator.");
         return err;

@@ -1,0 +1,7 @@
+defun foo (x : integer) : integer {
+    x + 35
+}
+
+bar : integer
+
+foo(bar)
