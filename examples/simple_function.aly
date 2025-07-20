@@ -1,7 +1,10 @@
-defun foo (x : integer) : integer {
-    x + 35
+defun foo (x : @integer) : integer {
+    @x := 69
+    0
 }
 
-bar : integer
+bar : integer = 42
 
-foo(bar)
+foo(&bar)
+
+bar

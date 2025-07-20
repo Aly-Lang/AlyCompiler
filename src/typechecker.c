@@ -9,6 +9,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO: Rewriting required — typechecker suffers from structural and safety issues.
+// - Repetitive case logic blocks type generalization
+// - Unsafe node manipulation leads to memory instability
+// - Type comparison limited to literals; needs abstraction layer
+// - Switch-case dispatch on nodes unreliable — recommend table-driven approach
+// Full refactor pending: see session notes [DATE] for rewrite scope and ideas.
+
 int type_compare(Node* a, Node* b) {
     if (a->type != b->type) { return 0; }
     Node* child_it_a = a->children;
@@ -214,7 +221,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
             if (err.type) { return err; }
 
             if (type_compare(return_type, last_type) == 0) {
-                ERROR_PREP(err, ERROR_TYPE, "Retrun type of last expression in function does not match function return type.");
+                ERROR_PREP(err, ERROR_TYPE, "Return type of last expression in function does not match function return type.");
                 return err;
             }
         }
@@ -287,36 +294,67 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
         //print_node(value,0);
         iterator = expression->children->next_child->children;
-        tmpnode = value->children->children;
+        Node* expected_paramater = value->children->children;
 
         // DEBUG
         //printf("Iterator:\n");
         //print_node(iterator, 2);
-        //printf("Tmpnode:\n");
-        //print_node(tmpnode, 2);
+        //printf("Expected parameter:\n");
+        //print_node(expected_paramater, 2);
 
-        while (iterator && tmpnode) {
+        while (iterator && expected_paramater) {
             // Get return type of given parameter.
             err = expression_return_type(original_context, context_to_enter, iterator, type);
             if (err.type) { return err; }
-            // Expected type symbol of parameter found in tmpnode->children->next_child.
-            err = parse_get_type(context, tmpnode->children->next_child, result);
+
+            // Expected type symbol of parameter found in expected_paramater->children->next_child.
+            Node* expected_type_symbol = expected_paramater->children->next_child;
+            Node* type_result_it = result;
+            while (expected_type_symbol->children && expected_type_symbol->type != NODE_TYPE_SYMBOL) {
+                result->type = NODE_TYPE_POINTER;
+
+                Node* one_more_level_of_pointer_indirection = node_allocate();
+                one_more_level_of_pointer_indirection->type = NODE_TYPE_POINTER;
+                type_result_it->children = one_more_level_of_pointer_indirection;
+                type_result_it = one_more_level_of_pointer_indirection;
+
+                expected_type_symbol = expected_type_symbol->children;
+            }
+            err = parse_get_type(context, expected_type_symbol, type_result_it);
             if (err.type) { return err; }
+
+            //print_node(type, 2);
+            //printf("\n");
+            //print_node(result, 2);
+            //printf("\n");
+            //print_node(expected_type_symbol, 2);
+
             if (type_compare(result, type) == 0) {
                 printf("Function:%s\n", expression->children->value.symbol);
                 printf("Invalid argument:\n");
                 print_node(iterator, 2);
                 printf("Expected argument:\n");
-                print_node(tmpnode, 2);
+                print_node(expected_paramater, 2);
+
                 ERROR_PREP(err, ERROR_TYPE, "Argument type does not match declared parameter type");
                 return err;
             }
+
+            // NOTE: Because of the BUG information below, comment this out for space 8!
+            // BUG: Memory misalignment detected when invoking `node_free(result->children)`
+            // This issue does not originate from the `node_free` method itself, but appears to stem
+            // from the typechecker's transformation logic corrupting node structure integrity.
+            // Debugging tools consistently flag this location, likely due to invalid memory writes
+            // introduced earlier in the typechecking phase. Full rewrite of the typechecker needed.
+            //node_free(result->children);
+
             iterator = iterator->next_child;
-            tmpnode = tmpnode->next_child;
+            expected_paramater = expected_paramater->next_child;
         }
-        if (tmpnode != NULL) {
-            printf("Expected argument:\n");
+        if (expected_paramater != NULL) {
             printf("Function:%s\n", expression->children->value.symbol);
+            printf("Expected argument:\n");
+            print_node(expected_paramater, 2);
             ERROR_PREP(err, ERROR_ARGUMENTS, "Not enough arguments passed to function!");
             break;
         }
