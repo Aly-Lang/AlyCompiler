@@ -296,6 +296,30 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
             ERROR_PREP(err, ERROR_ARGUMENTS, "Too many arguments passed to function!");
             break;
         }
+
+        // Set `func_return_type` to return type symbol of called function.
+        Node* func_return_type = node_allocate();
+        node_copy(value->children->next_child, func_return_type);
+        Node* func_return_type_it = func_return_type;
+        while (func_return_type_it->children) {
+            func_return_type_it = func_return_type_it->children;
+        }
+
+        // TODO / FIXME:
+        // Is context_to_enter correct, like, at all? NO!
+        // Do we need some link between function definitions and function contexts? Maybe!
+        // It's like we need to know which context function was defined within
+        // to properly check that return type is valid or get it at all, really.
+
+        err = parse_get_type(context, func_return_type_it, result);
+        if (err.type) { return err; }
+        *func_return_type_it = *result;
+        node_copy(func_return_type, result_type);
+
+        printf("RESULT:\n");
+        print_node(result, 0);
+        printf("resolved func return type:\n");
+        print_node(func_return_type, 0);
         break;
     }
     free(result);

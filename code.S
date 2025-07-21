@@ -111,6 +111,7 @@ mov %rax, number(%rip)
 ;;#; Addressof
 lea number(%rip), %rax
 mov %rax, numptr(%rip)
+;;#; Variable Reassignment
 ;;#; Function Call: "bar"
 pushq %rax
 ;;#; Variable Access: "numptr"
@@ -119,6 +120,7 @@ pushq %rax
 call bar
 add $8, %rsp
 add $8, %rsp
+mov %rax, number(%rip)
 ;;#; Variable Access: "number"
 mov number(%rip), %rax
 add $32, %rsp
