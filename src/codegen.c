@@ -220,10 +220,10 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         break;
     case NODE_TYPE_FUNCTION:
+        if (!cg_context->parent) { break; }
         if (codegen_verbose) {
             fprintf(code, ";;#; Function\n");
         }
-        if (!cg_context->parent) { break; }
         // TODO: Keep track of local lambda label in environment or something.
         result = label_generate();
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context, result, expression, code);

@@ -99,12 +99,10 @@ main:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
-;;#; Function
 ;;#; Function Call: "foo"
 pushq %rax
 call foo
 add $8, %rsp
-;;#; Function
 ;;#; Variable Reassignment
 ;;#; INTEGER: 0
 mov $0, %rax
