@@ -1291,7 +1291,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                     Node* variable_declaration = working_result;
                     variable_declaration->type = NODE_TYPE_VARIABLE_DECLARATION;
 
-                    // `symbol` is now owned by working_result, a var. decl.
+                    // `symbol` is now owned by working_result, a variable declaration.
                     node_add_child(variable_declaration, symbol);
 
                     // Context variables environment gains new binding.

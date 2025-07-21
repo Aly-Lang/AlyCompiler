@@ -31,6 +31,5 @@ defun bar (ptr : @integer) : integer {
 number : integer = 0
 numptr : @integer
 numptr := &number
-@numptr := 69
-;bar(numptr)
+bar(numptr)
 number
