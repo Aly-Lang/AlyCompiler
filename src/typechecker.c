@@ -316,10 +316,12 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         *func_return_type_it = *result;
         node_copy(func_return_type, result_type);
 
-        printf("RESULT:\n");
-        print_node(result, 0);
-        printf("resolved func return type:\n");
-        print_node(func_return_type, 0);
+        // DEBUG
+        //printf("RESULT:\n");
+        //print_node(result, 0);
+        //printf("resolved func return type:\n");
+        //print_node(func_return_type, 0);
+
         break;
     }
     free(result);
