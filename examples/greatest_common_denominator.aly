@@ -5,7 +5,9 @@ defun gcd_euclid (a : integer, b : integer) : integer {
         if a < b {
         gcd_euclid(a, b - a)
         } else {
+        c : integer = 42
         gcd_euclid(a - b, b)
+        c
         }
     }   
 }

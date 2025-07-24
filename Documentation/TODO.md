@@ -138,7 +138,7 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
       I had luck getting clang to produce working executables in a very straightforward manner as well, so if we can reproduce that today then let's definitely add that in there aas well.
 
-   - [ ] Change the type system surrounding pointers entirely
+   - [x] Change the type system surrounding pointers entirely
     - Switch from pointer nodes with children to nodes having a pointer flag and pointer count (or pointer flag is the pointer count non-zero). This will *greatly* simplify our typechecking, codegen, allocation, etc.
 
     This will most definitely break everything.
@@ -158,6 +158,9 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
     ```
     SYM: "INTEGER" (indirection level = 2)
     ```
+  
+  - [ ] TODO / FIX: Fix `if` context handling during codegen
+    - One thing that we are definitely not handling properly is contexts of `if` expressions during codegen.
 
   * **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
   * **`+= / -=` with Reassignment `:=`:** Conceptualize how to handle the interaction between compound assignment operators (`+=`, `-=`) and the reassignment symbol (`:=`).
