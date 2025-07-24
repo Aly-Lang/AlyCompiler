@@ -12,7 +12,7 @@
 
 - [x] Parse in a while loop, instead of just parsing a single expression.
 
-- [ ] `param_it` needs to be fixed in `parser.c`
+- [x] `param_it` needs to be fixed in `parser.c`
 
 - Think about how parser could parse within and into a given parsing context.
 
