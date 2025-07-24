@@ -130,6 +130,16 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
 -----
 
+  - [x] Fix messy git work tree
+      - We already have a gitignore to ignore all build type files / folders and we have moved all examples to `examples` folder anyway so its just `src/`
+    
+    - [ ] Have better build instructions for other toolchains
+      - First of all, instead of using GNU Binutils (`as` and `ld`), most people probably don't care about that and just want to run `gcc`. Luckily with GCC, it's really, really easy.
+
+      I had luck getting clang to produce working executables in a very straightforward manner as well, so if we can reproduce that today then let's definitely add that in there aas well.
+
+      I think that there is another way to compile GNU assembly with AT&T syntax.
+
   * **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
   * **`+= / -=` with Reassignment `:=`:** Conceptualize how to handle the interaction between compound assignment operators (`+=`, `-=`) and the reassignment symbol (`:=`).
   * **Refactor Type Inference:** Continue to improve the type inference system, particularly in cases where types can be automatically deduced.
