@@ -10,4 +10,4 @@ defun gcd_euclid (a : integer, b : integer) : integer {
     }   
 }
 
-gcd_euclid(80, 32)
+gcd_euclid(88, 32)

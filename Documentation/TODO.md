@@ -133,7 +133,7 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
   - [x] Fix messy git work tree
       - We already have a gitignore to ignore all build type files / folders and we have moved all examples to `examples` folder anyway so its just `src/`
     
-    - [ ] Have better build instructions for other toolchains
+    - [x] Have better build instructions for other toolchains
       - First of all, instead of using GNU Binutils (`as` and `ld`), most people probably don't care about that and just want to run `gcc`. Luckily with GCC, it's really, really easy.
 
       I had luck getting clang to produce working executables in a very straightforward manner as well, so if we can reproduce that today then let's definitely add that in there aas well.
