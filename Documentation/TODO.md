@@ -141,6 +141,24 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
    - [ ] Change the type system surrounding pointers entirely
     - Switch from pointer nodes with children to nodes having a pointer flag and pointer count (or pointer flag is the pointer count non-zero). This will *greatly* simplify our typechecking, codegen, allocation, etc.
 
+    This will most definitely break everything.
+
+    Our current pointer types look like this: `@@integer`
+    This gets converted into a `Node` that looks like this:
+    ```
+    POINTER
+    `-- POINTER
+        `-- SYM: "INTEGER"
+    ```
+
+    This is inefficient memory-wise and over-complicates the issue. There is literally no need to have the pointer type be a separate node type, or even a separate node.
+
+    What we should have instead is a pointer indirection counter. This could be a part of every node, and, when non-zero, indicates the amount of pointers to the type of the node itself.
+
+    ```
+    SYM: "INTEGER" (indirection level = 2)
+    ```
+
   * **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
   * **`+= / -=` with Reassignment `:=`:** Conceptualize how to handle the interaction between compound assignment operators (`+=`, `-=`) and the reassignment symbol (`:=`).
   * **Refactor Type Inference:** Continue to improve the type inference system, particularly in cases where types can be automatically deduced.

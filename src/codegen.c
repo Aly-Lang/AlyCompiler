@@ -77,8 +77,7 @@ void register_deallocate(Register* base, RegisterDescriptor register_descriptor)
         base = base->next;
         register_descriptor--;
     }
-    printf("ERROR::register_deallocate(): Could not deallocate register %d\n",
-        register_descriptor);
+    printf("ERROR::register_deallocate(): Could not deallocate register %d\n", register_descriptor);
     exit(1);
 }
 
@@ -90,8 +89,7 @@ char* register_name(Register* base, RegisterDescriptor register_descriptor) {
         base = base->next;
         register_descriptor--;
     }
-    printf("ERROR::register_name(): Could not find register with descriptor of %d\n",
-        register_descriptor);
+    printf("ERROR::register_name(): Could not find register with descriptor of %d\n", register_descriptor);
     return NULL;
 }
 
@@ -478,9 +476,11 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             ERROR_PREP(err, ERROR_GENERIC, "Invalid AST/context fed to codegen. Could not find variable declaration in environment.");
             return err;
         }
-        if (tmpnode->type == NODE_TYPE_POINTER) {
+        // Pointers are 8 bytes always, at least for now!
+        if (tmpnode->pointer_indirection != 0) {
             size_in_bytes = 8;
         } else {
+            // If not a pointer, get size in bytes from type environment.
             err = parse_get_type(context, tmpnode, tmpnode);
             if (err.type) { return err; }
             size_in_bytes = tmpnode->children->value.integer;

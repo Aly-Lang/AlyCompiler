@@ -1,5 +1,3 @@
-; We now have syntax highlighting of comments in Emacs :^)
-
 defun foo () : integer {
     a : integer = 0
     b : integer = 42
@@ -13,9 +11,9 @@ defun foo () : integer {
 
     ptrptr : @@integer
     ptrptr := &ptr
-    
+
     @ptrptr := test_ptr
-    
+
     @ptr := 42
 
     a
@@ -23,7 +21,8 @@ defun foo () : integer {
 
 foo()
 
-;; Using a pointer to mutate an integer variable that may be created at any time!
+;; Using a pointer to mutate an integer variable that may be created at
+;; any time!
 defun bar (ptr : @integer) : integer {
     @ptr := 69
     0

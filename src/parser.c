@@ -154,7 +154,7 @@ int node_compare(Node* a, Node* b) {
     //print_node(b, 2);
     //putchar('\n');
 
-    assert(NODE_TYPE_MAX == 14 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 13 && "node_compare() must handle all node types");
     // Variable access and symbol are not same type but share same comparison.
     if (!((a->type == NODE_TYPE_SYMBOL || a->type == NODE_TYPE_VARIABLE_ACCESS)
         && (b->type == NODE_TYPE_SYMBOL || b->type == NODE_TYPE_VARIABLE_ACCESS)))
@@ -199,9 +199,6 @@ int node_compare(Node* a, Node* b) {
         break;
     case NODE_TYPE_DEREFERENCE:
         printf("TODO: node_compare() DEREFERENCE\n");
-        break;
-    case NODE_TYPE_POINTER:
-        printf("TODO: node_compare() POINTER\n");
         break;
     case NODE_TYPE_IF:
         printf("TODO: node_compare() IF\n");
@@ -271,7 +268,7 @@ Error define_type(Environment* types, int type, Node* type_symbol, long long byt
 #define NODE_TEXT_BUFFER_SIZE 512
 char node_text_buffer[512];
 char* node_text(Node* node) {
-    assert(NODE_TYPE_MAX == 14 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 13 && "print_node() must handle all node types");
     if (!node) {
         return "NULL";
     }
@@ -302,9 +299,6 @@ char* node_text(Node* node) {
         break;
     case NODE_TYPE_IF:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "IF");
-        break;
-    case NODE_TYPE_POINTER:
-        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "POINTER");
         break;
     case NODE_TYPE_ADDRESSOF:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "ADDRESSOF");
@@ -956,39 +950,34 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
 
 Error parse_type(ParsingContext* context, Token* current, size_t* length, char** end, Node* type) {
     Error err = ok;
-    Node* type_it = type;
+    unsigned indirection_level = 0;
     // Loop over all pointer declaration symbols.
     while (current->beginning[0] == '@') {
         // Add one level of pointer indirection.
-        type_it->type = NODE_TYPE_POINTER;
-        Node* child = node_allocate();
-        type_it->children = child;
-        type_it = child;
+        indirection_level += 1;
         // Advance lexer.
         err = lex_advance(current, length, end);
         if (err.type != ERROR_NONE) { return err; }
         if (*length == 0) {
-            // FIXME: This error message SUCKS!
-            ERROR_PREP(err, ERROR_SYNTAX, "There must be a valid type following pointer type declaration symbol");
+            ERROR_PREP(err, ERROR_SYNTAX, "Expected a valid type following pointer type declaration symbol: `@`");
             return err;
         }
     }
 
     Node* type_symbol = node_symbol_from_buffer(current->beginning, *length);
-    *type_it = *type_symbol;
+    *type = *type_symbol;
+    type->pointer_indirection = indirection_level;
 
     Node* type_validator = node_allocate();
     err = parse_get_type(context, type_symbol, type_validator);
-    if (err.type) {
-        return err;
-    }
+    if (err.type) { return err; }
     if (nonep(*type_validator)) {
         ERROR_PREP(err, ERROR_TYPE, "Invalid type within variable declaration");
         printf("\nINVALID TYPE: \"%s\"\n", type_symbol->value.symbol);
         return err;
     }
+    free(type_symbol);
     free(type_validator);
-
     return err;
 }
 
