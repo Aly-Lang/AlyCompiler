@@ -138,7 +138,8 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
       I had luck getting clang to produce working executables in a very straightforward manner as well, so if we can reproduce that today then let's definitely add that in there aas well.
 
-      I think that there is another way to compile GNU assembly with AT&T syntax.
+   - [ ] Change the type system surrounding pointers entirely
+    - Switch from pointer nodes with children to nodes having a pointer flag and pointer count (or pointer flag is the pointer count non-zero). This will *greatly* simplify our typechecking, codegen, allocation, etc.
 
   * **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
   * **`+= / -=` with Reassignment `:=`:** Conceptualize how to handle the interaction between compound assignment operators (`+=`, `-=`) and the reassignment symbol (`:=`).
