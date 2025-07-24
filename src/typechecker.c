@@ -117,6 +117,34 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
         *result_type = *result_type->children;
         break;
+    case NODE_TYPE_IF:
+        if (0) { ; }
+        Node* then_expression = expression->children->next_child->children;
+        while (then_expression) {
+            err = typecheck_expression(context, context_to_enter, then_expression, result_type);
+            if (err.type) { return err; }
+            then_expression = then_expression->next_child;
+        }
+        if (expression->children->next_child->next_child) {
+            Node* otherwise_expression = expression->children->next_child->next_child->children;
+            Node* otherwise_type = node_allocate();
+            while (otherwise_expression) {
+                err = typecheck_expression(context, context_to_enter, otherwise_expression, otherwise_type);
+                if (err.type) { return err; }
+                otherwise_expression = otherwise_expression->next_child;
+            }
+            // Enforce that `if` expressions with else bodies must return same type.
+            if (type_compare(result_type, otherwise_type) == 0) {
+                printf("THEN type:\n");
+                print_node(result_type, 2);
+                printf("OTHERWISE type:\n");
+                print_node(otherwise_type, 2);
+                ERROR_PREP(err, ERROR_TYPE, "All branches of `if` expression must return same type.");
+                return err;
+            }
+            free(otherwise_type);
+        }
+        break;
     case NODE_TYPE_FUNCTION:
         // Typecheck body of function in proper context.
 
@@ -189,8 +217,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         // Get global context.
         while (context_it->parent) { context_it = context_it->parent; }
         // Get binary operator definition from global context into `value`.
-        environment_get_by_symbol(*context->binary_operators, expression->value.symbol, value);
-
+        environment_get_by_symbol(*context_it->binary_operators, expression->value.symbol, value);
         // Get return type of LHS into `type`.
         err = typecheck_expression(context, context_to_enter, expression->children, type);
         if (err.type) { return err; }
@@ -199,22 +226,25 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         if (err.type) { return err; }
         if (type_compare(type, tmpnode) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of left hand side expression of binary operator does not match declared left hand side return type");
             return err;
         }
-
         // Get return type of RHS into `type`.
         err = typecheck_expression(context, context_to_enter, expression->children->next_child, type);
         if (err.type) { return err; }
         // Get expected return type of RHS into `tmpnode`.
-        err = parse_get_type(context, value->children->next_child->next_child->next_child, tmpnode);
+        err = parse_get_type(context, value->children->next_child->next_child->next_child,  tmpnode);
         if (err.type) { return err; }
         if (type_compare(type, tmpnode) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of RHS expression of binary operator does not match declared RHS return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of right hand side expression of binary operator does not match declared right hand side return type");
             return err;
         }
         *result_type = *value->children->next_child;
+
+        // Resolve symbol of binary operator return value.
+        err = parse_get_type(context, value->children->next_child, result_type);
+        if (err.type) { return err; }
         break;
     case NODE_TYPE_FUNCTION_CALL:
         // Ensure function call arguments are of correct type.
