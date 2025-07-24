@@ -9,13 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// TODO: Rewriting required — typechecker suffers from structural and safety issues.
-// - Repetitive case logic blocks type generalization
-// - Unsafe node manipulation leads to memory instability
-// - Type comparison limited to literals; needs abstraction layer
-// - Switch-case dispatch on nodes unreliable — recommend table-driven approach
-// Full refactor pending: see session notes [21/07/2025] for rewrite scope and ideas.
-
 int type_compare(Node* a, Node* b) {
     if (a->type != b->type) { return 0; }
     Node* child_it_a = a->children;

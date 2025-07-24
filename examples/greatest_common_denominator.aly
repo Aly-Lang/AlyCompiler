@@ -1,5 +1,3 @@
-
-
 defun gcd_euclid (a : integer, b : integer) : integer {
     if a = b {
         a
