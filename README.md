@@ -1,4 +1,4 @@
-# AlyCompiler - A Language For You
+# Aly: A Language for You
 
 ![Language](https://img.shields.io/badge/Language-C-blue)
 ![License](https://img.shields.io/badge/License-MIT-blue)
@@ -7,39 +7,76 @@
 
 ![Aly-Lang LOGO](/Resources/Branding/LOGO.png)
 
-I don't really have a plan, I just want to make a compiler; it sounds fun. There's an example of some code that should be valid and able to be compile in [`example`](examples/example.aly) file.
-
-NOTE: Shell commands shown assume a working directory of this repository.
+I didn't really have a plan, but I went ahead and started making this compiler from scratch in C anyways. Now we have a functioning compiler for **Aly**, a brand new language.
 
 ## Usage
 
-Run the executable from a shell with a path to some source code as the only argument. Currently, we print out the furthest progress we are able to make. Eventually, we will output compiled source code.
+Running the compiler executable with no arguments will display a usage message that contains compiler flags and options as well as command layout.
 
 ## Building
 
-## Dependencies:
+### Dependencies
 
-- [CMake](https://cmake.org/download/)
-- [Any C Compiler](https://gcc.gnu.org/install/download.html)
+  * [CMake \>= 3.14](https://cmake.org/)
+  * Any C Compiler (We like [GCC](https://gcc.gnu.org/))
 
-First generate a build tree using CMake.
-```bash
-cmake -S . -B bld -G "MinGW Makefiles"
+First, generate a build tree using CMake:
+
+```shell
+cmake -B bld
 ```
 
-Finally, build an executable from the build tree.
-```bash
- cmake --build bld
+Finally, build an executable from the build tree:
+
+```shell
+cmake --build bld
 ```
 
-However, I have made two scripts in `Scripts` folders to generate the project for GCC, which is what I used but if you find MSVC is more user friendly then you can use this command to generate a solution `CMake -B <folder>` and it will generate the `.sln` file for you.
+### To build generated x86\_64 ASM
 
-## Building x86_64 ASM
+**GNU Binutils:**
 
-- On Windows under MinGW:
-```bash
+```shell
 as code.S -o code.o
-ld code.o -o code.exe && code.exe
+ld code.o -o code
 ```
 
-TODO: On Linux
+**GNU Compiler Collection (GCC):**
+
+```shell
+gcc code.S -o code.exe
+```
+
+**LLVM/Clang:**
+
+```shell
+clang code.S -o code.exe --target=x86_64
+```
+
+## Language Reference
+
+Aly is **statically typed**. Variables must be declared and type annotated before use.
+
+**Whitespace is ignored** and there are **no required expression delimiters**. That's right: no semi-colons and no forced indent\!
+
+Functions are first-class citizens, or at least should be eventually.
+
+An Aly program comes in the form of a file. The file may contain a series of expressions that will be executed in order, from top to bottom. There is no `main` function or other entry point; control flow starts at the very top of the file and makes its way to the bottom.
+
+Let's take a look at a basic program:
+
+```
+defun fact (n : integer) : integer {
+  if n < 2 {
+    1
+  } else {
+    n * fact(n - 1)
+  }
+}
+
+fact(4)
+```
+
+This program will return `24` as a status code. The result of the last expression in the file is the return value. The same holds true for function bodies and if/else bodies.
+
+Variables in a local scope **shadow** variables in a parent scope and may share the same symbolic name.
