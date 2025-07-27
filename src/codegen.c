@@ -222,8 +222,22 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (codegen_verbose) {
             fprintf(code, ";;#; Function\n");
         }
-        // TODO: Keep track of local lambda label in environment or something.
-        result = label_generate();
+        // TODO/FIXME: Obviously this is not ideal to do backwards lookup,
+        // especially for function nodes which contain the body... Oh well!
+        char git_got = 0;
+        ParsingContext*context_it = context;
+        while (context_it) {
+            if (environment_get_by_value(*context_it->functions, expression, tmpnode)) {
+                result = tmpnode->value.symbol;
+                git_got = 1;
+            }
+            context_it = context_it->parent;
+        }
+        if (!git_got) {
+            // TODO: Keep track of local lambda label in environment or something.
+            // FIXME: Completely memory leaked here, no chance of freeing!
+            result = label_generate();
+        }
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context, result, expression, code);
 
         // TODO: What should function return?
