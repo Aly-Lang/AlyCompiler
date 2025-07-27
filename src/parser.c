@@ -1,4 +1,4 @@
-#include <parser.h>
+﻿#include <parser.h>
 
 #include <assert.h>
 #include <error.h>
@@ -157,8 +157,7 @@ int node_compare(Node* a, Node* b) {
     assert(NODE_TYPE_MAX == 13 && "node_compare() must handle all node types");
     // Variable access and symbol are not same type but share same comparison.
     if (!((a->type == NODE_TYPE_SYMBOL || a->type == NODE_TYPE_VARIABLE_ACCESS)
-        && (b->type == NODE_TYPE_SYMBOL || b->type == NODE_TYPE_VARIABLE_ACCESS)))
-    {
+        && (b->type == NODE_TYPE_SYMBOL || b->type == NODE_TYPE_VARIABLE_ACCESS))) {
         if (a->type != b->type) {
             return 0;
         }
@@ -496,7 +495,8 @@ Error lex_advance(Token* token, size_t* token_length, char** end) {
     return err;
 }
 
-typedef struct ExpectReturnValue {
+typedef struct ExpectReturnValue
+{
     Error err;
     char found;
     char done;
@@ -643,7 +643,8 @@ Error parse_binary_infix_operator(ParsingContext* context, ParsingStack* stack, 
     return ok;
 }
 
-enum StackOperatorReturnValue {
+enum StackOperatorReturnValue
+{
     STACK_HANDLED_INVALID = 0,
     STACK_HANDLED_BREAK = 1,
     STACK_HANDLED_PARSE = 2,

@@ -129,6 +129,10 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 ## 📌 Miscellaneous
 
 -----
+  - [ ] Fix lambda parsing!
+
+- [ ] Remove global FUNCTION optimization in codegen
+  - Whilst it does make the program an unnoticeable amount faster, it also breaks if any `if` expression lies between global function definitions...
 
   - [x] Fix messy git work tree
       - We already have a gitignore to ignore all build type files / folders and we have moved all examples to `examples` folder anyway so its just `src/`
