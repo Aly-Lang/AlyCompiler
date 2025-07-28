@@ -130,17 +130,53 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
 -----
   - [ ] Fix lambda parsing!
-  - How do lambdas fit into a statically typed language? How can we accept a function as an argument? We will need some syntax to define a function signature like a type, that way a function parameters may have it's type be a function with a specific signature. We aren't able to just accept a `function` type because that is not able to be called. Rather, a call to a function defined in this way would not be able to be properly type-checked. I don't want to include a lambda runtime or whatever that does runtime typechecking, either.
+    - How do lambdas fit into a statically typed language? How can we accept a function as an argument? We will need some syntax to define a function signature like a type, that way a function parameters may have it's type be a function with a specific signature. We aren't able to just accept a `function` type because that is not able to be called. Rather, a call to a function defined in this way would not be able to be properly type-checked. I don't want to include a lambda runtime or whatever that does runtime typechecking, either.
 
-  So I think the solution is some way to define a variable as a function with a specific type signature (parameters and return type). Basically, what you find in the headers of C and C++ programs. Let's think about how we could represent a type like this with out type system.
+    So I think the solution is some way to define a variable as a function with a specific type signature (parameters and return type). Basically, what you find in the headers of C and C++ programs. Let's think about how we could represent a type like this with out type system.
 
-  WHEN TYPECHECKING A FUNCTION BODY:
-  We need to know which function signature we are defining for. With our current syntax and how everything works, this is easy to do. Every time a function is defined, we have the parameter and return type data. We create a new context for functions, so it increments the scope we have when iterating as well (just like `if` expressions bodies).
+    WHEN TYPECHECKING A FUNCTION BODY:
+    We need to know which function signature we are defining for. With our current syntax and how everything works, this is easy to do. Every time a function is defined, we have the parameter and return type data. We create a new context for functions, so it increments the scope we have when iterating as well (just like `if` expressions bodies).
 
-  WHEN TYPECHECKING A FUNCTION CALL:
-  We need to know which function signature we are defined for, both to set the return type as well as typecheck the given arguments against the expected parameters. If the return type was defined in a context that the function is not being called from: we shouldn't care about this! So maybe we don't need to keep track of the context the function was defined in. The comments mentioning this change in the typechecker are wrong, I'm pretty sure.
+    WHEN TYPECHECKING A FUNCTION CALL:
+    We need to know which function signature we are defined for, both to set the return type as well as typecheck the given arguments against the expected parameters. If the return type was defined in a context that the function is not being called from: we shouldn't care about this! So maybe we don't need to keep track of the context the function was defined in. The comments mentioning this change in the typechecker are wrong, I'm pretty sure.
 
-  So all of this makes me realize that a function signature needs to be a type, I guess. That would allow a function to be defined just like a variable. It just means that our typechecking would need to include function types, or we need to handle functions adn function signatures entirely on their own, like we currently do... I don't know!!!
+    So all of this makes me realize that a function signature needs to be a type, I guess. That would allow a function to be defined just like a variable. It just means that our typechecking would need to include function types, or we need to handle functions adn function signatures entirely on their own, like we currently do... I don't know!!!
+
+    ```
+    defun foo (function_parameter : (n : integer) : integer) : integer {
+        function_parameter(25)
+    }
+    ```
+
+    So the above shows how we may define a function parameter. Maybe we should extend this syntax to functions themselves?
+
+    ```
+    foo : integer (function_parameter : integer (n : integer), argument : integer) {
+        function_parameter(argument)
+    }
+
+    double_the_int : integer (a : integer) {
+        a * 2
+    }
+
+    foo(double_the_int, 25)
+    ```
+
+    As you can see I also changed the syntax to contain the return value first, then the parameter list.
+
+    So I guess we need functions to be variables, since they sometimes need to be used like a variable access... (as seen in the `foo` function call above).
+
+    So a function will be defined in variable environment like so:
+    ```
+    SYM:<function_variable_name> <-> FUNCTION
+                                    `-- <return type symbol> [-> <parameter>]...
+    ```
+
+    Then, we just need to somehow get the body of the function by the function variable name during code generation. This is necessary so that we can actually implement the function at an address that corresponds to the function variable name in some way (like using it directly for the assembly address label we `jmp` to, for example).
+
+    I presume this is what the functions environment should be for? Or, I just guess the body of the function could be stored in the AST like it is now.
+
+    Final thoughts: Functions need to be defined as type in the type system, and not this foreign thing. This will allow functions to be passed as parameters and such, while still being completely type checked. I think we need to store a flat list of all function body definitions and ensure that no duplicates are allowed, even in the case of different scopes. This allows direct use of the function symbol as an assembly address and prevents having to mangle.
 
 - [x] Remove global FUNCTION optimization in codegen
   - Whilst it does make the program an unnoticeable amount faster, it also breaks if any `if` expression lies between global function definitions...
