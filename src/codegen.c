@@ -224,16 +224,15 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         // TODO/FIXME: Obviously this is not ideal to do backwards lookup,
         // especially for function nodes which contain the body... Oh well!
-        char git_got = 0;
         ParsingContext*context_it = context;
         while (context_it) {
             if (environment_get_by_value(*context_it->functions, expression, tmpnode)) {
                 result = tmpnode->value.symbol;
-                git_got = 1;
+                break;
             }
             context_it = context_it->parent;
         }
-        if (!git_got) {
+        if (!result) {
             // TODO: Keep track of local lambda label in environment or something.
             // FIXME: Completely memory leaked here, no chance of freeing!
             result = label_generate();
