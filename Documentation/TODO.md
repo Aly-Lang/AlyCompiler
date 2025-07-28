@@ -176,7 +176,13 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
     I presume this is what the functions environment should be for? Or, I just guess the body of the function could be stored in the AST like it is now.
 
-    Final thoughts: Functions need to be defined as type in the type system, and not this foreign thing. This will allow functions to be passed as parameters and such, while still being completely type checked. I think we need to store a flat list of all function body definitions and ensure that no duplicates are allowed, even in the case of different scopes. This allows direct use of the function symbol as an assembly address and prevents having to mangle.
+    Final thoughts: Functions need to be defined as type in the type system, and not this foreign thing. This will allow functions to be passed as parameters and such, while still being completely type checked. I think we need to store a flat list of all function body definitions and ensure that no duplicates are allowed, even in the case of different scopes. This allows direct use of the function symbol as an assembly address and prevents having to mangle. Wait I don't think this is needed, and as long as type signature matches then we can ensure that even though we did separate type checking we can still generate code exactly the same (I think... Oh Lord).
+
+    So basically, when creating a function, create a context and everything. We need to allow a function with no body to be defined, in the hopes that it will be assigned some value before it is ever called. We should eventually ensure this.
+
+    When type-checking a function body, all we need is to enter the proper context. The context should contain all variables, types, etc in local scope, including parameters.
+
+    When type-checking a function call, all we need is to lookup the function name as a variable and get it's type.
 
 - [x] Remove global FUNCTION optimization in codegen
   - Whilst it does make the program an unnoticeable amount faster, it also breaks if any `if` expression lies between global function definitions...

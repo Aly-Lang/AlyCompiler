@@ -5,21 +5,6 @@ main:
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
-;;#; If
-;;#; INTEGER: 1
-mov $1, %rax
-;;#; If CONDITION
-test %rax, %rax
-jz .L0
-;;#; If THEN
-;;#; INTEGER: 0
-mov $0, %rax
-mov %rax, %r10
-jmp .L1
-;;#; If OTHERWISE
-.L0:
-mov $0, %r10
-.L1:
 ;;#; Function
 jmp aftergcd_euclid
 gcd_euclid:
@@ -41,14 +26,14 @@ cmp %rax, %r10
 cmove %rbx, %r11
 ;;#; If CONDITION
 test %r11, %r11
-jz .L2
+jz .L0
 ;;#; If THEN
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
 mov %rax, %r10
-jmp .L3
+jmp .L1
 ;;#; If OTHERWISE
-.L2:
+.L0:
 ;;#; If
 ;;#; Binary Operator: "<"
 ;;#; Variable Access: "a"
@@ -61,7 +46,7 @@ cmp %r11, %rax
 cmovl %rdi, %rbx
 ;;#; If CONDITION
 test %rbx, %rbx
-jz .L4
+jz .L2
 ;;#; If THEN
 ;;#; Function Call: "gcd_euclid"
 pushq %rax
@@ -79,9 +64,9 @@ call gcd_euclid
 add $16, %rsp
 add $8, %rsp
 mov %rax, %r11
-jmp .L5
+jmp .L3
 ;;#; If OTHERWISE
-.L4:
+.L2:
 ;;#; Function Call: "gcd_euclid"
 pushq %rax
 ;;#; Binary Operator: "-"
@@ -98,9 +83,9 @@ call gcd_euclid
 add $16, %rsp
 add $8, %rsp
 mov %rax, %r11
-.L5:
-mov %r11, %r10
 .L3:
+mov %r11, %r10
+.L1:
 mov %r10, %rax
 pop %rbx
 pop %rsi
