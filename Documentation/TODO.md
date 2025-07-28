@@ -130,8 +130,19 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
 -----
   - [ ] Fix lambda parsing!
+  - How do lambdas fit into a statically typed language? How can we accept a function as an argument? We will need some syntax to define a function signature like a type, that way a function parameters may have it's type be a function with a specific signature. We aren't able to just accept a `function` type because that is not able to be called. Rather, a call to a function defined in this way would not be able to be properly type-checked. I don't want to include a lambda runtime or whatever that does runtime typechecking, either.
 
-- [ ] Remove global FUNCTION optimization in codegen
+  So I think the solution is some way to define a variable as a function with a specific type signature (parameters and return type). Basically, what you find in the headers of C and C++ programs. Let's think about how we could represent a type like this with out type system.
+
+  WHEN TYPECHECKING A FUNCTION BODY:
+  We need to know which function signature we are defining for. With our current syntax and how everything works, this is easy to do. Every time a function is defined, we have the parameter and return type data. We create a new context for functions, so it increments the scope we have when iterating as well (just like `if` expressions bodies).
+
+  WHEN TYPECHECKING A FUNCTION CALL:
+  We need to know which function signature we are defined for, both to set the return type as well as typecheck the given arguments against the expected parameters. If the return type was defined in a context that the function is not being called from: we shouldn't care about this! So maybe we don't need to keep track of the context the function was defined in. The comments mentioning this change in the typechecker are wrong, I'm pretty sure.
+
+  So all of this makes me realize that a function signature needs to be a type, I guess. That would allow a function to be defined just like a variable. It just means that our typechecking would need to include function types, or we need to handle functions adn function signatures entirely on their own, like we currently do... I don't know!!!
+
+- [x] Remove global FUNCTION optimization in codegen
   - Whilst it does make the program an unnoticeable amount faster, it also breaks if any `if` expression lies between global function definitions...
 
   - [x] Fix messy git work tree

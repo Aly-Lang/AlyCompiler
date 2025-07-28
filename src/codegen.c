@@ -224,7 +224,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         // TODO/FIXME: Obviously this is not ideal to do backwards lookup,
         // especially for function nodes which contain the body... Oh well!
-        ParsingContext*context_it = context;
+        ParsingContext* context_it = context;
         while (context_it) {
             if (environment_get_by_value(*context_it->functions, expression, tmpnode)) {
                 result = tmpnode->value.symbol;
