@@ -1,0 +1,26 @@
+;; Upward FUNARG problem:
+;;  Pascal does not allow returning functions as values from other functions.
+;; defun make_adder(a : integer, b : integer) : <some_func> {
+;;    defun adder() : integer {
+;;      defun adder_impl() : integer {
+;;          a + b
+;;      }
+;;  } 
+;; 
+;;    adder()
+;;
+;;    adder
+;;}
+;; myAdder : <some_func> = make_adder(2, 2)
+;; myAdder()
+
+;; Downwards FUNARG problem:
+use_adder : integer (adder : integer (a : integer, b : integer), a : integer, b : integer) {
+    adder(a, b)
+}
+
+my_adder : integer (a : integer, b : integer) {
+    a + b
+}
+
+use_adder(my_adder, 2, 2)
