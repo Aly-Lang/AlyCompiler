@@ -492,8 +492,7 @@ Error lex_advance(Token* token, size_t* token_length, char** end) {
     return err;
 }
 
-typedef struct ExpectReturnValue
-{
+typedef struct ExpectReturnValue {
     Error err;
     char found;
     char done;
@@ -640,8 +639,7 @@ Error parse_binary_infix_operator(ParsingContext* context, ParsingStack* stack, 
     return ok;
 }
 
-enum StackOperatorReturnValue
-{
+enum StackOperatorReturnValue {
     STACK_HANDLED_INVALID = 0,
     STACK_HANDLED_BREAK = 1,
     STACK_HANDLED_PARSE = 2,
@@ -772,29 +770,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         Node* next_expr = node_allocate();
         node_add_child((*stack)->result, next_expr);
         *working_result = next_expr;
-        *status = STACK_HANDLED_PARSE;
-        return ok;
-    }
-
-    if (strcmp(operator->value.symbol, "lambda") == 0) {
-        // Evaluate next expression unless it's a closing brace.
-        EXPECT(expected, "}", current, length, end);
-        if (expected.done || expected.found) {
-            EXPECT(expected, "]", current, length, end);
-            if (expected.done || expected.found) {
-                *context = (*context)->parent;
-                *stack = (*stack)->parent;
-                *status = STACK_HANDLED_CHECK;
-                return ok;
-            } else {
-                ERROR_PREP(err, ERROR_SYNTAX, "Expected closing square bracket for following lambda body definition");
-                return err;
-            }
-        }
-
-        (*stack)->result->next_child = node_allocate();
-        *working_result = (*stack)->result->next_child;
-        (*stack)->result = *working_result;
         *status = STACK_HANDLED_PARSE;
         return ok;
     }
@@ -1032,99 +1007,8 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                 continue;
             }
 
-            // Parse lambda
-            if (strcmp("[", symbol->value.symbol) == 0) {
-                Node* lambda = working_result;
-                lambda->type = NODE_TYPE_FUNCTION;
-
-                // Return type
-                lex_advance(&current_token, &token_length, end);
-                Node* function_return_type = node_symbol_from_buffer(current_token.beginning, token_length);
-                // TODO: Ensure function return type is valid type.
-
-                // Parameter list
-                EXPECT(expected, "(", &current_token, &token_length, end);
-                if (!expected.found || expected.done) {
-                    ERROR_PREP(err, ERROR_SYNTAX, "Parameter list required within lambda definition");
-                    return err;
-                }
-
-                Node* parameter_list = node_allocate();
-
-                // TODO / FIXME: Should we possibly create a parser stack and evaluate the
-                // next expression, then ensure return value is var. decl. in stack
-                // handling below?
-                for (;;) {
-                    EXPECT(expected, ")", &current_token, &token_length, end);
-                    if (expected.found) { break; }
-                    if (expected.done) {
-                        ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis for parameter list");
-                        return err;
-                    }
-
-                    err = lex_advance(&current_token, &token_length, end);
-                    if (err.type) { return err; }
-                    Node* parameter_name = node_symbol_from_buffer(current_token.beginning, token_length);
-
-                    EXPECT(expected, ":", &current_token, &token_length, end);
-                    if (expected.done || !expected.found) {
-                        ERROR_PREP(err, ERROR_SYNTAX, "Parameter declaration requires a type annotation");
-                        return err;
-                    }
-
-                    lex_advance(&current_token, &token_length, end);
-                    Node* parameter_type = node_symbol_from_buffer(current_token.beginning, token_length);
-
-                    Node* parameter = node_allocate();
-                    node_add_child(parameter, parameter_name);
-                    node_add_child(parameter, parameter_type);
-
-                    node_add_child(parameter_list, parameter);
-
-                    EXPECT(expected, ",", &current_token, &token_length, end);
-                    if (expected.found) { continue; }
-
-                    EXPECT(expected, ")", &current_token, &token_length, end);
-                    if (!expected.found) {
-                        ERROR_PREP(err, ERROR_SYNTAX, "Expected closing parenthesis following parameter list");
-                        return err;
-                    }
-                    break;
-                }
-
-                // TODO / FIXME: Do I need to bind unnamed function in environment?
-                //environment_set(context->functions, function_name, working_result);
-
-                // Parse function body
-                EXPECT(expected, "{", &current_token, &token_length, end);
-                if (expected.done || !expected.found) {
-                    ERROR_PREP(err, ERROR_SYNTAX, "Function definition requires body following return type");
-                    return err;
-                }
-
-                context = parse_context_create(context);
-                Node* param_it = parameter_list->children;
-                while (param_it) {
-                    environment_set(context->variables, param_it->children, param_it->children->next_child);
-                    param_it = param_it->next_child;
-                }
-
-                Node* function_body = node_allocate();
-                Node* function_first_expression = node_allocate();
-                node_add_child(function_body, function_first_expression);
-                working_result = function_first_expression;
-
-                node_add_child(lambda, parameter_list);
-                node_add_child(lambda, function_return_type);
-                node_add_child(lambda, function_body);
-
-                stack = parse_stack_create(stack);
-                stack->operator = node_symbol("lambda");
-                stack->result = working_result;
-                continue;
-            }
-
             // TODO: Parse strings and other literal types.
+            // TOOD: Parse lambdas (RIP)
 
             if (strcmp("defun", symbol->value.symbol) == 0) {
                 // Begin function definition.

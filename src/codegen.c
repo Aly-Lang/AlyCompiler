@@ -262,6 +262,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (codegen_verbose) {
             fprintf(code, ";;#; If\n");
         }
+
+        // Generate if condition expression code.
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
         if (err.type) { return err; }
 
@@ -281,7 +283,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, ";;#; If THEN\n");
         }
 
-        // TODO / FIXME: There should be context handling here.
+        // TODO / FIXME: There should be context handling here!
 
         // Generate THEN expression body.
         Node* last_expr = NULL;
