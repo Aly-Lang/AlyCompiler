@@ -129,7 +129,28 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 ## 📌 Miscellaneous
 
 -----
-  - [ ] Fix lambda parsing!
+
+  - TODO: This example should work, but it does not!!!
+    - The following program returns 5 (access denied on Windows), instead of the correct answer (which is 8).
+  ```
+  defun gcd_euclid (a : integer, b : integer) : integer {
+    if a = b {
+        a
+    } else {
+        debug_testing : integer = 
+        if a < b {
+          gcd_euclid(a, b - a)
+        } else {
+           gcd_euclid(a - b, b)
+        }
+      debug_testing
+    }
+}
+
+gcd_euclid(88, 32)
+  ```
+
+  - [x] Fix lambda parsing!
     - How do lambdas fit into a statically typed language? How can we accept a function as an argument? We will need some syntax to define a function signature like a type, that way a function parameters may have it's type be a function with a specific signature. We aren't able to just accept a `function` type because that is not able to be called. Rather, a call to a function defined in this way would not be able to be properly type-checked. I don't want to include a lambda runtime or whatever that does runtime typechecking, either.
 
     So I think the solution is some way to define a variable as a function with a specific type signature (parameters and return type). Basically, what you find in the headers of C and C++ programs. Let's think about how we could represent a type like this with out type system.
@@ -216,7 +237,7 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
     SYM: "INTEGER" (indirection level = 2)
     ```
   
-  - [ ] TODO / FIX: Fix `if` context handling during codegen
+  - [x] TODO / FIX: Fix `if` context handling during codegen
     - One thing that we are definitely not handling properly is contexts of `if` expressions during codegen.
 
   * **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.

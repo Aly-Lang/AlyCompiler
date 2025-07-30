@@ -3,11 +3,11 @@ defun gcd_euclid (a : integer, b : integer) : integer {
         a
     } else {
         if a < b {
-           gcd_euclid(a, b - a)
+          gcd_euclid(a, b - a)
         } else {
-            gcd_euclid(a - b, b)
+           gcd_euclid(a - b, b)
         }
-    }   
+    }
 }
 
 gcd_euclid(88, 32)
