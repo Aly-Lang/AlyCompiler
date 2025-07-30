@@ -31,6 +31,14 @@
 
 -----
 
+- [ ] TODO: Refactor Emacs Major Mode to be like it is but better
+  - This is a great example from SerenityOS :: https://github.com/SerenityOS/jakt/blob/main/editors/emacs/jakt-mode.el
+
+- [ ] TODO: Add token member to AST node structures.
+  - This would allow for much better error messages that point to the source code that the error originates from.
+
+  - We should also think about line count or something like that; maybe node ast holds custom structure containing token span, as well as file path (if applicable), line number, column number, etc.
+
 ## 🚧 Compiler Pipeline: Next Steps
 
 -----
@@ -129,6 +137,12 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 ## 📌 Miscellaneous
 
 -----
+
+- TODO: Write TextMate grammar for VS integration
+  - Resources:
+    - MSDN :: https://learn.microsoft.com/en-us/visualstudio/ide/adding-visual-studio-editor-support-for-other-languages?view=vs-2022
+    - Article :: https://www.apeth.com/nonblog/stories/textmatebundle.html
+    - Example Grammar :: https:://macromates.com/manual/en/language_grammars
 
   - TODO: This example should work, but it does not!!!
     - The following program returns 5 (access denied on Windows), instead of the correct answer (which is 8).

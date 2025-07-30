@@ -1,4 +1,4 @@
-;;; aly-mode.el --- A major mode for editing the aly language that the aly compiler compiles... -*- lexical-binding: t -*-
+;;; aly-mode.el --- A major mode for editing the Aly language... -*- lexical-binding: t -*-
 
 ;;; Code:
 
@@ -68,56 +68,26 @@
  ?@ "'"
  aly-mode-syntax-table)
 
-(defconst un--font-lock-operators
-  (list
-   ;; Matching Regexp
-   (rx (or
-        "+" "*" "-" "/"
-        "<" ">"
-        ":" "=" ":="
-        "&" "@"
-        ))
-   '(0 nil)
-   ))
+;; Gather all keyword font locks together into big daddy keyword font-lock
+(setq un--font-lock-defaults
+      (let* ((keywords '("defun" "if" "else"))
+             (binary-operators '("+" "*" "-" "/"
+                                 "<" ">"
+                                 ":" "=" ":="
+                                 "&" "@"))
 
-(defconst un--font-lock-generic
-  (list
-   ;; Matching Regexp
-   (rx (or "defun" "if" "else"))
-   ;; Font face to use
-   '(0 font-lock-keyword-face)
-   ))
-
-(defconst un--font-lock-function-name
-  (list
-   ;; Matching Regexp
-   (rx "defun" whitespace
-       (group (* (or (not whitespace) "("))))
-   ;; Font face to use
-   '1
-   'font-lock-function-name-face
-   ))
-
-(defconst un--font-lock-builtin-types
-  (list
-   ;; Matching Regexp
-   (rx (zero-or-more "@")
-       (or "integer" "function"))
-   ;; Font face to use
-   '(0 font-lock-type-face)
-   ))
-
-;; Gather all keyword font locks together into keyword font-lock
-(defconst un--font-lock
-  (list
-   un--font-lock-builtin-types
-   un--font-lock-operators
-   un--font-lock-function-name
-   un--font-lock-generic
-   ))
+             (keywords-regex (regexp-opt keywords 'words))
+             (binary-operators-regex (regexp-opt binary-operators 'words))
+             (builtin-types-regex (rx (zero-or-more "@")
+                                      (or "integer" "function")))
+             )
+        `((,keywords-regex . 'font-lock-keyword-face)
+          (,builtin-types-regex . 'font-lock-type-face)
+          (,binary-operators-regex . nil)
+          )))
 
 (define-derived-mode aly-mode prog-mode
-  "aly"
-  (setq font-lock-defaults '(un--font-lock)))
+  "unnamed"
+  (setq font-lock-defaults '(un--font-lock-defaults)))
 
 ;;; aly-mode.el ends here

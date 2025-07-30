@@ -283,16 +283,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, ";;#; If THEN\n");
         }
 
-        // TODO / FIXME: There should be context handling here!
-        // context -> FUNCTION context
-        // next_child_context -> Hopefully be our if context.
-
-        // PROBLEM: next_child_context is NULL *when dereferenced*
-
-        /*printf("next child context; %p\n", *next_child_context);
-        exit(1);
-        parse_context_print(*next_child_context, 0);*/
-
         // Enter if then body context
         ParsingContext *ctx = context;
         ParsingContext *next_child_ctx = *next_child_context;
