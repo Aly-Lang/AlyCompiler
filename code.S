@@ -28,9 +28,11 @@ cmove %rbx, %r11
 test %r11, %r11
 jz .L0
 ;;#; If THEN
+;;#; Variable Declaration: "debug_marker"
+sub $8, %rsp
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
-mov %rax, %r10
+mov %rax, %rax
 jmp .L1
 ;;#; If OTHERWISE
 .L0:
@@ -39,13 +41,13 @@ jmp .L1
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
 ;;#; Variable Access: "b"
-mov 24(%rbp), %r11
-mov $0, %rbx
-mov $1, %rdi
-cmp %r11, %rax
-cmovl %rdi, %rbx
+mov 24(%rbp), %r10
+mov $0, %r11
+mov $1, %rbx
+cmp %r10, %rax
+cmovl %rbx, %r11
 ;;#; If CONDITION
-test %rbx, %rbx
+test %r11, %r11
 jz .L2
 ;;#; If THEN
 ;;#; Function Call: "gcd_euclid"
@@ -57,13 +59,13 @@ pushq %rax
 ;;#; Variable Access: "b"
 mov 24(%rbp), %rax
 ;;#; Variable Access: "a"
-mov 16(%rbp), %r11
-sub %r11, %rax
+mov 16(%rbp), %r10
+sub %r10, %rax
 pushq %rax
 call gcd_euclid
 add $16, %rsp
 add $8, %rsp
-mov %rax, %r11
+mov %rax, %r10
 jmp .L3
 ;;#; If OTHERWISE
 .L2:
@@ -73,8 +75,8 @@ pushq %rax
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
 ;;#; Variable Access: "b"
-mov 24(%rbp), %rbx
-sub %rbx, %rax
+mov 24(%rbp), %r11
+sub %r11, %rax
 pushq %rax
 ;;#; Variable Access: "b"
 mov 24(%rbp), %rax
@@ -82,15 +84,14 @@ pushq %rax
 call gcd_euclid
 add $16, %rsp
 add $8, %rsp
-mov %rax, %r11
+mov %rax, %r10
 .L3:
-mov %r11, %r10
-.L1:
 mov %r10, %rax
+.L1:
 pop %rbx
 pop %rsi
 pop %rdi
-add $32, %rsp
+add $40, %rsp
 pop %rbp
 ret
 aftergcd_euclid:

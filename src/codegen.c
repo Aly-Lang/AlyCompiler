@@ -222,7 +222,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (codegen_verbose) {
             fprintf(code, ";;#; Function\n");
         }
-        // TODO/FIXME: Obviously this is not ideal to do backwards lookup,
+        // TODO / FIXME: Obviously this is not ideal to do backwards lookup,
         // especially for function nodes which contain the body... Oh well!
         ParsingContext* context_it = context;
         while (context_it) {
@@ -284,12 +284,33 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
 
         // TODO / FIXME: There should be context handling here!
+        // context -> FUNCTION context
+        // next_child_context -> Hopefully be our if context.
+
+        // PROBLEM: next_child_context is NULL *when dereferenced*
+
+        /*printf("next child context; %p\n", *next_child_context);
+        exit(1);
+        parse_context_print(*next_child_context, 0);*/
+
+        // Enter if otherwise body context
+        ParsingContext *ctx = context;
+        ParsingContext *next_child_ctx = *next_child_context;
+        // FIXME: Should this NULL check create error rather than silently be allowed?
+        if (next_child_context) {
+            ctx = *next_child_context;
+            next_child_ctx = ctx->children;
+            *next_child_context = (*next_child_context)->next_child;
+
+            printf("Entered if context:\n");
+            parse_context_print(ctx, 0);
+        }
 
         // Generate THEN expression body.
         Node* last_expr = NULL;
         Node* expr = expression->children->next_child->children;
         while (expr) {
-            err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
+            err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, &next_child_ctx, expr);
             //register_deallocate(r, expr->result_register);
             if (err.type) { return err; }
             if (last_expr) {
@@ -483,8 +504,9 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // Get the size in bytes of the type of the variable
         long long size_in_bytes = 0;
         while (context) {
-            //parse_context_print(context, 0);
-            //print_node(expression->children, 0);
+
+            parse_context_print(context, 0);
+            print_node(expression->children, 0);
 
             if (environment_get(*context->variables, expression->children, tmpnode)) {
                 break;
@@ -618,19 +640,26 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
 
     // Function body
     ParsingContext* ctx = context;
+    ParsingContext* next_child_ctx = *next_child_context;
+    // FIXME: Should this NULL check create error rather than silently be allowed?
     if (next_child_context) {
         ctx = *next_child_context;
+        next_child_ctx = ctx->children;
         *next_child_context = (*next_child_context)->next_child;
+
+        printf("Entered function context:\n");
+        parse_context_print(ctx, 0);
     }
 
     Node* last_expression = NULL;
     Node* expression = function->children->next_child->next_child->children;
     while (expression) {
+
         //printf("\nCodegenning expression with context:\n");
         //print_node(expression, 0);
         //parse_context_print(ctx, 0);
 
-        err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, next_child_context, expression);
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, &next_child_ctx, expression);
         register_deallocate(r, expression->result_register);
         if (err.type) {
             print_error(err);
