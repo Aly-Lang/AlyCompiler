@@ -1,9 +1,7 @@
 defun gcd_euclid (a : integer, b : integer) : integer {
     if a = b {
-        debug_marker : integer
         a
     } else {
-        debug_marker
         if a < b {
            gcd_euclid(a, b - a)
         } else {
