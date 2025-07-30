@@ -293,7 +293,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         exit(1);
         parse_context_print(*next_child_context, 0);*/
 
-        // Enter if otherwise body context
+        // Enter if then body context
         ParsingContext *ctx = context;
         ParsingContext *next_child_ctx = *next_child_context;
         // FIXME: Should this NULL check create error rather than silently be allowed?
@@ -302,8 +302,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             next_child_ctx = ctx->children;
             *next_child_context = (*next_child_context)->next_child;
 
-            printf("Entered if context:\n");
-            parse_context_print(ctx, 0);
+            //printf("Entered if context:\n");
+            //parse_context_print(ctx, 0);
         }
 
         // Generate THEN expression body.
@@ -311,7 +311,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         Node* expr = expression->children->next_child->children;
         while (expr) {
             err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, &next_child_ctx, expr);
-            //register_deallocate(r, expr->result_register);
             if (err.type) { return err; }
             if (last_expr) {
                 register_deallocate(r, last_expr->result_register);
@@ -330,19 +329,28 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, ";;#; If OTHERWISE\n");
         }
 
-        // TODO / FIXME: There should be context handling here.
-
         // Generate OTHERWISE
         fprintf(code, "%s:\n", otherwise_label);
-        // TODO/FIXME: What should implicit return of IF with failing condition
-        //             with no else be?
 
         last_expr = NULL;
         if (expression->children->next_child->next_child) {
+
+            // Enter if otherwise body context
+            ParsingContext *ctx = context;
+            ParsingContext *next_child_ctx = *next_child_context;
+            // FIXME: Should this NULL check create error rather than silently be allowed?
+            if (next_child_context) {
+                ctx = *next_child_context;
+                next_child_ctx = ctx->children;
+                *next_child_context = (*next_child_context)->next_child;
+
+                //printf("Entered if else context:\n");
+                //parse_context_print(ctx, 0);
+            }
+
             expr = expression->children->next_child->next_child->children;
             while (expr) {
-                err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expr);
-                //register_deallocate(r, expr->result_register);
+                err = codegen_expression_x86_64_mswin(code, r, cg_context, ctx, &next_child_ctx, expr);
                 if (err.type) { return err; }
                 if (last_expr) {
                     register_deallocate(r, last_expr->result_register);
@@ -505,8 +513,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         long long size_in_bytes = 0;
         while (context) {
 
-            parse_context_print(context, 0);
-            print_node(expression->children, 0);
+            //parse_context_print(context, 0);
+            //print_node(expression->children, 0);
 
             if (environment_get(*context->variables, expression->children, tmpnode)) {
                 break;
@@ -647,8 +655,8 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
         next_child_ctx = ctx->children;
         *next_child_context = (*next_child_context)->next_child;
 
-        printf("Entered function context:\n");
-        parse_context_print(ctx, 0);
+        //printf("Entered function context:\n");
+        //parse_context_print(ctx, 0);
     }
 
     Node* last_expression = NULL;
