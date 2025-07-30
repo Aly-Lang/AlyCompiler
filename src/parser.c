@@ -1243,12 +1243,9 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                         continue;
                     }
 
-                    if (!stack) {
-                        printf("Symbol: \"%s\"\n", node_text(symbol));
-                        ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
-                        return err;
-                    }
-
+                    printf("Symbol: \"%s\"\n", node_text(symbol));
+                    ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
+                    return err;
                 }
             }
             free(var_binding);
