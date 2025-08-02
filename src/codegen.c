@@ -482,7 +482,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // TODO: Store base pointer offset from parent base pointer offset,
             //       if possible. This would allow for us to access any local
             //       variable in any parent scope
-                        //while (cg_context) {
+            //while (cg_context) {
             //  if (environment_get(*cg_context->locals, expression, tmpnode)) {
             //    break;
             //  }

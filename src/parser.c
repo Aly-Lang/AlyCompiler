@@ -839,120 +839,6 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
         return ok;
     }
 
-    if (strcmp(operator->value.symbol, "defun-params") == 0) {
-        if (((*stack)->result)->type != NODE_TYPE_VARIABLE_DECLARATION) {
-            ERROR_PREP(err, ERROR_SYNTAX, "Function parameter definition must be variable declaration expression");
-            return err;
-        }
-
-        // Lookup variable declaration symbol in environment to get it's type symbol node thing.
-        Node* type = node_allocate();
-        err = parse_get_variable(*context, (*working_result)->children, type);
-        if (err.type) { return err; }
-        node_add_child(*working_result, type);
-
-        // TODO: Handle `done` cases.
-        // Evaluate next expression unless it's a closing parenthesis.
-        EXPECT(expected, ")", current, length, end);
-        if (expected.found) {
-
-            // First lex/parse function return type.
-            EXPECT(expected, ":", current, length, end);
-            if (expected.found) {
-                err = lex_advance(current, length, end);
-                if (err.type != ERROR_NONE) { return err; }
-                if (*length == 0) {
-                    // FIXME: This error message SUCKS!
-                    ERROR_PREP(err, ERROR_SYNTAX, "There must be a valid type following parameter type annotation operator");
-                    return err;
-                }
-
-                // PARSE RETURN TYPE.
-                Node* type = node_allocate();
-                parse_type(*context, current, length, end, type);
-                node_add_child((*stack)->body, type);
-
-                // Ensure curly open brace for function body start.
-                EXPECT(expected, "{", current, length, end);
-                if (expected.found) {
-                    // Update the stack to handle defun-body and continue.
-
-                    // Bind parameters as variables in function body scope.
-                    // TODO: This assumes that variable declarations were parsed, but
-                    // we may not have any variable declarations. Do minimal type-checking.
-                    Node* param_it = (*stack)->body->children->children;
-                    while (param_it) {
-                        environment_set((*context)->variables, param_it->children, param_it->children->next_child);
-                        param_it = param_it->next_child;
-                    }
-
-                    Node* function_body = node_allocate();
-                    node_add_child((*stack)->body, function_body);
-
-                    EXPECT(expected, "}", current, length, end);
-                    if (expected.found) {
-                        *stack = (*stack)->parent;
-                        if (!(*stack)) {
-                            *status = STACK_HANDLED_BREAK;
-                        } else {
-                            *status = STACK_HANDLED_CHECK;
-                        }
-                        return ok;
-                    }
-
-                    Node* first_expr = node_allocate();
-                    node_add_child(function_body, first_expr);
-
-                    // TODO: Don't leak stack operator!
-                    (*stack)->operator = node_symbol("defun-body");
-                    (*stack)->result = first_expr;
-                    *working_result = first_expr;
-                    *status = STACK_HANDLED_PARSE;
-                    return ok;
-                }
-                ERROR_PREP(err, ERROR_SYNTAX, "Function declaration requires body definition");
-                return err;
-            }
-            ERROR_PREP(err, ERROR_SYNTAX, "Expected type annotation following parameter list for return type of function.");
-            return err;
-        }
-
-        // Eat the comma in-between variable declarations.
-        EXPECT(expected, ",", current, length, end);
-        if (expected.done) {
-            ERROR_PREP(err, ERROR_SYNTAX, "Expected another parameter definition but got EOF!");
-            return err;
-        }
-
-        Node* next_expr = node_allocate();
-        (*stack)->result->next_child = next_expr;
-        *working_result = next_expr;
-        (*stack)->result = next_expr;
-        *status = STACK_HANDLED_PARSE;
-        return ok;
-    }
-
-    if (strcmp(operator->value.symbol, "defun-body") == 0) {
-        // Evaluate next expression unless it's a closing brace.
-        EXPECT(expected, "}", current, length, end);
-        if (expected.done || expected.found) {
-            *context = (*context)->parent;
-            *stack = (*stack)->parent;
-            if (!(*stack)) {
-                *status = STACK_HANDLED_BREAK;
-            } else {
-                *status = STACK_HANDLED_CHECK;
-            }
-            return ok;
-        }
-        Node* next_expr = node_allocate();
-        (*stack)->result->next_child = next_expr;
-        *working_result = next_expr;
-        (*stack)->result = next_expr;
-        *status = STACK_HANDLED_PARSE;
-        return ok;
-    }
-
     if (strcmp(operator->value.symbol, "funcall") == 0) {
         EXPECT(expected, ")", current, length, end);
         if (expected.done) {
@@ -1327,6 +1213,7 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                             continue;
                         }
                     } else {
+                        // Symbol is unknown and is not followed by an assignment operator `:`
                         printf("Symbol: \"%s\"\n", node_text(symbol));
                         ERROR_PREP(err, ERROR_SYNTAX, "Unknown symbol");
                         return err;
