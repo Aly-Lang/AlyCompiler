@@ -102,8 +102,8 @@ int environment_get_by_symbol(Environment env, char* symbol, Node* result) {
     return status;
 }
 
-int environment_get_by_value(Environment env, Node *value, Node *result) {
-    Binding *binding_it = env.bind;
+int environment_get_by_value(Environment env, Node* value, Node* result) {
+    Binding* binding_it = env.bind;
     while (binding_it) {
         if (node_compare(binding_it->value, value)) {
             *result = *binding_it->id;

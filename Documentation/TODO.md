@@ -31,7 +31,10 @@
 
 -----
 
-- [ ] TODO: Refactor Emacs Major Mode to be like it is but better
+- [ ] TODO: Emacs Major Mode  and simplify syntax table entries.
+  - This is a great example from SerenityOS :: https://github.com/SerenityOS/jakt/blob/main/editors/emacs/jakt-mode.el
+
+- [x] TODO: Refactor Emacs Major Mode to be like it is but better
   - This is a great example from SerenityOS :: https://github.com/SerenityOS/jakt/blob/main/editors/emacs/jakt-mode.el
 
 - [ ] TODO: Add token member to AST node structures.

@@ -13,7 +13,7 @@ CodegenContext* codegen_context_create(CodegenContext* parent) {
     CodegenContext* cg_ctx = calloc(1, sizeof(CodegenContext));
     cg_ctx->parent = parent;
     cg_ctx->locals = environment_create(NULL);
-    // TODO/FIXME: This is specific to x86_64 right now
+    // TODO / FIXME: This is specific to x86_64 right now
     cg_ctx->locals_offset = -32;
     return cg_ctx;
 }
@@ -202,8 +202,12 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             count++;
         }
 
+        err = codegen_expression_x86_64_mswin(code, r, cg_context, context, next_child_context, expression->children);
+        if (err.type) { return err; }
+
         // Emit call
-        fprintf(code, "call %s\n", expression->children->value.symbol);
+        fprintf(code, "call *%s\n", register_name(r, expression->children->result_register));
+        register_deallocate(r, expression->children->result_register);
         if (count) {
             fprintf(code, "add $%lld, %%rsp\n", count * 8);
         }
@@ -241,6 +245,10 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
         // TODO: What should function return?
         // Probably function pointer/begin instruction address?
+
+        expression->result_register = register_allocate(r);
+        fprintf(code, "lea %s(%%rip), %s\n", result, register_name(r, expression->result_register));
+
         break;
     case NODE_TYPE_DEREFERENCE:
         if (codegen_verbose) {
@@ -284,8 +292,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
 
         // Enter if then body context
-        ParsingContext *ctx = context;
-        ParsingContext *next_child_ctx = *next_child_context;
+        ParsingContext* ctx = context;
+        ParsingContext* next_child_ctx = *next_child_context;
         // FIXME: Should this NULL check create error rather than silently be allowed?
         if (next_child_context) {
             ctx = *next_child_context;
@@ -326,8 +334,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (expression->children->next_child->next_child) {
 
             // Enter if otherwise body context
-            ParsingContext *ctx = context;
-            ParsingContext *next_child_ctx = *next_child_context;
+            ParsingContext* ctx = context;
+            ParsingContext* next_child_ctx = *next_child_context;
             // FIXME: Should this NULL check create error rather than silently be allowed?
             if (next_child_context) {
                 ctx = *next_child_context;
@@ -473,8 +481,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // Local variable
             // TODO: Store base pointer offset from parent base pointer offset,
             //       if possible. This would allow for us to access any local
-            //       variable in any parent scope.
-            //while (cg_context) {
+            //       variable in any parent scope
+                        //while (cg_context) {
             //  if (environment_get(*cg_context->locals, expression, tmpnode)) {
             //    break;
             //  }
@@ -712,18 +720,13 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
     Node* type_info = node_allocate();
     while (var_it) {
         Node* var_id = var_it->id;
-        Node* type_id = var_it->value;
-        while (type_id && !type_id->value.symbol) {
-            type_id = type_id->children;
-        }
-        if (!type_id) {
-            printf("Type: \"%s\"\n", type_id->value.symbol);
-            ERROR_PREP(err, ERROR_GENERIC, "Could not get type symbol/ID; AST must be invalid or mishapen!");
-            return err;
-        }
-        if (!environment_get(*context->types, type_id, type_info)) {
-            printf("Type: \"%s\"\n", type_id->value.symbol);
-            ERROR_PREP(err, ERROR_GENERIC, "Could not get type info from types environment!");
+        Node* type_id = node_allocate();
+        *type_id = *var_it->value;
+        type_id->children = NULL;
+        type_id->next_child = NULL;
+        err = parse_get_type(context, type_id, type_info);
+        if (err.type) {
+            print_node(type_id, 0);
             return err;
         }
         var_it = var_it->next;

@@ -1,4 +1,4 @@
-#ifndef ALY_COMPILER_PARSER_H
+﻿#ifndef ALY_COMPILER_PARSER_H
 #define ALY_COMPILER_PARSER_H
 
 #include <error.h>
@@ -168,7 +168,6 @@ void parse_context_add_child(ParsingContext* parent, ParsingContext* child);
 
 Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type);
 
-
 /**
  * type has this form
  * POINTER
@@ -180,11 +179,15 @@ Error define_binary_operator(ParsingContext* context, char* operator, int preced
 */
 Error parse_type(ParsingContext* context, Token* current, size_t* length, char** end, Node* type);
 
-
 /** Get the value of a type symbol/ID in types environment.
 * Return an error if type is not a valid symbol/ID found in context.
 */
 Error parse_get_type(ParsingContext* context, Node* id, Node* result);
+
+/** Get the value of a variable symbol/ID in types environment.
+* Return an error if variable is not a valid symbol/ID found in context.
+*/
+Error parse_get_variable(ParsingContext* context, Node* id, Node* result);
 
 ParsingContext* parse_context_create(ParsingContext* parent);
 ParsingContext* parse_context_default_create();

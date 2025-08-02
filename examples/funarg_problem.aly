@@ -35,6 +35,10 @@ some_adder : integer (a : integer, b : integer) {
     a + b
 }
 
+our_variable_name_which_is_a_function : integer (a : integer, b : integer) =  integer (a : integer, b : integer) {
+   some_adder(a, b)
+}
+ 
 another_adder : integer (a : integer, b : integer) {
     b + a
 }
