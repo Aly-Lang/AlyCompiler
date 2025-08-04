@@ -243,9 +243,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         }
         err = codegen_function_x86_64_att_asm_mswin(r, cg_context, context, next_child_context, result, expression, code);
 
-        // TODO: What should function return?
-        // Probably function pointer/begin instruction address?
-
+        // Function returns beginning of instructions address.
         expression->result_register = register_allocate(r);
         fprintf(code, "lea %s(%%rip), %s\n", result, register_name(r, expression->result_register));
 
