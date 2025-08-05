@@ -1,52 +1,7 @@
-;; The downwards FUNARG problem is the problem in computer science 
-;; where functions are passed as arguments to other functions.
+sixty_nine : integer() = integer() { 69 }
 
-foo : integer() = integer() {
-    42
+foo : integer(int : integer()) = integer(int : integer()) {
+ int()
 }
 
-bar : @@integer( n : integer); = integer(n : integer) {
-
-;}
-
-integer () { 5 }
-
-integer() {
-    a : integer = 69
-    integer() { 42 } 
-    a
-}
-
-integer (n : integer) {
-    5
-}
-
-; PARSING ...
-; ENCOUNTER FUNCTION/LAMBDA/SCOPE/BLOCK
-; CREATE A NEW SYMBOL TABLE AS THE "NEXT CHILD" OF THE CURRENT
-
-; SYMBOL TABLE
-; `-- bar (type ...) -> foo (type ...)
-
-; SYMBOL TABLE CHILD 0
-; `-- STUFF IN FOO
-
-; SYMBOL TABLE CHILD 1
-; `-- n (integer)
-
-; SYMBOL TABLE CHILD 2
-; `-- n (integer)
-
-; SYMBOL TABLE CHILD 3
-; `-- a (integer)
-
-; SYMBOL TABLE CHILD 3 CHILD 0
-; `-- STUFF IN NESTED LAMBDA
-
-; SYMBOL TABLE CHILD 4
-; `-- n (integer)
-
-; Function signatures are now type-checked properly :^)
-barbar : @@integer(n : integer) = bar
-
-foo()
+foo(sixty_nine)
