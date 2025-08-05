@@ -547,7 +547,7 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
         context = context->parent;
     }
     result->type = NODE_TYPE_NONE;
-    printf("Type not found: \"%s\"\n", id->value.symbol);
+    //printf("Type not found: \"%s\"\n", id->value.symbol);
     ERROR_PREP(err, ERROR_GENERIC, "Type is not found in environment.");
     return err;
 }
@@ -884,21 +884,25 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
 
 Error parse_base_type(ParsingContext* context, Token* current, size_t* length, char** end, Node* type) {
     Error err = ok;
+    Token current_copy = *current;
+    size_t length_copy = *length;
+    char* end_copy = *end;
+
     unsigned indirection_level = 0;
     // Loop over all pointer declaration symbols.
-    while (current->beginning[0] == '@') {
+    while (current_copy.beginning[0] == '@') {
         // Add one level of pointer indirection.
         indirection_level += 1;
         // Advance lexer.
-        err = lex_advance(current, length, end);
+        err = lex_advance(&current_copy, &length_copy, &end_copy);
         if (err.type != ERROR_NONE) { return err; }
-        if (*length == 0) {
+        if (length_copy == 0) {
             ERROR_PREP(err, ERROR_SYNTAX, "Expected a valid type following pointer type declaration symbol: `@`");
             return err;
         }
     }
 
-    Node* type_symbol = node_symbol_from_buffer(current->beginning, *length);
+    Node* type_symbol = node_symbol_from_buffer(current_copy.beginning, length_copy);
     *type = *type_symbol;
     type->pointer_indirection = indirection_level;
 
@@ -912,6 +916,11 @@ Error parse_base_type(ParsingContext* context, Token* current, size_t* length, c
     }
     free(type_symbol);
     free(type_validator);
+
+    *current = current_copy;
+    *length = length_copy;
+    *end = end_copy;
+
     return err;
 }
 
@@ -997,8 +1006,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
 
         } else {
             // Check for lambda
-            // TODO: We need the names of the parameters, but we also need
-            // the return type of the lambda. How fun :^)
             Node* type = node_allocate();
             Token token = current_token;
             size_t length = token_length;
