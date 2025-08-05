@@ -95,7 +95,6 @@ char* register_name(Register* base, RegisterDescriptor register_descriptor) {
 
 //================================================================ END REGISTER STUFF
 
-
 #define label_buffer_size 1024
 char label_buffer[label_buffer_size];
 size_t label_index = 0;
@@ -246,7 +245,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // Function returns beginning of instructions address.
         expression->result_register = register_allocate(r);
         fprintf(code, "lea %s(%%rip), %s\n", result, register_name(r, expression->result_register));
-
         break;
     case NODE_TYPE_DEREFERENCE:
         if (codegen_verbose) {
@@ -602,12 +600,14 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 }
 
 const char* function_header_x86_64 =
+".cfi_startproc\n"
 "push %rbp\n"
 "mov %rsp, %rbp\n"
 "sub $32, %rsp\n";
 const char* function_footer_x86_64 =
 "pop %rbp\n"
-"ret\n";
+"ret\n"
+".cfi_endproc\n";
 
 Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code) {
     Error err = ok;
@@ -617,7 +617,7 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     // Store base pointer integer offset within locals environment
     // Start at one to make space for pushed RBP in function header.
     size_t param_count = 1;
-    Node* parameter = function->children->children;
+    Node* parameter = function->children->next_child->children;
     while (parameter) {
         param_count++;
         // Bind parameter name to integer base pointer offset.

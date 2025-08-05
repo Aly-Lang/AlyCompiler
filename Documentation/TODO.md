@@ -31,6 +31,10 @@
 
 -----
 
+- [ ] TODO: Add debug information using CFI directives
+  - ![GNU Binutils documentation](https://sourceware.org/binutils/docs/as/)
+
+
 - [ ] TODO: Emacs Major Mode  and simplify syntax table entries.
   - This is a great example from SerenityOS :: https://github.com/SerenityOS/jakt/blob/main/editors/emacs/jakt-mode.el
 
