@@ -4,7 +4,6 @@ sixty_nine: .space 8
 .section .text
 .global main
 main:
-.cfi_startproc
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
@@ -12,7 +11,6 @@ sub $32, %rsp
 ;;#; Function
 jmp after.L0
 .L0:
-.cfi_startproc
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
@@ -27,7 +25,6 @@ pop %rdi
 add $32, %rsp
 pop %rbp
 ret
-.cfi_endproc
 after.L0:
 lea .L0(%rip), %rax
 mov %rax, sixty_nine(%rip)
@@ -35,7 +32,6 @@ mov %rax, sixty_nine(%rip)
 ;;#; Function
 jmp after.L1
 .L1:
-.cfi_startproc
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
@@ -54,7 +50,6 @@ pop %rdi
 add $32, %rsp
 pop %rbp
 ret
-.cfi_endproc
 after.L1:
 lea .L1(%rip), %rax
 mov %rax, foo(%rip)
@@ -71,4 +66,3 @@ add $8, %rsp
 add $32, %rsp
 pop %rbp
 ret
-.cfi_endproc

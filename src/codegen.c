@@ -602,17 +602,17 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 }
 
 const char* function_header_x86_64 =
-".cfi_startproc\n"
 "push %rbp\n"
 "mov %rsp, %rbp\n"
 "sub $32, %rsp\n";
 const char* function_footer_x86_64 =
 "pop %rbp\n"
-"ret\n"
-".cfi_endproc\n";
+"ret\n";
 
 Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code) {
     Error err = ok;
+
+    // TODO: CFI function stuff.
 
     cg_context = codegen_context_create(cg_context);
 
