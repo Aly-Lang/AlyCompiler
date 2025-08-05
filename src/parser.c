@@ -723,6 +723,13 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
             return ok;
         }
 
+        // Eat the comma in-between variable declarations.
+        EXPECT(expected, ",", current, length, end);
+        if (expected.done) {
+            ERROR_PREP(err, ERROR_SYNTAX, "Expected another parameter definition but got EOF");
+            return err;
+        }
+
         Node* next_expr = node_allocate();
         (*stack)->result->next_child = next_expr;
         (*stack)->result = next_expr;
