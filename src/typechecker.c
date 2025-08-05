@@ -232,8 +232,8 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
 
         Node* parameter = expression->children->next_child->children;
         if (parameter) {
-            Node* parameter_type = node_allocate();
             do {
+                Node* parameter_type = node_allocate();
                 if (parameter->type != NODE_TYPE_VARIABLE_DECLARATION) {
                     ERROR_PREP(err, ERROR_TYPE, "Function parameter declaration must be a valid variable declaration!");
                     return err;

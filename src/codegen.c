@@ -95,6 +95,7 @@ char* register_name(Register* base, RegisterDescriptor register_descriptor) {
 
 //================================================================ END REGISTER STUFF
 
+
 #define label_buffer_size 1024
 char label_buffer[label_buffer_size];
 size_t label_index = 0;
@@ -245,6 +246,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         // Function returns beginning of instructions address.
         expression->result_register = register_allocate(r);
         fprintf(code, "lea %s(%%rip), %s\n", result, register_name(r, expression->result_register));
+
         break;
     case NODE_TYPE_DEREFERENCE:
         if (codegen_verbose) {
