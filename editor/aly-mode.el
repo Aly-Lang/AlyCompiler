@@ -69,7 +69,7 @@
  aly-mode-syntax-table)
 
 ;; Gather all keyword font locks together into big daddy keyword font-lock
-(setq un--font-lock-defaults
+(setq aly--font-lock-defaults
       (let* ((keywords '("if" "else"))
              (binary-operators '("+" "*" "-" "/"
                                  "<" ">"
@@ -86,8 +86,49 @@
           (,binary-operators-regex . nil)
           )))
 
+          (defcustom un-mode-indent-amount 2
+  "The amount of characters that each level of parenthesis nesting in the aly language source code will be indented."
+  :group 'un-mode)
+
+(defun aly--indent-line ()
+  "Indent a line in the aly programming language."
+  (let ((indent)
+        (boi-predicate)
+        (should-move-eol)
+        (point (point)))
+    (save-excursion
+      ;; Move 'point' backwards to end of indentation, if any.
+      (back-to-indentation)
+      ;; Use the partial parsing syntax state or whatever to get
+      ;; parenthesis nesting level. This value is calculated using
+      ;; data from the syntax table up above.
+      (setq indent (car (syntax-ppss))
+            boi-predicate (= (point) point))
+      (if boi-predicate
+          ;; If we began at the beginning of the line (after indentation),
+          ;; we need to move point to after inserted indentation.
+          (setq should-move-eol t)
+        ;; If not at beginning of indentation but at a newline, do not
+        ;; indent anything at all. FIXME: Is this misleading?
+        (when (eq (char-after) ?\n)
+          (setq indent 0)))
+      ;; Closing parenthesis characters are indented at parent level.
+      (when (or
+             (eq (char-after) ?\))
+             (eq (char-after) ?\}))
+        (setq indent (1- indent)))
+      ;; Get rid of existing indentation, if any.
+      (delete-region (line-beginning-position) (point))
+      ;; Indent to proper amount based on customizable value.
+      (indent-to (* indent un-mode-indent-amount)))
+    (when should-move-eol
+      (move-end-of-line nil))))
+
 (define-derived-mode aly-mode prog-mode
-  "unnamed"
-  (setq font-lock-defaults '(un--font-lock-defaults)))
+  "aly"
+  (setq font-lock-defaults '(aly--font-lock-defaults))
+  (setq indent-line-function #'aly--indent-line))
+
+(provide 'aly-mode)
 
 ;;; aly-mode.el ends here
