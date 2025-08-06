@@ -408,11 +408,19 @@ void parse_context_print(ParsingContext* top, size_t indent) {
 
 void parse_context_add_child(ParsingContext* parent, ParsingContext* child) {
     if (parent) {
-        //child->next_child = parent->children;
-        //parent->children = child;
         if (parent->children) {
             parent = parent->children;
-            while (parent->next_child) { parent = parent->next_child; }
+            if (parent == child) {
+                fprintf(stderr, "DEVELOPER WARNING: Refusal to make circular linked list by parse_context_add_child()\n");
+                return;
+            }
+            while (parent->next_child) {
+                parent = parent->next_child;
+                if (parent == child) {
+                    fprintf(stderr, "DEVELOPER WARNING: Refusal to make circular linked list by parse_context_add_child()\n");
+                    return;
+                }
+            }
             parent->next_child = child;
         } else {
             parent->children = child;
@@ -451,10 +459,6 @@ ParsingContext* parse_context_default_create() {
     err = define_type(ctx->types, NODE_TYPE_INTEGER, node_symbol("integer"), sizeof(long long));
     if (err.type != ERROR_NONE) {
         printf("ERROR: Failed to set builtin integer type in types environment.\n");
-    }
-    err = define_type(ctx->types, NODE_TYPE_FUNCTION, node_symbol("function"), sizeof(long long));
-    if (err.type != ERROR_NONE) {
-        printf("ERROR: Failed to set builtin function type in types environment.\n");
     }
     // TODO: Should we use type IDs vs type symbols?
     // FIXME: Use precedence enum!
@@ -534,6 +538,13 @@ ExpectReturnValue lex_expect(char* expected, Token* current, size_t* current_len
 
 Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
     Error err = ok;
+
+    // Handle pointers and functions, as they are both memory addresses.
+    // This should ideally return target format-dependant address size.
+    if (id->pointer_indirection > 0 || strcmp(id->value.symbol, "function") == 0) {
+        result->children = node_integer(8);
+        return ok;
+    }
 
     // DEBUG
     //printf("Searching following context for ");

@@ -514,15 +514,11 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             ERROR_PREP(err, ERROR_GENERIC, "Invalid AST/context fed to codegen. Could not find variable declaration in environment.");
             return err;
         }
-        // Pointers are 8 bytes always, at least for now!
-        if (tmpnode->pointer_indirection != 0) {
-            size_in_bytes = 8;
-        } else {
-            // If not a pointer, get size in bytes from type environment.
-            err = parse_get_type(context, tmpnode, tmpnode);
-            if (err.type) { return err; }
-            size_in_bytes = tmpnode->children->value.integer;
-        }
+        // Get size in bytes from type environment.
+        err = parse_get_type(context, tmpnode, tmpnode);
+        if (err.type) { return err; }
+        size_in_bytes = tmpnode->children->value.integer;
+
         // Subtract type size in bytes from stack pointer
         fprintf(code, "sub $%lld, %%rsp\n", size_in_bytes);
         // Keep track of RBP offset.
@@ -741,7 +737,9 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
             continue;
         }
         err = codegen_expression_x86_64_mswin(code, r, cg_context, context, &next_child_context, expression);
-        if (err.type) { return err; }
+        if (err.type) {
+            return err;
+        }
         register_deallocate(r, expression->result_register);
         last_expression = expression;
         expression = expression->next_child;
