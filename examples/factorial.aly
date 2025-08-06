@@ -6,4 +6,4 @@ fact : integer (n : integer) = integer (n : integer) {
   }
 }
 
-fact(5)
+fact(4)

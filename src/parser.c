@@ -698,7 +698,7 @@ Error handle_stack_operator(int* status, ParsingContext** context, ParsingStack*
     }
 
     if (strcmp(operator->value.symbol, "lambdarameters") == 0) {
-        print_node((*stack)->result, 0);
+        //print_node((*stack)->result, 0);
 
         EXPECT(expected, ")", current, length, end);
         if (expected.found) {
