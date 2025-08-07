@@ -34,7 +34,7 @@
 - [ ] TODO: Add debug information using CFI directives
   - ![GNU Binutils documentation](https://sourceware.org/binutils/docs/as/)
 
-- [ ] TODO: Emacs Major Mode indenting and simplify syntax table entries.
+- [x] TODO: Emacs Major Mode indenting and simplify syntax table entries.
   - This is a great example from SerenityOS :: https://github.com/SerenityOS/jakt/blob/main/editors/emacs/jakt-mode.el
 
 - [x] TODO: Refactor Emacs Major Mode to be like it is but better
@@ -305,3 +305,70 @@ foo :None() {}
   * **Variable Access:** `<symbol>`
   * **Binary Operator:** `<expression> <operator> <expression>`
   * **Function Call:** `<symbol> <parameter list>`
+
+
+- [ ] TODO: Implement repetitive control flow...
+
+- [ ] TODO: Consolidate `current_token`, `token_length`, and `end` into `ParsingState`
+
+- [ ] TODO: Separate contexts from scopes (or fix this problem in some other way)...
+
+- [ ] TODO: Create new binary operator node value that is easier in codegen...
+
+- [ ] TODO: Implement division and bit shifting binary operators...
+
+- [ ] TODO: Support quick function declarations syntax...
+
+- [ ] TODO: AST optimization, Codegen optimization, etc. etc...
+  - At a glance, it seems that we could do much better at daisy-chaining result registers of expressions. As a prime example, we could use an integer literal directly in the instruction, rather than loading it into a register before using that register wherever the integer is needed. This would be obvious in function call parameter pushing
+  ```
+  ;;#; Function Call: "foo"
+  pushq %rax
+  ;;#; Variable Access: "sixty_nine"
+  mov sixty_nine(%rip), %rax
+  pushq %rax
+  ;;#; Variable Access: "foo"
+  mov foo(%rip), %rax
+  call *%rax
+  add $8, %rsp
+  add $8, %rsp
+  ```
+
+  Another thing we could fix up is pushing/popping all callee-saved registers, even when they aren't used. It makes simple functions, ones that just return a single integer, for example, a bit silly in how complex the code generated is.
+  ```
+  ;;#; Function
+  jmp after.L0
+.L0:
+  push %rbp
+  mov $rsp, %rbp
+  sub $32, %rsp
+  push %rbx
+  push %rsi
+  push %rdi
+  ;;#; INTEGER: 69
+  mov $69, %rax
+  pop %rbx
+  pop %rsi
+  pop %rdi
+  add $32, %rsp
+  pop %rbp
+  ret
+after.L0:
+  lea .L0(%rip), %rax
+  ```
+
+ One thing I'm wondering is how to figure out when an expression may be used as an operand, and when it must be code-genned into a result register... After some thought, it seems that this must be done during codegen, with specific checks in certain expression types to attempt to create the most efficient program possible. All of these checks must also ensure they respect the user's specific optimization level.
+
+- [ ] TODO: Add debug information using CFI directives...
+
+- [ ] TODO: Compiler that enforces certain code style...
+
+- [ ] TODO: Vimscript Syntax plugin
+
+- [ ] FIXME: When out of scratch registers in codegen, use stack or something...
+
+- [ ] FIXME: How do we deal with syntax of `*=` and `-=`. etc???
+
+- [ ] TODO: Convert `{}` expression lists into an expression itself.
+
+- [ ] TODO: Have the compiler able to collect TODO comments and things from source...
