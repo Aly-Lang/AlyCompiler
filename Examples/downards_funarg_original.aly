@@ -1,0 +1,68 @@
+;; Upward FUNARG problem:
+;;  Pascal does not allow returning functions as values from other functions.
+;; defun make_adder(a : integer, b : integer) : <some_func> {
+;;    defun adder() : integer {
+;;      defun adder_impl() : integer {
+;;          a + b
+;;      }
+;;  } 
+;; 
+;;    adder()
+;;
+;;    adder
+;;}
+;; myAdder : <some_func> = make_adder(2, 2)
+;; myAdder()
+
+;; Downwards FUNARG problem:
+;;  Our solution is going to be define functions as variables.
+;;  A function is just another type in our type system.
+;;  A function variable can not be reassigned if it has a body
+;;  declared. This is to avoid losing the function body.
+;;  A function variable may be reassigned to another function 
+;;  variable.
+;;
+;; As for syntax and readability: Yes, we do need functions to be
+;; able to variables, but it would be nice to have a custom more
+;; readable syntax that requires strong functions.
+;; Basically have `defun` still operate as it did before, and require
+;; function body. This means there is dedicated syntax.
+defun use_adder : integer (adder : integer (a : integer, b : integer), a : integer, b : integer) {
+    adder(a, b)
+}
+
+some_adder : integer (a : integer, b : integer) {
+    a + b
+}
+
+our_variable_name_which_is_a_function : integer (a : integer, b : integer) =  integer (a : integer, b : integer) {
+   some_adder(a, b)
+}
+ 
+another_adder : integer (a : integer, b : integer) {
+    b + a
+}
+
+;; Catch error of undefined function call (hopefully)
+my_other_adder : integer (a : integer, b : integer)
+my_other_adder()
+
+my_adder : integer (a : integer, b : integer)
+my_adder := some_adder
+my_adder(21, 21)
+
+my_adder := another_adder
+my_adder(34, 35)
+
+my_adder := my_other_adder
+my_adder(2, 40)
+
+use_adder(my_adder, 34, 35)
+
+;; TODO: EVENTUALLY!
+# extern malloc : @integer (size : integer)
+;; EVENTUALLY EVENTUALLY!
+# extern malloc : @byte (size : integer)
+# heap_memory : @byte = malloc(8)
+;; And also handle basic arithmetic on byte pointers
+;; OR have sized arrays of bytes be a thing...
