@@ -59,14 +59,13 @@ Aly is **statically typed**. Variables must be declared and type annotated befor
 
 **Whitespace is ignored** and there are **no required expression delimiters**. That's right: no semi-colons and no forced indent\!
 
-Functions are first-class citizens, or at least should be eventually.
+Functions are first-class citizens.
 
 An Aly program comes in the form of a file. The file may contain a series of expressions that will be executed in order, from top to bottom. There is no `main` function or other entry point; control flow starts at the very top of the file and makes its way to the bottom.
 
 Let's take a look at a basic program:
-
 ```
-defun fact (n : integer) : integer {
+fact : integer (n : integer) = integer (n : integer) {
   if n < 2 {
     1
   } else {
@@ -74,9 +73,9 @@ defun fact (n : integer) : integer {
   }
 }
 
-fact(4)
+fact(5)
 ```
 
-This program will return `24` as a status code. The result of the last expression in the file is the return value. The same holds true for function bodies and if/else bodies.
+This program will return `120` as a status code. The result of the last expression in the file is the return value. The same holds true for function bodies and if/else bodies.
 
 Variables in a local scope **shadow** variables in a parent scope and may share the same symbolic name.
