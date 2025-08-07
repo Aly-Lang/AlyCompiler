@@ -1,0 +1,15 @@
+;; This file is part of the Aly programming language project.
+;; Contains potential syntax for type-inferred variable declarations.
+
+a :? 1
+;; OR maybe?
+a <: 1
+
+;; Not sure I like this, but it is a possibility.
+a /? 1
+
+;; Maybe even this?
+a == 1
+
+;; This one may not be too bad...
+a :: 1

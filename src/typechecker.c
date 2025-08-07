@@ -106,6 +106,12 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
 
     switch (expression->type) {
     default:
+        printf("DEVELOPER WARNING: Unhandled expression type in typecheck_expression()\n");
+        print_node(expression, 2);
+        break;
+    case NODE_TYPE_NONE:
+        break;
+    case NODE_TYPE_VARIABLE_DECLARATION:
         break;
     case NODE_TYPE_INTEGER:
         if (0) { ; }

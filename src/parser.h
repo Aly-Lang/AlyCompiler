@@ -126,6 +126,16 @@ int token_string_equalp(char* string, Token* token);
 /// @return Boolean-like value; 1 upon success, 0 for failure.
 int parse_integer(Token* token, Node* node);
 
+typedef struct ParsingState {
+	Token* current;
+	size_t* length;
+	char** end;
+} ParsingState;
+
+ParsingState parse_state_create(Token* token, size_t* length, char** end);
+void parse_state_update(ParsingState* state, Token token, size_t length, char* end);
+void parse_state_update_from(ParsingState* state, ParsingState new_state);
+
 // TODO: Separate context from stack.
 typedef struct ParsingStack {
 	struct ParsingStack* parent;
@@ -168,16 +178,7 @@ void parse_context_add_child(ParsingContext* parent, ParsingContext* child);
 
 Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type);
 
-/**
- * type has this form
- * POINTER
- * `-- NODE WITH PROPER TYPE IN NODE TYPE
- *
- * type_name has this form
- * POINTER
- * `-- SYMBOL WITH THE NAME OF TYPE
-*/
-Error parse_type(ParsingContext* context, Token* current, size_t* length, char** end, Node* type);
+Error parse_type(ParsingContext* context, ParsingState* state, Node* type);
 
 /** Get the value of a type symbol/ID in types environment.
 * Return an error if type is not a valid symbol/ID found in context.

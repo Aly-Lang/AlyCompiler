@@ -310,6 +310,7 @@ foo :None() {}
 - [ ] TODO: Implement repetitive control flow...
 
 - [ ] TODO: Consolidate `current_token`, `token_length`, and `end` into `ParsingState`
+  - These current are passed all around the parser as arguments to all sorts of functions, and I think it could be simplified by bundling these arguments together into the one thing they represent.
 
 - [ ] TODO: Separate contexts from scopes (or fix this problem in some other way)...
 
@@ -319,8 +320,8 @@ foo :None() {}
 
 - [ ] TODO: Support quick function declarations syntax...
 
-- [ ] TODO: AST optimization, Codegen optimization, etc. etc...
-  - At a glance, it seems that we could do much better at daisy-chaining result registers of expressions. As a prime example, we could use an integer literal directly in the instruction, rather than loading it into a register before using that register wherever the integer is needed. This would be obvious in function call parameter pushing
+- [ ] TODO: AST optimization, Codegen optimization, etc. etc... 
+    - At a glance, it seems that we could do much better at daisy-chaining result registers of expressions. As a prime example, we could use an integer literal directly in the instruction, rather than loading it into a register before using that register wherever the integer is needed. This would be obvious in function call parameter pushing.
 ```
   ;;#; Function Call: "foo"
   pushq %rax
@@ -365,6 +366,7 @@ after.L0:
 - [ ] TODO: Compiler that enforces certain code style...
 
 - [ ] TODO: Vimscript Syntax plugin
+  - [VIM Syntax Plugins Support](https://thoughtbot.com/blog/writing-vim-syntax-plugins)
 
 - [ ] FIXME: When out of scratch registers in codegen, use stack or something...
 
