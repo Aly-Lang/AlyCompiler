@@ -152,8 +152,8 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
   - TODO: This example should work, but it does not!!!
     - The following program returns 5 (access denied on Windows), instead of the correct answer (which is 8).
-  ```
-  defun gcd_euclid (a : integer, b : integer) : integer {
+```
+defun gcd_euclid (a : integer, b : integer) : integer {
     if a = b {
         a
     } else {
@@ -168,7 +168,7 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 }
 
 gcd_euclid(88, 32)
-  ```
+```
 
   - [x] Fix lambda parsing!
     - How do lambdas fit into a statically typed language? How can we accept a function as an argument? We will need some syntax to define a function signature like a type, that way a function parameters may have it's type be a function with a specific signature. We aren't able to just accept a `function` type because that is not able to be called. Rather, a call to a function defined in this way would not be able to be properly type-checked. I don't want to include a lambda runtime or whatever that does runtime typechecking, either.
@@ -321,7 +321,7 @@ foo :None() {}
 
 - [ ] TODO: AST optimization, Codegen optimization, etc. etc...
   - At a glance, it seems that we could do much better at daisy-chaining result registers of expressions. As a prime example, we could use an integer literal directly in the instruction, rather than loading it into a register before using that register wherever the integer is needed. This would be obvious in function call parameter pushing
-  ```
+```
   ;;#; Function Call: "foo"
   pushq %rax
   ;;#; Variable Access: "sixty_nine"
@@ -332,10 +332,11 @@ foo :None() {}
   call *%rax
   add $8, %rsp
   add $8, %rsp
-  ```
+```
 
-  Another thing we could fix up is pushing/popping all callee-saved registers, even when they aren't used. It makes simple functions, ones that just return a single integer, for example, a bit silly in how complex the code generated is.
-  ```
+Another thing we could fix up is pushing/popping all callee-saved registers, even when they aren't used. It makes simple functions, ones that just return a single integer, for example, a bit silly in how complex the code generated is.
+
+```
   ;;#; Function
   jmp after.L0
 .L0:
@@ -355,7 +356,7 @@ foo :None() {}
   ret
 after.L0:
   lea .L0(%rip), %rax
-  ```
+```
 
  One thing I'm wondering is how to figure out when an expression may be used as an operand, and when it must be code-genned into a result register... After some thought, it seems that this must be done during codegen, with specific checks in certain expression types to attempt to create the most efficient program possible. All of these checks must also ensure they respect the user's specific optimization level.
 
