@@ -463,11 +463,17 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Free no-longer-used LHS result register.
             register_deallocate(r, expression->children->result_register);
-        } else if (strcmp(expression->value.symbol, "/") == 0) {
-            // Division
+        } else if (strcmp(expression->value.symbol, "/") == 0 || strcmp(expression->value.symbol, "%") == 0) {
+            // Division/Modulo
             // https://www.felixcloutier.com/x86/div
             // https://www.felixcloutier.com/x86/idiv
             // https://www.felixcloutier.com/x86/cwd:cdq:cqo
+
+            char modulo_flag = 0;
+            // TODO: Don't compare twice!
+            if (strcmp(expression->value.symbol, "%") == 0) {
+                modulo_flag = 1;
+            }
 
             // Quotient is in RAX, Remainder in RDX; we must save and
             // restore these registers before and after divide, sadly.
@@ -496,11 +502,16 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // Call IDIV with right hand side of division operator.
             fprintf(code, "idiv %s\n", register_name(r, expression->children->next_child->result_register));
 
-            // Move return value from RAX into wherever it actually belongs.
             expression->result_register = register_allocate(r);
             char* result_register_name = register_name(r, expression->result_register);
-            if (strcmp(result_register_name, "%rax")) {
-                fprintf(code, "mov %%rax, %s\n", result_register_name);
+            if (modulo_flag) {
+                // Move return value from RDX into wherever it actually belongs.
+                fprintf(code, "mov %%rdx, %s\n", result_register_name);
+            } else {
+                // Move return value from RAX into wherever it actually belongs.
+                if (strcmp(result_register_name, "%rax")) {
+                    fprintf(code, "mov %%rax, %s\n", result_register_name);
+                }
             }
 
             fprintf(code,

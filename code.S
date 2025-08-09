@@ -35,7 +35,20 @@ push %rcx
 mov %rbx, %rcx
 sal %cl, %r11
 pop %rcx
+;;#; Binary Operator: "%"
+;;#; INTEGER: 69
+mov $69, %r11
+;;#; INTEGER: 4
+mov $4, %rbx
+push %rax
+push %rdx
 mov %r11, %rax
+cqto
+idiv %rbx
+mov %rdx, %rdi
+pop %rdx
+pop %rax
+mov %rdi, %rax
 add $32, %rsp
 pop %rbp
 ret
