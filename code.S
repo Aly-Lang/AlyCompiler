@@ -12,9 +12,9 @@ mov $24, %rax
 mov $4, %r10
 push %rax
 push %rdx
-xor %rdx, %rdx
 mov %rax, %rax
-div %r10
+cqto
+idiv %r10
 mov %rax, %r11
 pop %rdx
 pop %rax

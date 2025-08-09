@@ -467,29 +467,31 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // Division
             // https://www.felixcloutier.com/x86/div
             // https://www.felixcloutier.com/x86/idiv
+            // https://www.felixcloutier.com/x86/cwd:cdq:cqo
 
-            // Quotient is in RAX, Remainder in RDX; we must save and
+                        // Quotient is in RAX, Remainder in RDX; we must save and
             // restore these registers before and after divide, sadly.
 
             fprintf(code,
                 "push %%rax\n"
                 "push %%rdx\n");
 
-            // Zero RDX to not interfere with division result.
-            // RDX is treated as the 8 high bytes of a 16-byte
-            // number stored in RDX:RAX.
-            fprintf(code, "xor %%rdx, %%rdx\n");
-
             // Load RAX with LHS of division operator.
             // TODO: Check if LHS is already in RAX or not.
             // If RHS is in RAX, we must save RAX first...
             fprintf(code, "mov %s, %%rax\n", register_name(r, expression->children->result_register));
 
-            // Call DIV with RHS of division operator.
-            fprintf(code, "div %s\n", register_name(r, expression->children->next_child->result_register));
+            // Sign-extend the value in RAX to RDX.
+            // RDX is treated as the 8 high bytes of a 16-byte
+            // number stored in RDX:RAX.
+            fprintf(code, "cqto\n");
+
+            // Call IDIV with right hand side of division operator.
+            fprintf(code, "idiv %s\n", register_name(r, expression->children->next_child->result_register));
 
             // Move return value from RAX into wherever it actually belongs.
             expression->result_register = register_allocate(r);
+            // TODO: Check if result_register is RAX...
             fprintf(code, "mov %%rax, %s\n", register_name(r, expression->result_register));
 
             fprintf(code,
