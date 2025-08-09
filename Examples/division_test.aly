@@ -1,9 +1,7 @@
 24 / 4
 
-;; Should return 8
-2 [ 2
+8 >> 2
 
-;; Should return 2
-8 ] 2
+2 << 2
 
-;; WOO HOO WE HAVE BIT SHIFTING AND DIVISION!!! 
+;; WOO HOO WE HAVE BIT SHIFTING AND DIVISION!!!

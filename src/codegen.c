@@ -472,14 +472,21 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // Quotient is in RAX, Remainder in RDX; we must save and
             // restore these registers before and after divide, sadly.
 
+            // TODO: We can optimize the outputted code by testing if LHS
+            // result register is RAX, in which case we can use it
+            // destructively as our divison expression result register.
+
             fprintf(code,
                 "push %%rax\n"
                 "push %%rdx\n");
 
-            // Load RAX with LHS of division operator.
-            // TODO: Check if LHS is already in RAX or not.
-            // If RHS is in RAX, we must save RAX first...
-            fprintf(code, "mov %s, %%rax\n", register_name(r, expression->children->result_register));
+            // Load RAX with LHS of division operator, if needed.
+            // TODO: Use enum comparison on RegisterDescriptor instead of strcmp()!
+            char* lhs_register_name = register_name(r, expression->children->result_register);
+            if (strcmp(lhs_register_name, "%rax")) {
+                // TODO: If RHS is in RAX, we must save RAX first...
+                fprintf(code, "mov %s, %%rax\n", lhs_register_name);
+            }
 
             // Sign-extend the value in RAX to RDX.
             // RDX is treated as the 8 high bytes of a 16-byte
@@ -491,13 +498,16 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Move return value from RAX into wherever it actually belongs.
             expression->result_register = register_allocate(r);
-            // TODO: Check if result_register is RAX...
-            fprintf(code, "mov %%rax, %s\n", register_name(r, expression->result_register));
+            char* result_register_name = register_name(r, expression->result_register);
+            if (strcmp(result_register_name, "%rax")) {
+                fprintf(code, "mov %%rax, %s\n", result_register_name);
+            }
 
             fprintf(code,
                 "pop %%rdx\n"
                 "pop %%rax\n");
-        } else if (strcmp(expression->value.symbol, "[") == 0) { // FIXME: Temporary bitshift operator
+
+        } else if (strcmp(expression->value.symbol, "<<") == 0) {
             // Bitshift Left
             // https://www.felixcloutier.com/x86/sal:sar:shl:shr
 
@@ -507,13 +517,13 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code,
                 "push %%rcx\n"
                 "mov %s, %%rcx\n"
-                "shl %%cl, %s\n"
+                "sal %%cl, %s\n"
                 "pop %%rcx\n",
                 register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
 
             // Free no-longer-used RHS result register.
             register_deallocate(r, expression->children->next_child->result_register);
-        } else if (strcmp(expression->value.symbol, "]") == 0) {
+        } else if (strcmp(expression->value.symbol, ">>") == 0) {
             // Bitshift Right
             // https://www.felixcloutier.com/x86/sal:sar:shl:shr
 
@@ -529,6 +539,10 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
 
             // Free no-longer-used RHS result register.
             register_deallocate(r, expression->children->next_child->result_register);
+        } else {
+            fprintf(stderr, "Unrecognized binary operator: \"%s\"\n", expression->value.symbol);
+            ERROR_PREP(err, ERROR_GENERIC, "codegen_expression_x86_64() does not recognize binary operator");
+            return err;
         }
         break;
     case NODE_TYPE_VARIABLE_ACCESS:
@@ -712,7 +726,6 @@ Error codegen_function_x86_64_att_asm_mswin(Register* r, CodegenContext* cg_cont
     Node* last_expression = NULL;
     Node* expression = function->children->next_child->next_child->children;
     while (expression) {
-
         //printf("\nCodegenning expression with context:\n");
         //print_node(expression, 0);
         //parse_context_print(ctx, 0);

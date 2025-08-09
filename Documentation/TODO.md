@@ -31,6 +31,9 @@
 
 -----
 
+- [ ] TODO: Update the lexer:
+    - The lexer needs to have some way to let the caller know that the token lexed was a delimiter itself, as multiple of these may want to be lexed in a row (for example, during operator parsing, we want to parse `<` but also `<<`, so we must lex until we get a non-delimiter token).
+
 - [ ] TODO: Add debug information using CFI directives
   - ![GNU Binutils documentation](https://sourceware.org/binutils/docs/as/)
 
