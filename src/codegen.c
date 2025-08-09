@@ -469,7 +469,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             // https://www.felixcloutier.com/x86/idiv
             // https://www.felixcloutier.com/x86/cwd:cdq:cqo
 
-                        // Quotient is in RAX, Remainder in RDX; we must save and
+            // Quotient is in RAX, Remainder in RDX; we must save and
             // restore these registers before and after divide, sadly.
 
             fprintf(code,
@@ -523,7 +523,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code,
                 "push %%rcx\n"
                 "mov %s, %%rcx\n"
-                "shr %%cl, %s\n"
+                "sar %%cl, %s\n"
                 "pop %%rcx\n",
                 register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
 

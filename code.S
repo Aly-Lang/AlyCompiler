@@ -34,7 +34,7 @@ mov $8, %r11
 mov $2, %rbx
 push %rcx
 mov %rbx, %rcx
-shr %cl, %r11
+sar %cl, %r11
 pop %rcx
 mov %r11, %rax
 add $32, %rsp
