@@ -382,6 +382,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
         if (err.type) { return err; }
 
         if (strcmp(expression->value.symbol, ">") == 0) {
+            // Greater than/Above
             // https://www.felixcloutier.com/x86/cmovcc
 
             expression->result_register = register_allocate(r);
@@ -392,11 +393,12 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, "cmp %s, %s\n", register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
             fprintf(code, "cmovg %s, %s\n", register_name(r, true_register), register_name(r, expression->result_register));
 
-            // Free no-longer-used left hand side result register.
+            // Free no-longer-used LHS result register.
             register_deallocate(r, true_register);
             register_deallocate(r, expression->children->result_register);
             register_deallocate(r, expression->children->next_child->result_register);
         } else if (strcmp(expression->value.symbol, "<") == 0) {
+            // Less than/Below
             // https://www.felixcloutier.com/x86/cmovcc
 
             expression->result_register = register_allocate(r);
@@ -407,11 +409,12 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, "cmp %s, %s\n", register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
             fprintf(code, "cmovl %s, %s\n", register_name(r, true_register), register_name(r, expression->result_register));
 
-            // Free no-longer-used left hand side result register.
+            // Free no-longer-used LHS result register.
             register_deallocate(r, true_register);
             register_deallocate(r, expression->children->result_register);
             register_deallocate(r, expression->children->next_child->result_register);
         } else if (strcmp(expression->value.symbol, "=") == 0) {
+            // Equality
             // https://www.felixcloutier.com/x86/cmovcc
 
             expression->result_register = register_allocate(r);
@@ -422,49 +425,108 @@ Error codegen_expression_x86_64_mswin(FILE* code, Register* r, CodegenContext* c
             fprintf(code, "cmp %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
             fprintf(code, "cmove %s, %s\n", register_name(r, true_register), register_name(r, expression->result_register));
 
-            // Free no-longer-used left hand side result register.
+            // Free no-longer-used LHS result register.
             register_deallocate(r, true_register);
             register_deallocate(r, expression->children->result_register);
             register_deallocate(r, expression->children->next_child->result_register);
         } else if (strcmp(expression->value.symbol, "+") == 0) {
+            // Plus/Addition
             // https://www.felixcloutier.com/x86/add
 
-            // Use right hand side result register as our result since ADD is destructive!
+            // Use RHS result register as our result since ADD is destructive!
             expression->result_register = expression->children->next_child->result_register;
 
             fprintf(code, "add %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
 
-            // Free no-longer-used left hand side result register.
+            // Free no-longer-used LHS result register.
             register_deallocate(r, expression->children->result_register);
         } else if (strcmp(expression->value.symbol, "-") == 0) {
+            // Minus/Subtraction
             // https://www.felixcloutier.com/x86/sub
 
-            // Use right hand side result register as our result since SUB is destructive!
+            // Use RHS result register as our result since SUB is destructive!
             expression->result_register = expression->children->result_register;
 
             fprintf(code, "sub %s, %s\n", register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
 
-            // Free no-longer-used left hand side result register.
+            // Free no-longer-used LHS result register.
             register_deallocate(r, expression->children->next_child->result_register);
         } else if (strcmp(expression->value.symbol, "*") == 0) {
+            // Multiply
             // https://www.felixcloutier.com/x86/mul
             // https://www.felixcloutier.com/x86/imul
 
-            // Use right hand side result register as our result since ADD is destructive!
+            // Use RHS result register as our result since ADD is destructive!
             expression->result_register = expression->children->next_child->result_register;
 
             fprintf(code, "imul %s, %s\n", register_name(r, expression->children->result_register), register_name(r, expression->children->next_child->result_register));
 
-            // Free no-longer-used left hand side result register.
+            // Free no-longer-used LHS result register.
             register_deallocate(r, expression->children->result_register);
         } else if (strcmp(expression->value.symbol, "/") == 0) {
-            // TODO: Division codegen!
-
+            // Division
             // https://www.felixcloutier.com/x86/div
             // https://www.felixcloutier.com/x86/idiv
 
             // Quotient is in RAX, Remainder in RDX; we must save and
             // restore these registers before and after divide, sadly.
+
+            fprintf(code,
+                "push %%rax\n"
+                "push %%rdx\n");
+
+            // Zero RDX to not interfere with division result.
+            // RDX is treated as the 8 high bytes of a 16-byte
+            // number stored in RDX:RAX.
+            fprintf(code, "xor %%rdx, %%rdx\n");
+
+            // Load RAX with LHS of division operator.
+            // TODO: Check if LHS is already in RAX or not.
+            // If RHS is in RAX, we must save RAX first...
+            fprintf(code, "mov %s, %%rax\n", register_name(r, expression->children->result_register));
+
+            // Call DIV with RHS of division operator.
+            fprintf(code, "div %s\n", register_name(r, expression->children->next_child->result_register));
+
+            // Move return value from RAX into wherever it actually belongs.
+            expression->result_register = register_allocate(r);
+            fprintf(code, "mov %%rax, %s\n", register_name(r, expression->result_register));
+
+            fprintf(code,
+                "pop %%rdx\n"
+                "pop %%rax\n");
+        } else if (strcmp(expression->value.symbol, "[") == 0) { // FIXME: Temporary bitshift operator
+            // Bitshift Left
+            // https://www.felixcloutier.com/x86/sal:sar:shl:shr
+
+            // Use LHS result register as our result since SHL is destructive!
+            expression->result_register = expression->children->result_register;
+
+            fprintf(code,
+                "push %%rcx\n"
+                "mov %s, %%rcx\n"
+                "shl %%cl, %s\n"
+                "pop %%rcx\n",
+                register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
+
+            // Free no-longer-used RHS result register.
+            register_deallocate(r, expression->children->next_child->result_register);
+        } else if (strcmp(expression->value.symbol, "]") == 0) {
+            // Bitshift Right
+            // https://www.felixcloutier.com/x86/sal:sar:shl:shr
+
+            // Use LHS result register as our result since SHR is destructive!
+            expression->result_register = expression->children->result_register;
+
+            fprintf(code,
+                "push %%rcx\n"
+                "mov %s, %%rcx\n"
+                "shr %%cl, %s\n"
+                "pop %%rcx\n",
+                register_name(r, expression->children->next_child->result_register), register_name(r, expression->children->result_register));
+
+            // Free no-longer-used RHS result register.
+            register_deallocate(r, expression->children->next_child->result_register);
         }
         break;
     case NODE_TYPE_VARIABLE_ACCESS:

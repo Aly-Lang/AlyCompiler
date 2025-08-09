@@ -260,7 +260,7 @@ gcd_euclid(88, 32)
   - [x] TODO / FIX: Fix `if` context handling during codegen
     - One thing that we are definitely not handling properly is contexts of `if` expressions during codegen.
 
-  * **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
+  * [ ] **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
   * **`+= / -=` with Reassignment `:=`:** Conceptualize how to handle the interaction between compound assignment operators (`+=`, `-=`) and the reassignment symbol (`:=`).
   * **Refactor Type Inference:** Continue to improve the type inference system, particularly in cases where types can be automatically deduced.
   * **Finalize Type Referencing Approach:** Define how types should reference other types. This could help with creating meta-types or dealing with more complex type systems.
@@ -309,18 +309,18 @@ foo :None() {}
 
 - [ ] TODO: Implement repetitive control flow...
 
-- [ ] TODO: Consolidate `current_token`, `token_length`, and `end` into `ParsingState`
+- [x] TODO: Consolidate `current_token`, `token_length`, and `end` into `ParsingState`
   - These current are passed all around the parser as arguments to all sorts of functions, and I think it could be simplified by bundling these arguments together into the one thing they represent.
 
 - [ ] TODO: Separate contexts from scopes (or fix this problem in some other way)...
 
 - [ ] TODO: Create new binary operator node value that is easier in codegen...
 
-- [ ] TODO: Implement division and bit shifting binary operators...
+- [x] TODO: Implement division and bit shifting binary operators...
 
 - [ ] TODO: Support quick function declarations syntax...
 
-- [ ] TODO: AST optimization, Codegen optimization, etc. etc... 
+- [ ] TODO: AST optimization, Codegen optimization, etc. etc...
     - At a glance, it seems that we could do much better at daisy-chaining result registers of expressions. As a prime example, we could use an integer literal directly in the instruction, rather than loading it into a register before using that register wherever the integer is needed. This would be obvious in function call parameter pushing.
 ```
   ;;#; Function Call: "foo"

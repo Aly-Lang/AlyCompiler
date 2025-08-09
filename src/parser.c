@@ -396,7 +396,6 @@ void parse_state_update_from(ParsingState* state, ParsingState new_state) {
     *state->end = *new_state.end;
 }
 
-
 void parse_context_print(ParsingContext* top, size_t indent) {
     size_t indent_it = indent;
     while (indent_it--) { putchar(' '); }
@@ -490,6 +489,12 @@ ParsingContext* parse_context_default_create() {
     err = define_binary_operator(ctx, "<", 3, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
     err = define_binary_operator(ctx, ">", 3, "integer", "integer", "integer");
+    if (err.type != ERROR_NONE) { puts(binop_error_message); }
+
+    // TODO / FIXME: These are very much so temporary bitshifting operators!!!
+    err = define_binary_operator(ctx, "[", 4, "integer", "integer", "integer");
+    if (err.type != ERROR_NONE) { puts(binop_error_message); }
+    err = define_binary_operator(ctx, "]", 4, "integer", "integer", "integer");
     if (err.type != ERROR_NONE) { puts(binop_error_message); }
 
     err = define_binary_operator(ctx, "+", 5, "integer", "integer", "integer");
@@ -618,16 +623,18 @@ int parse_integer(Token* token, Node* node) {
 /// Set FOUND to 1 if an infix operator is found and parsing should continue, otherwise 0.
 Error parse_binary_infix_operator(ParsingContext* context, ParsingStack* stack, ParsingState* state, int* found, long long* working_precedence, Node** working_result, Node* result) {
     Error err = ok;
+
     // Look ahead for a binary infix operator.
     *found = 0;
     Token current_copy = *state->current;
     size_t length_copy = *state->length;
     char* end_copy = *state->end;
     ParsingState state_copy = parse_state_create(&current_copy, &length_copy, &end_copy);
+    // TODO: Continually lex until operators are no longer getting got.
+    // This will require lexer knowledge of what's an operator and what isn't.
     err = lex_advance(&state_copy);
     if (err.type != ERROR_NONE) { return err; }
-    Node* operator_symbol =
-        node_symbol_from_buffer(state_copy.current->beginning, *state_copy.length);
+    Node* operator_symbol = node_symbol_from_buffer(state_copy.current->beginning, *state_copy.length);
     Node* operator_value = node_allocate();
     ParsingContext* global = context;
     while (global->parent) { global = global->parent; }
@@ -635,10 +642,8 @@ Error parse_binary_infix_operator(ParsingContext* context, ParsingStack* stack, 
         parse_state_update_from(state, state_copy);
         long long precedence = operator_value->children->value.integer;
 
-        //printf("Got op. %s with precedence %lld (working %lld)\n",
-        //       operator_symbol->value.symbol,
-        //       precedence, working_precedence);
-        //printf("working precedence: %lld\n", working_precedence);
+        //printf("Got operator \"%s\" with precedence %lld(working %lld)\n", operator_symbol->value.symbol, precedence, *working_precedence);
+        //printf("working precedence: %lld\n", *working_precedence);
 
         // TODO: Handle grouped expressions through parentheses using precedence stack.
 
