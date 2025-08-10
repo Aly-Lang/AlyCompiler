@@ -103,6 +103,7 @@ void register_deallocate(CodegenContext* cg_ctx, RegisterDescriptor descriptor) 
 const char* register_name(CodegenContext* cg_ctx, RegisterDescriptor descriptor) {
     if (!register_descriptor_is_valid(cg_ctx, descriptor)) {
         printf("ERROR::register_name(): Could not find register with descriptor of %d\n", descriptor);
+        return NULL;
     }
     return cg_ctx->registers.regs[descriptor].name;
 }
