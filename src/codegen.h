@@ -10,8 +10,6 @@ typedef int RegisterDescriptor;
 typedef struct Register {
 	/// What will be emitted when referencing this register, i.e "%rax"
 	const char* name;
-	/// What will be emitted when referencing this register, i.e "%rax"
-	char* name;
 	/// If non-zero, this register is in use.
 	char in_use;
 	/// Identifies a register uniquely.
