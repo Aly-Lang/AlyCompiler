@@ -19,7 +19,7 @@
   * **Compiler Infrastructure:**
       * Compiling with **`-Wall`** and **`-WExtra`** is enabled, and all associated warnings have been fixed, ensuring cleaner compilation.
   * **Examples:**
-      * Implemented **Greatest Common Divisor (GCD)**, which required division codegen.
+      * Implemented **Greatest Common Divisor (GCD)**, which required division code-gen.
   * **Command Line Interface:**
       * Began handling command-line flags, including:
           * `--help, -h`: Prints usage and version information.
@@ -27,7 +27,7 @@
           * `--format, -f`: Sets the target output format for generated code.
           * `--formats`: Lists all supported output formats.
           * `--notypecheck, -nt`: Skips type checking after parsing.
-          * `--nocodegen, -nc`: Stops after type checking, without generating any code.
+          * `--nocode-gen, -nc`: Stops after type checking, without generating any code.
 
 -----
 
@@ -86,7 +86,7 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
 -----
 
-  * **Modular Code Generation:** We'll create a `CodeGen` structure that utilizes **function pointers** to modularize the code generation process. This will move away from large `switch` statements, allowing different backends to define their specific code generation behaviors consistently.
+  * **Modular Code Generation:** We'll create a `code-gen` structure that utilizes **function pointers** to modularize the code generation process. This will move away from large `switch` statements, allowing different backends to define their specific code generation behaviors consistently.
   * **Register Allocation and Stack Usage:** When scratch registers are exhausted during code generation, we'll implement mechanisms to utilize the **stack for temporary storage**. This will ensure the compiler can handle complex expressions without running out of registers.
   * **Block Return Types:** We'll convert expression lists (`{}`) into a standalone **expression type** (`NODE_TYPE_BLOCK`). This will enable blocks to have return values, specifically the return value of the last expression within the block, or a default value if no expressions are present.
   * **`if` Conditional Statement Context Handling:** The basic parsing of `if` statements is in place, but proper **context handling** for these statements still needs to be fully implemented. This should be a straightforward task. (Added)
@@ -228,7 +228,7 @@ gcd_euclid(88, 32)
 
     When type-checking a function call, all we need is to lookup the function name as a variable and get it's type.
 
-- [x] Remove global FUNCTION optimization in codegen
+- [x] Remove global FUNCTION optimization in code-gen
   - Whilst it does make the program an unnoticeable amount faster, it also breaks if any `if` expression lies between global function definitions...
 
   - [x] Fix messy git work tree
@@ -240,7 +240,7 @@ gcd_euclid(88, 32)
       I had luck getting clang to produce working executables in a very straightforward manner as well, so if we can reproduce that today then let's definitely add that in there aas well.
 
    - [x] Change the type system surrounding pointers entirely
-    - Switch from pointer nodes with children to nodes having a pointer flag and pointer count (or pointer flag is the pointer count non-zero). This will *greatly* simplify our typechecking, codegen, allocation, etc.
+    - Switch from pointer nodes with children to nodes having a pointer flag and pointer count (or pointer flag is the pointer count non-zero). This will *greatly* simplify our typechecking, code-gen, allocation, etc.
 
     This will most definitely break everything.
 
@@ -260,8 +260,8 @@ gcd_euclid(88, 32)
     SYM: "INTEGER" (indirection level = 2)
     ```
   
-  - [x] TODO / FIX: Fix `if` context handling during codegen
-    - One thing that we are definitely not handling properly is contexts of `if` expressions during codegen.
+  - [x] TODO / FIX: Fix `if` context handling during code-gen
+    - One thing that we are definitely not handling properly is contexts of `if` expressions during code-gen.
 
   * [ ] **Division and Bit-Shifting Operators:** Implement division and bit-shifting binary operators to enable more powerful examples like `sqrt` and `perfect_square`.
   * **`+= / -=` with Reassignment `:=`:** Conceptualize how to handle the interaction between compound assignment operators (`+=`, `-=`) and the reassignment symbol (`:=`).
@@ -317,13 +317,13 @@ foo :None() {}
 
 - [ ] TODO: Separate contexts from scopes (or fix this problem in some other way)...
 
-- [ ] TODO: Create new binary operator node value that is easier in codegen...
+- [ ] TODO: Create new binary operator node value that is easier in code-gen...
 
 - [x] TODO: Implement division and bit shifting binary operators...
 
 - [ ] TODO: Support quick function declarations syntax...
 
-- [ ] TODO: AST optimization, Codegen optimization, etc. etc...
+- [ ] TODO: AST optimization, code-gen optimization, etc. etc...
     - At a glance, it seems that we could do much better at daisy-chaining result registers of expressions. As a prime example, we could use an integer literal directly in the instruction, rather than loading it into a register before using that register wherever the integer is needed. This would be obvious in function call parameter pushing.
 ```
   ;;#; Function Call: "foo"
@@ -362,7 +362,15 @@ after.L0:
   lea .L0(%rip), %rax
 ```
 
- One thing I'm wondering is how to figure out when an expression may be used as an operand, and when it must be code-genned into a result register... After some thought, it seems that this must be done during codegen, with specific checks in certain expression types to attempt to create the most efficient program possible. All of these checks must also ensure they respect the user's specific optimization level.
+ One thing I'm wondering is how to figure out when an expression may be used as an operand, and when it must be code-genned into a result register... After some thought, it seems that this must be done during code-gen, with specific checks in certain expression types to attempt to create the most efficient program possible. All of these checks must also ensure they respect the user's specific optimization level.
+
+- [ ] TODO: Esolang exactly like C but only with a single type: `bit`
+  - This would allow use to do something like:
+    - `bit[32] main(bit[32] argc, bit[64] argv)`
+```c
+bit* a = malloc(8);
+bit++
+```
 
 - [ ] TODO: Add debug information using CFI directives...
 
@@ -371,9 +379,12 @@ after.L0:
 - [ ] TODO: Vimscript Syntax plugin
   - [VIM Syntax Plugins Support](https://thoughtbot.com/blog/writing-vim-syntax-plugins)
 
-- [ ] FIXME: When out of scratch registers in codegen, use stack or something...
+- [ ] FIXME: When out of scratch registers in code-gen, use stack or something...
 
-- [ ] FIXME: How do we deal with syntax of `*=` and `-=`. etc???
+- [ ] FIXME: How do we deal with syntax of `*=` and `-=`. etc??? 
+  - We could either have different AST nodes that are code-genned differently or we could have them construct and composite existing AST nodes (BINARY OPERATOR AND REASSIGN). 
+
+  - Coming back to this, I really like just constructing two nodes for these specific binary operator cases. I wonder if we could even generalize, and have any binary operator before an `=` do a reassignment thing. Doesn't really work with `<=` or `>=`though...
 
 - [ ] TODO: Convert `{}` expression lists into an expression itself.
 

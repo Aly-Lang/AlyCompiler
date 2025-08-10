@@ -1,4 +1,4 @@
-#ifndef ALY_COMPILER_CODEGEN_H
+﻿#ifndef ALY_COMPILER_CODEGEN_H
 #define ALY_COMPILER_CODEGEN_H
 
 #include <environment.h>
@@ -8,25 +8,21 @@
 typedef int RegisterDescriptor;
 
 typedef struct Register {
-	struct Register* next;
+	/// What will be emitted when referencing this register, i.e "%rax"
+	const char* name;
 	/// What will be emitted when referencing this register, i.e "%rax"
 	char* name;
 	/// If non-zero, this register is in use.
 	char in_use;
+	/// Identifies a register uniquely.
+	RegisterDescriptor descriptor;
 } Register;
 
-/// NAME is now owned by register.
-Register* register_create(char* name);
-
-/// NAME is now owned by register.
-void register_add(Register* base, char* name);
-
-void register_free(Register* base);
-
-RegisterDescriptor register_allocate(Register* base);
-void register_deallocate(Register* base, RegisterDescriptor register_descriptor);
-
-char* register_name(Register* base, RegisterDescriptor register_descriptor);
+/// Architecture-specific register information.
+typedef struct RegisterPool {
+	Register* regs;
+	size_t num_regs;
+} RegisterPool;
 
 char* label_generate();
 
@@ -35,6 +31,7 @@ typedef struct CodegenContext {
 	/// LOCALS
 	/// `-- SYMBOL (NAME) -> INTEGER (STACK OFFSET)
 	Environment* locals;
+	RegisterPool registers;
 	long long locals_offset;
 } CodegenContext;
 
