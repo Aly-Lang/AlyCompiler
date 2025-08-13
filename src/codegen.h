@@ -2,6 +2,7 @@
 #define ALY_COMPILER_CODEGEN_H
 
 #include <environment.h>
+#include <stddef.h>
 #include <error.h>
 #include <parser.h>
 

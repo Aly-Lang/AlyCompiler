@@ -119,15 +119,12 @@ RegisterDescriptor register_allocate(CodegenContext* cg_ctx) {
             return reg->descriptor;
         }
     }
-
-    printf("ERROR::register_allocate(): Could not allocate register!\n");
-    exit(1);
+    panic("ERROR::register_allocate(): Could not allocate register!\n");
 }
 
 void register_deallocate(CodegenContext* cg_ctx, RegisterDescriptor descriptor) {
     if (!register_descriptor_is_valid(cg_ctx, descriptor)) {
-        printf("ERROR::register_deallocate(): Invalid register descriptor!\n");
-        exit(1);
+        panic("ERROR::register_deallocate(): Invalid register descriptor!\n");
     } else {
         cg_ctx->registers.regs[descriptor].in_use = 0;
     }
@@ -135,8 +132,7 @@ void register_deallocate(CodegenContext* cg_ctx, RegisterDescriptor descriptor) 
 
 const char* register_name(CodegenContext* cg_ctx, RegisterDescriptor descriptor) {
     if (!register_descriptor_is_valid(cg_ctx, descriptor)) {
-        printf("ERROR::register_name(): Could not find register with descriptor of %d\n", descriptor);
-        exit(1);
+        panic("ERROR::register_name(): Could not find register with descriptor of %d\n", descriptor);
     }
     return cg_ctx->registers.regs[descriptor].name;
 }
@@ -161,7 +157,7 @@ char* label_generate() {
 
 //================================================================ BEG CG_FMT_x86_64_MSWIN
 
-// TODO/FIXME: Make this a parameter affectable by command line arguments.
+// TODO/FIXME: Make this a parameter effected by command line arguments.
 char codegen_verbose = 1;
 
 #define symbol_buffer_size 1024
