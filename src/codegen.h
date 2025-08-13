@@ -17,8 +17,11 @@ typedef struct Register {
 } Register;
 
 /// Architecture-specific register information.
+
 typedef struct RegisterPool {
 	Register* regs;
+	// NOTE: Store as an array: { A, B, C, D, E, F, G }, etc. 
+	size_t num_scratch_regs;
 	size_t num_regs;
 } RegisterPool;
 
@@ -34,10 +37,10 @@ typedef struct CodegenContext {
 } CodegenContext;
 
 enum CodegenOutputFormat {
-	CG_FMT_DEFAULT = 0,
 	CG_FMT_x86_64_MSWIN,
+	CG_FMT_DEFAULT = CG_FMT_x86_64_MSWIN,
 };
 
-Error codegen_program(enum CodegenOutputFormat, char* output_filepath, ParsingContext* context, Node* program);
+Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingContext* context, Node* program);
 
 #endif // ALY_COMPILER_CODEGEN_H
