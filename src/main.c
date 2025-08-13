@@ -51,13 +51,13 @@ int handle_command_line_arguments(int argc, char** argv) {
         } else if (strcmp(argument, "-o") == 0 || strcmp(argument, "--output") == 0) {
             i++;
             if (i >= argc) {
-                printf("ERROR: Expected filepath after output command line argument\n");
+                panic("ERROR: Expected filepath after output command line argument\n");
                 return 1;
             }
             // FIXME: This very well may be a valid filepath. We may want to
             //        check that it isn't a valid filepath with fopen or something.
             if (*argv[i] == '-') {
-                printf("ERROR: Expected filepath after output command line argument\n"
+                panic("ERROR: Expected filepath after output command line argument\n"
                     "Instead, got what looks like another command line argument.\n"
                     " -> \"%s\"\n", argv[i]);
                 return 1;
@@ -70,7 +70,7 @@ int handle_command_line_arguments(int argc, char** argv) {
                 return 1;
             }
             if (*argv[i] == '-') {
-                printf("ERROR: Expected format after format command line argument\n"
+                panic("ERROR: Expected format after format command line argument\n"
                     "Instead, got what looks like another command line argument.\n"
                     " -> \"%s\"\n", argv[i]);
                 return 1;
@@ -80,7 +80,7 @@ int handle_command_line_arguments(int argc, char** argv) {
             } else if (strcmp(argv[i], "x86_64-mswin") == 0) {
                 output_format = CG_FMT_x86_64_MSWIN;
             } else {
-                printf("ERROR: Expected format after format command line argument\n"
+                panic("ERROR: Expected format after format command line argument\n"
                     "Instead, got an unrecognized format: \"%s\".\n", argv[i]);
                 print_acceptable_formats();
                 return 1;
