@@ -31,6 +31,7 @@ extern Error ok;
 #define ALY_FORMAT(...) __attribute__((format(__VA_ARGS__)))
 #else
 #define ALY_NORETURN
+#define FUNC_FORMAT(...)
 #endif
 
 // NOTE: The `ALY_FORMAT` macro is used to ensure that the format string and arguments match in the `panic` functions.
