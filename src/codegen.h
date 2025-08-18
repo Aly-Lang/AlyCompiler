@@ -2,29 +2,31 @@
 #define ALY_COMPILER_CODEGEN_H
 
 #include <environment.h>
-#include <stddef.h>
 #include <error.h>
 #include <parser.h>
 
 typedef int RegisterDescriptor;
 
 typedef struct Register {
+	struct Register* next;
 	/// What will be emitted when referencing this register, i.e "%rax"
-	const char* name;
+	char* name;
 	/// If non-zero, this register is in use.
 	char in_use;
-	/// Identifies a register uniquely.
-	RegisterDescriptor descriptor;
 } Register;
 
-/// Architecture-specific register information.
+/// NAME is now owned by register.
+Register* register_create(char* name);
 
-typedef struct RegisterPool {
-	Register* regs;
-	// NOTE: Store as an array: { A, B, C, D, E, F, G }, etc. 
-	size_t num_scratch_regs;
-	size_t num_regs;
-} RegisterPool;
+/// NAME is now owned by register.
+void register_add(Register* base, char* name);
+
+void register_free(Register* base);
+
+RegisterDescriptor register_allocate(Register* base);
+void register_deallocate(Register* base, RegisterDescriptor register_descriptor);
+
+char* register_name(Register* base, RegisterDescriptor register_descriptor);
 
 char* label_generate();
 
@@ -33,15 +35,14 @@ typedef struct CodegenContext {
 	/// LOCALS
 	/// `-- SYMBOL (NAME) -> INTEGER (STACK OFFSET)
 	Environment* locals;
-	RegisterPool registers;
 	long long locals_offset;
 } CodegenContext;
 
 enum CodegenOutputFormat {
+	CG_FMT_DEFAULT = 0,
 	CG_FMT_x86_64_MSWIN,
-	CG_FMT_DEFAULT = CG_FMT_x86_64_MSWIN,
 };
 
-Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingContext* context, Node* program);
+Error codegen_program(enum CodegenOutputFormat, char* output_filepath, ParsingContext* context, Node* program);
 
 #endif // ALY_COMPILER_CODEGEN_H

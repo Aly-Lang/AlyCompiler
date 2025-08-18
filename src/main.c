@@ -43,49 +43,56 @@ int handle_command_line_arguments(int argc, char** argv) {
         if (strcmp(argument, "-h") == 0 || strcmp(argument, "--help") == 0) {
             print_usage(argv);
             exit(0);
-        } else if (strcmp(argument, "--formats") == 0) {
+        }
+        else if (strcmp(argument, "--formats") == 0) {
             print_acceptable_formats();
             exit(0);
-        } else if (strcmp(argument, "-v") == 0 || strcmp(argument, "--verbose") == 0) {
+        }
+        else if (strcmp(argument, "-v") == 0 || strcmp(argument, "--verbose") == 0) {
             verbosity = 1;
-        } else if (strcmp(argument, "-o") == 0 || strcmp(argument, "--output") == 0) {
+        }
+        else if (strcmp(argument, "-o") == 0 || strcmp(argument, "--output") == 0) {
             i++;
             if (i >= argc) {
-                panic("ERROR: Expected filepath after output command line argument\n");
+                printf("ERROR: Expected filepath after output command line argument\n");
                 return 1;
             }
             // FIXME: This very well may be a valid filepath. We may want to
             //        check that it isn't a valid filepath with fopen or something.
             if (*argv[i] == '-') {
-                panic("ERROR: Expected filepath after output command line argument\n"
+                printf("ERROR: Expected filepath after output command line argument\n"
                     "Instead, got what looks like another command line argument.\n"
                     " -> \"%s\"\n", argv[i]);
                 return 1;
             }
             output_filepath_index = i;
-        } else if (strcmp(argument, "-f") == 0 || strcmp(argument, "--format") == 0) {
+        }
+        else if (strcmp(argument, "-f") == 0 || strcmp(argument, "--format") == 0) {
             i++;
             if (i >= argc) {
                 printf("ERROR: Expected format after format command line argument\n");
                 return 1;
             }
             if (*argv[i] == '-') {
-                panic("ERROR: Expected format after format command line argument\n"
+                printf("ERROR: Expected format after format command line argument\n"
                     "Instead, got what looks like another command line argument.\n"
                     " -> \"%s\"\n", argv[i]);
                 return 1;
             }
             if (strcmp(argv[i], "default") == 0) {
                 output_format = CG_FMT_DEFAULT;
-            } else if (strcmp(argv[i], "x86_64-mswin") == 0) {
+            }
+            else if (strcmp(argv[i], "x86_64-mswin") == 0) {
                 output_format = CG_FMT_x86_64_MSWIN;
-            } else {
-                panic("ERROR: Expected format after format command line argument\n"
+            }
+            else {
+                printf("ERROR: Expected format after format command line argument\n"
                     "Instead, got an unrecognized format: \"%s\".\n", argv[i]);
                 print_acceptable_formats();
                 return 1;
             }
-        } else if (strcmp(argument, "--aluminium") == 0) {
+        }
+        else if (strcmp(argument, "--aluminium") == 0) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
             // Windows
             system("start https://www.youtube.com/watch?v=dQw4w9WgXcQ");
@@ -96,7 +103,8 @@ int handle_command_line_arguments(int argc, char** argv) {
             // Linux or unix-based
             system("xdg-open https://www.youtube.com/watch?v=dQw4w9WgXcQ");
 #endif
-        } else {
+        }
+        else {
             if (input_filepath_index != -1) {
                 printf("ERROR: Only a single input filepath is used, but multiple were given.\n"
                     "Using the latest one.\n");

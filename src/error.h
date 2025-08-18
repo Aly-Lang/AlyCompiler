@@ -26,23 +26,4 @@ extern Error ok;
 	(n).type = (t);                  \
 	(n).msg = (message);
 
-#ifndef _MSC_VER
-#define ALY_NORETURN __attribute__((noreturn))
-#define ALY_FORMAT(...) __attribute__((format(__VA_ARGS__)))
-#else
-#define ALY_NORETURN
-#define FUNC_FORMAT(...)
-#endif
-
-// NOTE: The `ALY_FORMAT` macro is used to ensure that the format string and arguments match in the `panic` functions.
-// Not entirely sure why this is saying this wrong in both MSVC and GCC, but it works fine in practice.
-
-ALY_NORETURN
-ALY_FORMAT(printf, 1, 2)
-void panic(const char* fmt, ...);
-
-ALY_NORETURN
-ALY_FORMAT(printf, 2, 3)
-void panic_with_code(int code, const char* fmt, ...);
-
 #endif // ALY_COMPILER_ERROR_H

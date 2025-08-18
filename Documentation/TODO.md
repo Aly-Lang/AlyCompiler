@@ -54,6 +54,39 @@
 
 ### External Function Support
 
+  - I believe that we need a way to differentiate them as an external function from any other function. It's basically going to be a function variable that is callable, even though it hasn't been assigned a function/lambda. Currently, this is any function variable, because we don't do that extensive of type checking on functions / function calls.
+
+  With this in mind, it may be smart to work on disallowing unassigned function calls before attempting to add to the feature that doesn't exist yet?
+
+  So, function calls are currently typed checked in that the variable access is a function, and given arguments match parameter type, and that's it. We need to ensile that the function we are calling has been assigned to, I think? Otherwise, the variable may be uninitialized, and the call to contents of the variable will definitely break at RT.
+
+  During type-checking, we iterate over the AST in a very specific way: in order!
+  Because Aly works like C and requires variable and such to be defined before they are used, we are able to detect when a variable has not yet been assigned to. So all we have to do is add some sort of flag or something in the variable binding when a reassignment is type-checked. Then, when a function call happens, we already check the variable binding to ensure `function` type, so checking if it's uninitialized should be easier.
+
+  After thinking about the syntax, we also need to keep in mind that `external` functions do not need this sort of special type-checking, and should only apply to functions that are't external... Also, external function calls should probably be code-genned differently, at least currently, as the language passes all arguments on the stack, and that's not the proper calling convention for every single platform.
+
+  So, with all that in mind: maybe external functions are a different type than functions? For an example, let's say we had an "external function" type, as well as the "function" type we have now. I guess we would just skip the "callable" type checking that we just describe above adding when the type was "external function". I think this could be the way to go about this problem.
+
+  Although, you can see in `external_function.aly` that this should not be allowed but for reference:
+  ```
+  putc : ext integer(c : integer)
+
+  another_putc : integer(n : integer)
+  another_putc := putc
+  ```
+
+  Is this okay? I think this should be fine. I never really want a function variable that isn't explicitly external to be used to reference a function that very much so external. So I think external functions just being a separate type is totally okay, at least for now.
+
+  In Conclusion:
+    - Parsing:: Syntax + Highlighting
+      - Expand `parse_type` to parse `ext` keyword before doing what it already does.
+
+      - FOR NOW -- Error when `ext` is used on non-function types, but maybe eventually open this up to allow for linked symbols to be used...
+
+   - Type Checking :: Callable
+    - Currently, the typechecker handles function calls without ever ensuring teh function has been assigned to., This is the feature of the language we don't do for external function calls, so basically just ensure that we have a control flow during type checking between eternal and non-external function calls. But for now do nothing more than what we've been doing with function type assurance and argument/parameter type matching. 
+
+
 We need to allow **external functions and symbols** to be defined. This will enable the use of standard library functions like `printf` or `fopen` for input/output operations.
 
   * **Declaration Syntax:** We'll define a clear syntax for declaring external functions, possibly `: ext <function_name> ([<parameter>]...)`. We also need to consider how to handle calling conventions (e.g., `: ext <function_name> ([<parameter>]....) : <mswin | linux>`), though this might add complexity for cross-compilation.

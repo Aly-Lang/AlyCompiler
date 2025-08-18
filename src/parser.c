@@ -180,7 +180,8 @@ int node_compare(Node* a, Node* b) {
     // Compare types of nodes.
     // Variable access and symbol are not same type but share same comparison.
     if (!((a->type == NODE_TYPE_SYMBOL || a->type == NODE_TYPE_VARIABLE_ACCESS)
-        && (b->type == NODE_TYPE_SYMBOL || b->type == NODE_TYPE_VARIABLE_ACCESS))) {
+        && (b->type == NODE_TYPE_SYMBOL || b->type == NODE_TYPE_VARIABLE_ACCESS)))
+    {
         if (a->type != b->type) {
             return 0;
         }

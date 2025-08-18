@@ -49,6 +49,6 @@ int environment_get_by_symbol(Environment env, char* symbol, Node* result);
  *
  * @return Boolean-like value; 1 for success, 0 for failure.
  */
-int environment_get_by_value(Environment env, Node *value, Node *result);
+int environment_get_by_value(Environment env, Node* value, Node* result);
 
 #endif // ALY_COMPILER_ENVIRONMENT_H

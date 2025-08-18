@@ -1,4 +1,4 @@
-#ifndef ALY_COMPILER_FILE_IO_H
+﻿#ifndef ALY_COMPILER_FILE_IO_H
 #define ALY_COMPILER_FILE_IO_H
 
 #include <stddef.h>
