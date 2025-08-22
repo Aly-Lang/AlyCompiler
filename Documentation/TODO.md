@@ -422,3 +422,12 @@ bit++
 - [ ] TODO: Convert `{}` expression lists into an expression itself.
 
 - [ ] TODO: Have the compiler able to collect TODO comments and things from source...
+
+- [ ] FIXME: Errors that don't suck:
+  - This means errors that can have references to the original source code. Also errors that can have filepaths, line/column numbers for relevant source code file positions.
+  
+  So with these two things, we should be good to go on our errors, or at least have a good start: 
+    - Print relevant source code span
+      - To do this, we are going to have to keep track of a AST node's token span, which will require quiet some work in the parser. Without this, there wouldn't really be a way to know where the AST node came from. I guess we are just going to have to add a new member to the Node structure that contains source code span information; we could quiet literally store a `Token`, as just a string span.
+
+  - File, Line, and Column reference
