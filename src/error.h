@@ -26,18 +26,21 @@ extern Error ok;
 	(n).type = (t);                  \
 	(n).msg = (message);
 
+
 #ifndef _MSC_VER
-__attribute__((noreturn))
-__attribute__((format(printf, 1, 2)))
+#define ALY_NORETURN __attribute__((noreturn))
+#define ALY_FORMAT(...) __attribute__((format(__VA_ARGS__)))
+#else
+#define ALY_NORETURN
 #endif
 
+
+ALY_NORETURN
+ALY_FORMAT(printf, 1, 2)
 void panic(const char* fmt, ...);
 
-#ifndef _MSC_VER
-__attribute__((noreturn))
-__attribute__((format(printf, 2, 3)))
-#endif
-
+ALY_NORETURN
+ALY_FORMAT(printf, 2, 3)
 void panic_with_code(int code, const char* fmt, ...);
 
 #endif // ALY_COMPILER_ERROR_H
