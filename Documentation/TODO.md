@@ -52,7 +52,7 @@
 
 -----
 
-### External Function Support
+[x] ### External Function Support
 
   - I believe that we need a way to differentiate them as an external function from any other function. It's basically going to be a function variable that is callable, even though it hasn't been assigned a function/lambda. Currently, this is any function variable, because we don't do that extensive of type checking on functions / function calls.
 

@@ -227,6 +227,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
             free(expr_return_type);
         }
 
+        // TODO: Copy result type from function, don't just make it up!
         Node* function_type_symbol = node_symbol("function");
         *result_type = *function_type_symbol;
 
@@ -328,7 +329,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
 
         // Ensure variable that is being accessed is of function type.
-        if (strcmp(value->value.symbol, "function") != 0) {
+        if (strcmp(value->value.symbol, "function") != 0 && strcmp(value->value.symbol, "external function") != 0) {
             print_node(expression, 0);
             ERROR_PREP(err, ERROR_TYPE, "A called variable must have a function type!");
             return err;
