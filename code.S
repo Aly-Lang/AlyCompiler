@@ -13,26 +13,23 @@ jmp after.L0
 push %rbp
 mov %rsp, %rbp
 sub $32, %rsp
-push %rbx
-push %rsi
-push %rdi
 ;;#; If
 ;;#; Binary Operator: "="
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
 ;;#; Variable Access: "b"
-mov 24(%rbp), %r10
-mov $0, %r11
-mov $1, %rbx
-cmp %rax, %r10
-cmove %rbx, %r11
+mov 24(%rbp), %rcx
+mov $0, %rdx
+mov $1, %r8
+cmp %rax, %rcx
+cmove %r8, %rdx
 ;;#; If CONDITION
-test %r11, %r11
+test %rdx, %rdx
 jz .L1
 ;;#; If THEN
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
-mov %rax, %r10
+mov %rax, %rcx
 jmp .L2
 ;;#; If OTHERWISE
 .L1:
@@ -41,13 +38,13 @@ jmp .L2
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
 ;;#; Variable Access: "b"
-mov 24(%rbp), %r11
-mov $0, %rbx
-mov $1, %rdi
-cmp %r11, %rax
-cmovl %rdi, %rbx
+mov 24(%rbp), %rdx
+mov $0, %r8
+mov $1, %r9
+cmp %rdx, %rax
+cmovl %r9, %r8
 ;;#; If CONDITION
-test %rbx, %rbx
+test %r8, %r8
 jz .L3
 ;;#; If THEN
 ;;#; Function Call: "gcd_euclid"
@@ -59,15 +56,15 @@ pushq %rax
 ;;#; Variable Access: "b"
 mov 24(%rbp), %rax
 ;;#; Variable Access: "a"
-mov 16(%rbp), %r11
-sub %r11, %rax
+mov 16(%rbp), %rdx
+sub %rdx, %rax
 pushq %rax
 ;;#; Variable Access: "gcd_euclid"
 mov gcd_euclid(%rip), %rax
 call *%rax
 add $16, %rsp
 add $8, %rsp
-mov %rax, %r11
+mov %rax, %rdx
 jmp .L4
 ;;#; If OTHERWISE
 .L3:
@@ -77,8 +74,8 @@ pushq %rax
 ;;#; Variable Access: "a"
 mov 16(%rbp), %rax
 ;;#; Variable Access: "b"
-mov 24(%rbp), %rbx
-sub %rbx, %rax
+mov 24(%rbp), %r8
+sub %r8, %rax
 pushq %rax
 ;;#; Variable Access: "b"
 mov 24(%rbp), %rax
@@ -88,14 +85,11 @@ mov gcd_euclid(%rip), %rax
 call *%rax
 add $16, %rsp
 add $8, %rsp
-mov %rax, %r11
+mov %rax, %rdx
 .L4:
-mov %r11, %r10
+mov %rdx, %rcx
 .L2:
-mov %r10, %rax
-pop %rbx
-pop %rsi
-pop %rdi
+mov %rcx, %rax
 add $32, %rsp
 pop %rbp
 ret
