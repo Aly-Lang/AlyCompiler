@@ -26,14 +26,13 @@ extern Error ok;
 	(n).type = (t);                  \
 	(n).msg = (message);
 
-
 #ifndef _MSC_VER
 #define ALY_NORETURN __attribute__((noreturn))
 #define ALY_FORMAT(...) __attribute__((format(__VA_ARGS__)))
 #else
 #define ALY_NORETURN
+#define ALY_FORMAT(...)
 #endif
-
 
 ALY_NORETURN
 ALY_FORMAT(printf, 1, 2)
