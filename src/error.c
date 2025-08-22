@@ -41,8 +41,7 @@ void print_error(Error err) {
     }
 }
 
-ALY_NORETURN
-static void vpanic(int code, const char* fmt, va_list args) {
+NORETURN static void vpanic(int code, const char* fmt, va_list args) {
     fprintf(stderr, "Panic: ");
     vfprintf(stderr, fmt, args);
     fputc('\n', stderr);
@@ -63,9 +62,9 @@ void panic_with_code(int code, const char* fmt, ...) {
     exit(1); // unreachable
 }
 
-void aly_assert_impl(const char* file, const char* func, int line, const char* condition, const char* fmt, ...) {
+void assert_impl(const char* file, const char* func, int line, const char* condition, const char* fmt, ...) {
     /// Prettier file name
-    const char* basename = strrchr(file, ALY_PATH_SEPARATOR[0]);
+    const char* basename = strrchr(file, PATH_SEPARATOR[0]);
     file = basename ? basename + 1 : file;
 
     fprintf(stderr, "Assertion failed: %s\n", condition);

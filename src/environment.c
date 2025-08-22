@@ -28,7 +28,7 @@ void environment_print(Environment env, long long indent) {
 
 Environment* environment_create(Environment* parent) {
     Environment* env = malloc(sizeof(Environment));
-    ALY_ASSERT(env, "Could not allocate memory to new environment");
+    ASSERT(env, "Could not allocate memory to new environment");
     env->parent = parent;
     env->bind = NULL;
     return env;
@@ -48,7 +48,7 @@ int environment_set(Environment* env, Node* id, Node* value) {
     }
     // Create new binding.
     Binding* binding = malloc(sizeof(Binding));
-    ALY_ASSERT(binding, "Could not allocate new binding for environment");
+    ASSERT(binding, "Could not allocate new binding for environment");
     binding->id = id;
     binding->value = value;
     binding->next = env->bind;
@@ -75,7 +75,7 @@ int environment_set_end(Environment* env, Node* id, Node* value) {
     }
     // Create new binding.
     Binding* binding = calloc(1, sizeof(Binding));
-    ALY_ASSERT(binding, "Could not allocate new binding for environment");
+    ASSERT(binding, "Could not allocate new binding for environment");
     binding->id = id;
     binding->value = value;
     last_binding->next = binding;
