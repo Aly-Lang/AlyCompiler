@@ -16,4 +16,4 @@ Error expression_return_type(ParsingContext* context, ParsingContext** context_t
 Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_enter, Node* expression, Node* result_type);
 Error typecheck_program(ParsingContext* context, Node* program);
 
-#endif // ALY_COMPILER_TYPECHECKER_H
+#endif /* ALY_COMPILER_TYPECHECKER_H */

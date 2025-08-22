@@ -51,4 +51,4 @@ int environment_get_by_symbol(Environment env, char* symbol, Node* result);
  */
 int environment_get_by_value(Environment env, Node* value, Node* result);
 
-#endif // ALY_COMPILER_ENVIRONMENT_H
+#endif /* ALY_COMPILER_ENVIRONMENT_H */

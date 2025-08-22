@@ -197,4 +197,4 @@ Error parse_program(char* filepath, ParsingContext* context, Node* result);
 
 Error parse_expr(ParsingContext* context, char* source, char** end, Node* result);
 
-#endif // ALY_COMPILER_PARSER_H
+#endif /* ALY_COMPILER_PARSER_H */

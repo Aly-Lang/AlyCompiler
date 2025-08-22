@@ -7,4 +7,4 @@
 size_t file_size(FILE* file);
 char* file_contents(char* path);
 
-#endif // ALY_COMPILER_FILE_IO_H
+#endif /* ALY_COMPILER_FILE_IO_H */
