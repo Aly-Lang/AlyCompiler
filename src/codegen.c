@@ -900,7 +900,7 @@ Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingCo
         ERROR_PREP(err, ERROR_GENERIC, "codegen_program(): fopen failed to open file at path.");
         return err;
     }
-    if (format == CG_FMT_DEFAULT || format == CG_FMT_x86_64_MSWIN) {
+    if (format == CG_FMT_x86_64_MSWIN) {
         CodegenContext* cg_context = codegen_context_x86_64_mswin_create(NULL);
         err = codegen_program_x86_64_mswin(code, cg_context, context, program);
         codegen_context_x86_64_mswin_free(cg_context);

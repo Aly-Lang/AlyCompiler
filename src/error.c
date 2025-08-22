@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
 Error ok = { ERROR_NONE, NULL };
 
@@ -35,4 +37,27 @@ void print_error(Error err) {
     if (err.msg) {
         printf("     : %s\n", err.msg);
     }
+}
+
+#ifndef _MSC_VER
+__attribute__((noreturn))
+#endif
+static void vpanic(int code, const char* fmt, va_list args) {
+    vfprintf(stderr, fmt, args);
+    fputc('\n', stderr);
+    exit(code);
+}
+
+void panic(const char* fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    vpanic(1, fmt, va);
+    exit(1); // unreachable
+}
+
+void panic_with_code(int code, const char* fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    vpanic(code, fmt, va);
+    exit(1); // unreachable
 }

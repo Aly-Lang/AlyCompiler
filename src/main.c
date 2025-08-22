@@ -43,68 +43,56 @@ int handle_command_line_arguments(int argc, char** argv) {
         if (strcmp(argument, "-h") == 0 || strcmp(argument, "--help") == 0) {
             print_usage(argv);
             exit(0);
-        }
-        else if (strcmp(argument, "--formats") == 0) {
+        } else if (strcmp(argument, "--formats") == 0) {
             print_acceptable_formats();
             exit(0);
-        }
-        else if (strcmp(argument, "-v") == 0 || strcmp(argument, "--verbose") == 0) {
+        } else if (strcmp(argument, "-v") == 0 || strcmp(argument, "--verbose") == 0) {
             verbosity = 1;
-        }
-        else if (strcmp(argument, "-o") == 0 || strcmp(argument, "--output") == 0) {
+        } else if (strcmp(argument, "-o") == 0 || strcmp(argument, "--output") == 0) {
             i++;
             if (i >= argc) {
-                printf("ERROR: Expected filepath after output command line argument\n");
-                return 1;
+                panic("ERROR: Expected filepath after output command line argument");
             }
             // FIXME: This very well may be a valid filepath. We may want to
             //        check that it isn't a valid filepath with fopen or something.
             if (*argv[i] == '-') {
-                printf("ERROR: Expected filepath after output command line argument\n"
+                panic("ERROR: Expected filepath after output command line argument\n"
                     "Instead, got what looks like another command line argument.\n"
-                    " -> \"%s\"\n", argv[i]);
-                return 1;
+                    " -> \"%s\"", argv[i]);
             }
             output_filepath_index = i;
-        }
-        else if (strcmp(argument, "-f") == 0 || strcmp(argument, "--format") == 0) {
+        } else if (strcmp(argument, "-f") == 0 || strcmp(argument, "--format") == 0) {
             i++;
             if (i >= argc) {
-                printf("ERROR: Expected format after format command line argument\n");
-                return 1;
+                panic("ERROR: Expected format after format command line argument");
             }
             if (*argv[i] == '-') {
-                printf("ERROR: Expected format after format command line argument\n"
+                panic("ERROR: Expected format after format command line argument\n"
                     "Instead, got what looks like another command line argument.\n"
-                    " -> \"%s\"\n", argv[i]);
-                return 1;
+                    " -> \"%s\"", argv[i]);
             }
             if (strcmp(argv[i], "default") == 0) {
                 output_format = CG_FMT_DEFAULT;
-            }
-            else if (strcmp(argv[i], "x86_64-mswin") == 0) {
+            } else if (strcmp(argv[i], "x86_64-mswin") == 0) {
                 output_format = CG_FMT_x86_64_MSWIN;
-            }
-            else {
+            } else {
                 printf("ERROR: Expected format after format command line argument\n"
                     "Instead, got an unrecognized format: \"%s\".\n", argv[i]);
                 print_acceptable_formats();
                 return 1;
             }
-        }
-        else if (strcmp(argument, "--aluminium") == 0) {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+        } else if (strcmp(argument, "--aluminium") == 0) {
+#     if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
             // Windows
             system("start https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-#elif __APPLE__
+#     elif __APPLE__
             // Apple (iOS, OS X, watchOS...)
             system("open https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-#elif __linux__ || __unix__
+#     elif __linux__ || __unix__
             // Linux or unix-based
             system("xdg-open https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-#endif
-        }
-        else {
+#     endif
+        } else {
             if (input_filepath_index != -1) {
                 printf("ERROR: Only a single input filepath is used, but multiple were given.\n"
                     "Using the latest one.\n");
