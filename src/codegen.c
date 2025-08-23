@@ -21,7 +21,7 @@ enum ComparisonType {
     COMPARE_COUNT,
 };
 
-static const char* comparison_suffixes[COMPARE_COUNT] = {
+static const char* comparison_suffixes_x86_64[COMPARE_COUNT] = {
     "e",
     "ne",
     "l",
@@ -242,7 +242,7 @@ void codegen_comparison_x86_64_mswin(CodegenContext* cg_context, Node* expressio
 
     // Perform the comparison.
     fprintf(code, "cmp %s, %s\n", register_name(cg_context, expression->children->next_child->result_register), register_name(cg_context, expression->children->result_register));
-    fprintf(code, "set%s %%r8b\n", comparison_suffixes[type]);
+    fprintf(code, "set%s %%r8b\n", comparison_suffixes_x86_64[type]);
     register_deallocate(cg_context, expression->children->next_child->result_register);
 
     // Move the value into the result register and restore %r8 if it was in use.
@@ -927,7 +927,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
 
 //================================================================ END CG_FMT_x86_64_MSWIN
 
-Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingContext* context, Node* program ) {
+Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingContext* context, Node* program) {
     Error err = ok;
     if (!filepath) {
         ERROR_PREP(err, ERROR_ARGUMENTS, "codegen_program(): filepath can not be NULL!");
