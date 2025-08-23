@@ -17,6 +17,17 @@ enum ComparisonType {
     COMPARE_LE,
     COMPARE_GT,
     COMPARE_GE,
+
+    COMPARE_COUNT,
+};
+
+static const char* comparison_suffixes[COMPARE_COUNT] = {
+    "e",
+    "ne",
+    "l",
+    "le",
+    "g",
+    "ge",
 };
 
 // Each platform must have registers defined, obviously.
@@ -49,7 +60,7 @@ enum ScratchRegisters_X86_64_MSWIN {
     REG_X86_64_MSWIN_COUNT = REG_X86_64_MSWIN_RIP + 1
 };
 
-#define INIT_REGISTER(registers, desc, reg_name) \
+#define INIT_REGISTER(registers, desc, reg_name)                        \
   ((registers)[desc] = (Register){.name = (reg_name), .in_use = 0, .descriptor = (desc)})
 
 /// Creates a context for the CG_FMT_x86_64_MSWIN architecture.
@@ -154,8 +165,7 @@ size_t label_index = 0;
 size_t label_count = 0;
 char* label_generate() {
     char* label = label_buffer + label_index;
-    label_index += snprintf(label, label_buffer_size - label_index,
-        ".L%zu", label_count);
+    label_index += snprintf(label, label_buffer_size - label_index, ".L%zu", label_count);
     label_index++;
     if (label_index >= label_buffer_size) {
         label_index = 0;
@@ -188,10 +198,7 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
     char* symbol_string = symbol_buffer + symbol_index;
     if (!cg_ctx->parent) {
         // Global variable access.
-        symbol_index += snprintf(symbol_string,
-            symbol_buffer_size - symbol_index,
-            "%s(%%rip)",
-            symbol->value.symbol);
+        symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%s(%%rip)", symbol->value.symbol);
     } else {
         // Local variable access.
         Node* stack_offset = node_allocate();
@@ -199,13 +206,10 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
             putchar('\n');
             print_node(symbol, 0);
             environment_print(*cg_ctx->locals, 0);
-            printf("ERROR: symbol_to_address() Could not find \"%s\" in locals environment.\n",
-                symbol->value.symbol);
+            printf("ERROR: symbol_to_address() Could not find \"%s\" in locals environment.\n", symbol->value.symbol);
             return NULL;
         }
-        symbol_index += snprintf(symbol_string,
-            symbol_buffer_size - symbol_index,
-            "%lld(%%rbp)", stack_offset->value.integer);
+        symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%lld(%%rbp)", stack_offset->value.integer);
         free(stack_offset);
     }
     symbol_index++;
@@ -220,61 +224,32 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
 Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code);
 
 void codegen_comparison_x86_64_mswin(CodegenContext* cg_context, Node* expression, enum ComparisonType type, FILE* code) {
-    switch (type) {
-    case COMPARE_EQ: {
-        expression->result_register = register_allocate(cg_context);
-        RegisterDescriptor true_register = register_allocate(cg_context);
+    assert(type < COMPARE_COUNT && "Invalid comparison type");
 
-        fprintf(code, "mov $0, %s\n", register_name(cg_context, expression->result_register));
-        fprintf(code, "mov $1, %s\n", register_name(cg_context, true_register));
-        fprintf(code, "cmp %s, %s\n", register_name(cg_context, expression->children->result_register), register_name(cg_context, expression->children->next_child->result_register));
-        fprintf(code, "cmove %s, %s\n", register_name(cg_context, true_register), register_name(cg_context, expression->result_register));
+    // Reuse a register for the result of the comparison.
+    expression->result_register = expression->children->result_register;
 
-        // Free no-longer-used left hand side result register.
-        register_deallocate(cg_context, true_register);
-        register_deallocate(cg_context, expression->children->result_register);
-        register_deallocate(cg_context, expression->children->next_child->result_register);
-    } return;
+    // To avoid having to encode 8-bit registers, we always use %r8b for this for
+    // the time being. If the result register happens to be %r8, we can just use it
+    // without having to save/restore anything.
+    // TODO: Implement 8-bit registers and use the 8-bit variant of the result register
+    //   instead. Don't forget to zero out that register instead of %r8.
+    char r8_is_result = expression->result_register == REG_X86_64_MSWIN_R8;
 
-    case COMPARE_NE: assert(0 && "Not implemented"); return;
+    // Save %r8 if need be and clear it.
+    if (!r8_is_result) { fprintf(code, "pushq %%r8\n"); }
+    fprintf(code, "xor %%r8, %%r8\n");
 
-    case COMPARE_LT: {
-        expression->result_register = register_allocate(cg_context);
-        RegisterDescriptor true_register = register_allocate(cg_context);
+    // Perform the comparison.
+    fprintf(code, "cmp %s, %s\n", register_name(cg_context, expression->children->next_child->result_register), register_name(cg_context, expression->children->result_register));
+    fprintf(code, "set%s %%r8b\n", comparison_suffixes[type]);
+    register_deallocate(cg_context, expression->children->next_child->result_register);
 
-        fprintf(code, "mov $0, %s\n", register_name(cg_context, expression->result_register));
-        fprintf(code, "mov $1, %s\n", register_name(cg_context, true_register));
-        fprintf(code, "cmp %s, %s\n", register_name(cg_context, expression->children->next_child->result_register), register_name(cg_context, expression->children->result_register)
-        );
-        fprintf(code, "cmovl %s, %s\n", register_name(cg_context, true_register), register_name(cg_context, expression->result_register));
-
-        // Free no-longer-used left hand side result register.
-        register_deallocate(cg_context, true_register);
-        register_deallocate(cg_context, expression->children->result_register);
-        register_deallocate(cg_context, expression->children->next_child->result_register);
-    } return;
-
-    case COMPARE_LE: assert(0 && "Not implemented"); return;
-
-    case COMPARE_GT: {
-        expression->result_register = register_allocate(cg_context);
-        RegisterDescriptor true_register = register_allocate(cg_context);
-
-        fprintf(code, "mov $0, %s\n", register_name(cg_context, expression->result_register));
-        fprintf(code, "mov $1, %s\n", register_name(cg_context, true_register));
-        fprintf(code, "cmp %s, %s\n", register_name(cg_context, expression->children->next_child->result_register), register_name(cg_context, expression->children->result_register));
-        fprintf(code, "cmovg %s, %s\n", register_name(cg_context, true_register), register_name(cg_context, expression->result_register));
-
-        // Free no-longer-used left hand side result register.
-        register_deallocate(cg_context, true_register);
-        register_deallocate(cg_context, expression->children->result_register);
-        register_deallocate(cg_context, expression->children->next_child->result_register);
-    } return;
-
-    case COMPARE_GE: assert(0 && "Not implemented"); return;
+    // Move the value into the result register and restore %r8 if it was in use.
+    if (!r8_is_result) {
+        fprintf(code, "movzbq %%r8b, %s\n", register_name(cg_context, expression->result_register));
+        fprintf(code, "popq %%r8\n");
     }
-
-    panic("Invalid comparison type: %d", type);
 }
 
 Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, Node* expression) {
@@ -296,9 +271,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
             fprintf(code, ";;#; INTEGER: %lld\n", expression->value.integer);
         }
         expression->result_register = register_allocate(cg_context);
-        fprintf(code, "mov $%lld, %s\n",
-            expression->value.integer,
-            register_name(cg_context, expression->result_register));
+        fprintf(code, "mov $%lld, %s\n", expression->value.integer, register_name(cg_context, expression->result_register));
         break;
     case NODE_TYPE_FUNCTION_CALL:
         if (codegen_verbose) {
@@ -719,7 +692,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
             fprintf(code, ";;#; Variable Declaration: \"%s\"\n", expression->children->value.symbol);
         }
         // Allocate space on stack
-        //   Get the size in bytes of the type of the variable
+        // Get the size in bytes of the type of the variable
         long long size_in_bytes = 0;
         while (context) {
             if (environment_get(*context->variables, expression->children, tmpnode)) {
@@ -954,7 +927,7 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
 
 //================================================================ END CG_FMT_x86_64_MSWIN
 
-Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingContext* context, Node* program) {
+Error codegen_program(enum CodegenOutputFormat format, char* filepath, ParsingContext* context, Node* program ) {
     Error err = ok;
     if (!filepath) {
         ERROR_PREP(err, ERROR_ARGUMENTS, "codegen_program(): filepath can not be NULL!");
