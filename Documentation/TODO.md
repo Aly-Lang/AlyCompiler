@@ -431,3 +431,6 @@ bit++
       - To do this, we are going to have to keep track of a AST node's token span, which will require quiet some work in the parser. Without this, there wouldn't really be a way to know where the AST node came from. I guess we are just going to have to add a new member to the Node structure that contains source code span information; we could quiet literally store a `Token`, as just a string span.
 
   - File, Line, and Column reference
+
+- [x] TODO: Use `sete` in `x86_64` backend for comparisons
+  - This would be much more efficient than our 4-scratch-registers-hogging current situation.

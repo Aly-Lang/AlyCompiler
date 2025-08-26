@@ -1,6 +1,5 @@
 ﻿#include <codegen.h>
 
-#include <assert.h>
 #include <environment.h>
 #include <error.h>
 #include <parser.h>
@@ -46,7 +45,6 @@ enum ScratchRegisters_X86_64_MSWIN {
 
     // Non-scratch Registers XD
     REG_X86_64_MSWIN_R12,
-    REG_X86_64_MSWIN_R13,
     REG_X86_64_MSWIN_R14,
     REG_X86_64_MSWIN_R15,
     REG_X86_64_MSWIN_RBX,
@@ -80,7 +78,7 @@ CodegenContext* codegen_context_x86_64_mswin_create(CodegenContext* parent) {
         INIT_REGISTER(registers, REG_X86_64_MSWIN_R11, "%r11");
 
         INIT_REGISTER(registers, REG_X86_64_MSWIN_R12, "%r12");
-        INIT_REGISTER(registers, REG_X86_64_MSWIN_R13, "%r13");
+        INIT_REGISTER(registers, REG_X86_64_MSWIN_R14, "%r14");
         INIT_REGISTER(registers, REG_X86_64_MSWIN_R14, "%r14");
         INIT_REGISTER(registers, REG_X86_64_MSWIN_R15, "%r15");
         INIT_REGISTER(registers, REG_X86_64_MSWIN_RBX, "%rbx");
@@ -131,7 +129,7 @@ char register_descriptor_is_valid(CodegenContext* cg_ctx, RegisterDescriptor des
 }
 
 RegisterDescriptor register_allocate(CodegenContext* cg_ctx) {
-    assert(cg_ctx->registers.num_regs > 0 && cg_ctx->registers.num_scratch_regs > 0 && "Register pool is empty");
+    ASSERT(cg_ctx->registers.num_regs > 0 && cg_ctx->registers.num_scratch_regs > 0, "Register pool is empty");
 
     for (RegisterDescriptor d = 0; d < cg_ctx->registers.num_scratch_regs; ++d) {
         Register* reg = &cg_ctx->registers.regs[d];
@@ -224,7 +222,7 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
 Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code);
 
 void codegen_comparison_x86_64_mswin(CodegenContext* cg_context, Node* expression, enum ComparisonType type, FILE* code) {
-    assert(type < COMPARE_COUNT && "Invalid comparison type");
+    ASSERT(type < COMPARE_COUNT, "Invalid comparison type");
 
     // Reuse a register for the result of the comparison.
     expression->result_register = expression->children->result_register;
@@ -262,7 +260,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
     ParsingContext* original_context = context;
     //expression->result_register = -1;
 
-    assert(NODE_TYPE_MAX == 13 && "codegen_expression_x86_64_mswin() must exhaustively handle node types!");
+    ASSERT(NODE_TYPE_MAX == 14, "codegen_expression_x86_64_mswin() must exhaustively handle node types!");
     switch (expression->type) {
     default:
         break;
@@ -799,7 +797,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
     if (expression->result_register == -1) {
         printf("Mishandled expression type %i in codegen_expression_x86_64_mswin()\n", expression->type);
     }
-    //assert(expression->result_register != -1 &&
+    //ASSERT(expression->result_register != -1,
     //      "Result register of expression not set. Likely an internal error during codegen.");
 
     free(tmpnode);
