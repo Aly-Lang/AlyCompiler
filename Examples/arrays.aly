@@ -1,0 +1,8 @@
+int_array : integer[2]
+@int_array[0] := 506631917033178453
+@int_array[1] := 506776893918711584
+
+int_array    ;; MAYBE a pointer to beginning of array.
+             ;; OR it could return literal array type.
+int_array[0] ;; This could also be a pointer. I like this.
+@int_array[0] ;; Dereference index operator to get lvalue.

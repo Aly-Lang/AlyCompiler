@@ -162,7 +162,7 @@ void node_add_child(Node* parent, Node* new_child) {
 }
 
 int node_compare(Node* a, Node* b) {
-    assert(NODE_TYPE_MAX == 13 && "node_compare() must handle all node types");
+    assert(NODE_TYPE_MAX == 14 && "node_compare() must handle all node types");
 
     // NOTE: Actually really nice debug output when you need it.
     //printf("Comparing nodes:\n");
@@ -205,6 +205,7 @@ int node_compare(Node* a, Node* b) {
     switch (a->type) {
     default:
         return 1;
+    case NODE_TYPE_INDEX:
     case NODE_TYPE_INTEGER:
         if (a->value.integer == b->value.integer) {
             return 1;
@@ -284,7 +285,7 @@ Error define_type(Environment* types, int type, Node* type_symbol, long long byt
 #define NODE_TEXT_BUFFER_SIZE 512
 char node_text_buffer[512];
 char* node_text(Node* node) {
-    assert(NODE_TYPE_MAX == 13 && "print_node() must handle all node types");
+    assert(NODE_TYPE_MAX == 14 && "print_node() must handle all node types");
     if (!node) {
         return "NULL";
     }
@@ -330,6 +331,9 @@ char* node_text(Node* node) {
         break;
     case NODE_TYPE_FUNCTION_CALL:
         snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "FUNCTION CALL");
+        break;
+    case NODE_TYPE_INDEX:
+        snprintf(node_text_buffer, NODE_TEXT_BUFFER_SIZE, "INDEX");
         break;
     }
     return node_text_buffer;
@@ -596,6 +600,17 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
         return ok;
     }
 
+    if (strcmp(id->value.symbol, "array") == 0) {
+        // Get size of base type!
+        Node* base_type = node_allocate();
+        err = parse_get_type(context, id->children->next_child, base_type);
+        if (err.type) { return err; }
+        // Size of array is equal to size of base type multiplied by capacity of array.
+        result->children = node_integer(id->children->value.integer * base_type->children->value.integer);
+        free(base_type);
+        return ok;
+    }
+
     // DEBUG
     //printf("Searching following context for ");
     //print_node(id, 0);
@@ -604,7 +619,11 @@ Error parse_get_type(ParsingContext* context, Node* id, Node* result) {
 
     while (context) {
         int status = environment_get(*context->types, id, result);
-        if (status) { return ok; }
+        if (status) {
+            //printf("Got thing:\n");
+            //print_node(result, 2);
+            return ok;
+        }
         context = context->parent;
     }
     result->type = NODE_TYPE_NONE;
@@ -1071,10 +1090,46 @@ Error parse_type(ParsingContext* context, ParsingState* state, Node* type) {
             // With finished parameter, add as child to function, or add to function context?
             node_add_child(type, parameter_type);
         }
-    } else if (external) {
+        return err;
+    }
+    if (external) {
         // This is a non-function "ext" type.
         ERROR_PREP(err, ERROR_TYPE, "\"ext\" may only be used on function types (for now).");
+        return err;
     }
+
+    EXPECT(expected, "[", state);
+    if (expected.found) {
+        // Copy base type
+        Node* base_type = node_allocate();
+        node_copy(type, base_type);
+        free(type->value.symbol);
+        // Create array type
+        Node* array_type = node_symbol("array");
+        *type = *array_type;
+        free(array_type);
+
+        // Parse size integer
+        err = lex_advance(state);
+        if (err.type) { return err; }
+
+        Node* array_size = node_allocate();
+        if (parse_integer(state->current, array_size) == 0) {
+            ERROR_PREP(err, ERROR_SYNTAX, "Array type annotation expects array size (an integer) after opening '['.");
+            return err;
+        };
+
+        node_add_child(type, array_size);
+
+        EXPECT(expected, "]", state);
+        if (!expected.found) {
+            ERROR_PREP(err, ERROR_SYNTAX, "Array type annotation must have closing ']' after array size.");
+            return err;
+        }
+
+        node_add_child(type, base_type);
+    }
+
     return err;
 }
 
@@ -1232,6 +1287,33 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
                             continue;
                         }
                     } else {
+                        // Lookahead for array index operator.
+                        EXPECT(expected, "[", &state);
+                        if (expected.found) {
+                            Node* var_access = node_allocate();
+                            node_copy(working_result, var_access);
+                            working_result->type = NODE_TYPE_INDEX;
+                            node_add_child(working_result, var_access);
+
+                            err = lex_advance(&state);
+                            if (err.type) { return err; }
+
+                            Node* integer_offset = node_allocate();
+                            if (parse_integer(state.current, integer_offset) == 0) {
+                                ERROR_PREP(err, ERROR_SYNTAX, "Expected integer following opening index operator: '['.");
+                                return err;
+                            }
+
+                            working_result->value.integer = integer_offset->value.integer;
+                            node_free(integer_offset);
+
+                            EXPECT(expected, "]", &state);
+                            if (!expected.found) {
+                                ERROR_PREP(err, ERROR_SYNTAX, "Expected closing index operator following index integer: '['.");
+                                return err;
+                            }
+                        }
+
                         // Lookahead for variable reassignment.
                         EXPECT(expected, ":", &state);
                         if (expected.found) {
