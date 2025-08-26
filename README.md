@@ -52,6 +52,7 @@ gcc code.S -o code.exe
 ```shell
 clang code.S -o code.exe --target=x86_64
 ```
+To use external calls, link with appropriate libraries!
 
 ## Language Reference
 

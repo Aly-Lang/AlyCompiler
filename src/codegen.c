@@ -900,10 +900,6 @@ Error codegen_program_x86_64_mswin(FILE* code, CodegenContext* cg_context, Parsi
         Node* var_id = var_it->id;
         Node* type_id = node_allocate();
         *type_id = *var_it->value;
-
-        //type_id->children = NULL;
-        //type_id->next_child = NULL;
-
         // Do not emit "external" typed variables.
         // TODO: Probably should have external attribute rather than this nonsense!
         if (strcmp(type_id->value.symbol, "external function") != 0) {
