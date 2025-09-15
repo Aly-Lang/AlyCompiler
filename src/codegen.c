@@ -58,7 +58,7 @@ enum ScratchRegisters_X86_64_MSWIN {
     REG_X86_64_MSWIN_COUNT = REG_X86_64_MSWIN_RIP + 1
 };
 
-#define INIT_REGISTER(registers, desc, reg_name)                        \
+#define INIT_REGISTER(registers, desc, reg_name) \
   ((registers)[desc] = (Register){.name = (reg_name), .in_use = 0, .descriptor = (desc)})
 
 /// Creates a context for the CG_FMT_x86_64_MSWIN architecture.
@@ -88,7 +88,7 @@ CodegenContext* codegen_context_x86_64_mswin_create(CodegenContext* parent) {
         INIT_REGISTER(registers, REG_X86_64_MSWIN_RSP, "%rsp");
         INIT_REGISTER(registers, REG_X86_64_MSWIN_RIP, "%rip");
 
-        pool = (RegisterPool){
+        pool = (RegisterPool) {
           .regs = registers,
           .num_scratch_regs = REG_X86_64_MSWIN_SCRATCH,
           .num_regs = REG_X86_64_MSWIN_COUNT,
@@ -194,6 +194,9 @@ char* symbol_to_address(CodegenContext* cg_ctx, Node* symbol) {
         return NULL;
     }
     char* symbol_string = symbol_buffer + symbol_index;
+    
+    //environment_print(*cg_ctx->locals, 0);
+    
     if (!cg_ctx->parent) {
         // Global variable access.
         symbol_index += snprintf(symbol_string, symbol_buffer_size - symbol_index, "%s(%%rip)", symbol->value.symbol);
@@ -687,7 +690,6 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
         expression->result_register = register_allocate(cg_context);
 
         // Find context that local variable resides in.
-
         CodegenContext* variable_residency = cg_context;
         while (variable_residency) {
             if (environment_get_by_symbol(*variable_residency->locals, expression->value.symbol, tmpnode)) {
@@ -727,7 +729,7 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
             ERROR_PREP(err, ERROR_GENERIC, "Invalid AST/context fed to codegen. Could not find variable declaration in environment");
             return err;
         }
-        if (strcmp(tmpnode->value.symbol, "external function") != 0) {
+        if (strcmp(tmpnode->value.symbol, "external function") == 0) {
             break;
         }
         // Get size in bytes from types environment.
@@ -735,6 +737,8 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
         if (err.type) { return err; }
         size_in_bytes = tmpnode->children->value.integer;
 
+        // TODO: Optimize to subtract all local variable's stack size at
+        // beginning of function rather than throughout.
         // Subtract type size in bytes from stack pointer
         fprintf(code, "sub $%lld, %%rsp\n", size_in_bytes);
         // Keep track of RBP offset.
@@ -746,11 +750,10 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
         if (codegen_verbose) {
             fprintf(code, ";;#; Variable Reassignment\n");
         }
-
         // 1. Codegen RHS
-        // 2. Recurse LHS into children until LHS is a var. access.
+        // 2. Recurse LHS into children until LHS is a variable access.
 
-        // Set iterator to the var. access node.
+        // Set iterator to the variable access node.
         iterator = expression->children;
         while (iterator && iterator->type != NODE_TYPE_VARIABLE_ACCESS) {
             iterator = iterator->children;
@@ -790,27 +793,25 @@ Error codegen_expression_x86_64_mswin(FILE* code, CodegenContext* cg_context, Pa
             free(result);
             register_deallocate(cg_context, expression->children->result_register);
         }
-
         break;
     }
 
     if (expression->result_register == -1) {
         printf("Mishandled expression type %i in codegen_expression_x86_64_mswin()\n", expression->type);
     }
-    //ASSERT(expression->result_register != -1,
-    //      "Result register of expression not set. Likely an internal error during codegen.");
+    //ASSERT(expression->result_register != -1, "Result register of expression not set. Likely an internal error during codegen.");
 
     free(tmpnode);
     return err;
 }
 
 const char* function_header_x86_64 =
-"push %rbp\n"
-"mov %rsp, %rbp\n"
-"sub $32, %rsp\n";
+    "push %rbp\n"
+    "mov %rsp, %rbp\n"
+    "sub $32, %rsp\n";
 const char* function_footer_x86_64 =
-"pop %rbp\n"
-"ret\n";
+    "pop %rbp\n"
+    "ret\n";
 
 Error codegen_function_x86_64_att_asm_mswin(CodegenContext* cg_context, ParsingContext* context, ParsingContext** next_child_context, char* name, Node* function, FILE* code) {
     Error err = ok;

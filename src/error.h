@@ -19,11 +19,11 @@ void print_error(Error err);
 
 extern Error ok;
 
-#define ERROR_CREATE(n, t, msg)                 \
+#define ERROR_CREATE(n, t, msg)   \
   Error (n) = { (t), (msg) }
 
-#define ERROR_PREP(n, t, message)               \
-  (n).type = (t);                               \
+#define ERROR_PREP(n, t, message) \
+  (n).type = (t);                 \
   (n).msg = (message);
 
 #ifndef _MSC_VER
@@ -50,8 +50,8 @@ FORMAT(printf, 5, 6)
 void assert_impl(const char* file, const char* func, int line, const char* condition, const char* fmt, ...);
 
 /// Usage:
-///   ASSERT(condition);
-///   ASSERT(condition, "message", ...);
+///  ASSERT(condition);
+///  ASSERT(condition, "message", ...);
 #define ASSERT(cond, ...)  \
   do {                     \
     if (!(cond)) {         \

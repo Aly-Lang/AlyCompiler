@@ -277,10 +277,9 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
 
         *context_to_enter = (*context_to_enter)->next_child;
-
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
-        // Get return type of left hand side variable, dereference adjusted.
+        // Get return type of LHS variable, dereference adjusted.
         err = typecheck_expression(context, context_to_enter, expression->children, result_type);
         if (err.type) { return err; }
 
@@ -290,7 +289,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         //printf("LHS return type (dereference adjusted pointer type)\n");
         //print_node(result_type,0);
 
-        // Get return type of right hand side expression.
+        // Get return type of RHS expression.
         Node* rhs_return_value = node_allocate();
         err = typecheck_expression(context, context_to_enter, expression->children->next_child, rhs_return_value);
         if (err.type) { return err; }
@@ -325,7 +324,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         // Expected return type of LHS is third child of binary operator definition.
         if (type_compare_symbol(type, value->children->next_child->next_child) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of left hand side expression of binary operator does not match declared left hand side return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
             return err;
         }
         // Get return type of RHS into `type`.
@@ -334,7 +333,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         // Expected return type of RHS is fourth child of binary operator definition.
         if (type_compare_symbol(type, value->children->next_child->next_child->next_child) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of right hand side expression of binary operator does not match declared right hand side return type");
+            ERROR_PREP(err, ERROR_TYPE, "Return type of RHS expression of binary operator does not match declared RHS return type");
             return err;
         }
         *result_type = *value->children->next_child;

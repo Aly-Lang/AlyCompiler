@@ -60,7 +60,7 @@ int comment_at_beginning(Token token) {
 //        token->end += 1;
 //    }
 //    return err;
-//}
+// }
 
 // "a +- 4" == "a + -4"
 // FIXME: If we removed whitespace from token string view during binary

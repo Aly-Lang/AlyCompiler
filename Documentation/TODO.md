@@ -180,6 +180,8 @@ We'll develop additional examples to thoroughly test and demonstrate the compile
 
 -----
 
+- TODO: [OPTIMIZATION] Substract local stack allocation at beginning of function
+
 - TODO: Write TextMate grammar for VS integration
   - Resources:
     - MSDN :: https://learn.microsoft.com/en-us/visualstudio/ide/adding-visual-studio-editor-support-for-other-languages?view=vs-2022
@@ -434,3 +436,6 @@ bit++
 
 - [x] TODO: Use `sete` in `x86_64` backend for comparisons
   - This would be much more efficient than our 4-scratch-registers-hogging current situation.
+
+- [x] TODO: Pointers example is very, very borked ~:/~
+  - I don't know what happened, but it breaks VERY badly. This was fixed by updating the compiler.
