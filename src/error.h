@@ -60,7 +60,7 @@ void assert_impl(const char* file, const char* func, int line, const char* condi
          PRETTY_FUNCTION,  \
          __LINE__ ,        \
          #cond,            \
-         "" __VA_ARGS__    \
+         "!" __VA_ARGS__   \
          );                \
     }                      \
   } while (0)

@@ -439,3 +439,6 @@ bit++
 
 - [x] TODO: Pointers example is very, very borked ~:/~
   - I don't know what happened, but it breaks VERY badly. This was fixed by updating the compiler.
+
+- [ ] TODO: Separate codegen into multiple files by platform
+

@@ -1156,8 +1156,6 @@ Error parse_expr(ParsingContext* context, char* source, char** end, Node* result
         } else {
             // Check for lambda
             Node* type = node_allocate();
-            Token token = current_token;
-            size_t length = token_length;
             err = parse_base_type(context, &state, type);
             if (err.type == ERROR_NONE) {
                 context = parse_context_create(context);

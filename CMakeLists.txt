@@ -29,16 +29,16 @@ add_executable(alyc ${SOURCE_FILES})
 # Include directories
 target_include_directories(alyc PUBLIC src)
 
-# Compiler flags - warnings off
+# Compiler flags - warnings on
 target_compile_options(alyc PRIVATE
-    # MSVC
-    $<$<C_COMPILER_ID:MSVC>:/utf-8 /w>
+    # MSVC: enable all warnings
+    $<$<C_COMPILER_ID:MSVC>:/W4 /permissive->
 
-    # GCC / MinGW
-    $<$<C_COMPILER_ID:GNU>:-w>
+    # GCC / MinGW: enable common warnings and treat warnings as errors optionally
+    # $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
 
-    # Clang
-    $<$<C_COMPILER_ID:Clang>:-w>
+    # Clang: similar to GCC
+    # $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
 )
 
 # Ensure C standard is set based on compiler

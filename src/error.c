@@ -75,8 +75,11 @@ void assert_impl(const char* file, const char* func, int line, const char* condi
     fprintf(stderr, "    In file %s:%d\n", file, line);
     fprintf(stderr, "    In function %s", func);
 
-    if (strcmp(fmt, "") != 0) {
+    if (strcmp(fmt, "!") != 0) {
         fprintf(stderr, "\n    Message: ");
+
+        // Skip '!' placeholder for non-empty format string.
+        fmt += 1;
 
         va_list va;
         va_start(va, fmt);

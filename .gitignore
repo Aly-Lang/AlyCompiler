@@ -68,3 +68,6 @@ msys/
 /MinGW Makefiles/
 
 windows/
+
+# Ignore ~ files
+*~
