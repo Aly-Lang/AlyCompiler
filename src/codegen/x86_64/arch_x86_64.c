@@ -24,9 +24,9 @@
 
 /// Lookup tables for register names.
 #define DEFINE_REGISTER_NAME_LOOKUP_FUNCTION(name, bits)                                        \
-  static const char *name(RegisterDescriptor descriptor) {                                             \
+static const char *name(RegisterDescriptor descriptor) {                                        \
     static const char* register_names[] = { FOR_ALL_X86_64_REGISTERS(REGISTER_NAME_##bits) };   \
-    if (descriptor < 0 || descriptor >= REG_COUNT) {                                     \
+    if (descriptor < 0 || descriptor >= REG_COUNT) {                                            \
       panic("ERROR::" #name "(): Could not find register with descriptor of %d\n", descriptor); \
     }                                                                                           \
     return register_names[descriptor];                                                          \
