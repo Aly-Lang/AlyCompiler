@@ -21,6 +21,8 @@ set(SOURCE_FILES
     src/environment.c
     src/codegen.c
     src/typechecker.c
+    src/codegen/codegen_platforms.c
+    src/codegen/x86_64/arch_x86_64.c
 )
 
 # Define executable
