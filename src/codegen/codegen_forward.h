@@ -41,5 +41,4 @@ enum ComparisonType {
 
   COMPARE_COUNT,
 };
-
 #endif // ALY_COMPILER_CODEGEN_FORWARD_H

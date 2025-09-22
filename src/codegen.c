@@ -100,7 +100,7 @@ symbol_address symbol_to_address(CodegenContext *cg_ctx, Node *symbol) {
     print_node(symbol,0);
     environment_print(*cg_ctx->locals, 0);
 
-    // FIXME: This is ugly. Should this be heap-allocated?
+    // FIXME(Sirraide): This is ugly. Should this be heap-allocated?
     //   Maybe we should have a way to store a heap allocated string in
     //   an `Error`? I would recommend either adding a flag indicating
     //   that the messages needs to be free()’d or just leaking the
@@ -535,7 +535,7 @@ Error codegen_expression
     //   Subtract type size in bytes from stack pointer
     codegen_alloca(cg_context, size_in_bytes);
     // Keep track of RBP offset.
-    // FIXME: this is probably no longer necessary since we now reset
+    // FIXME(Sirraide): this is probably no longer necessary since we now reset
     //   RSP to RBP at the end of a function anyway.
     cg_context->locals_offset -= size_in_bytes;
     //   Kept in codegen context.
