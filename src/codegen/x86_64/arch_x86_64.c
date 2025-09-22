@@ -23,7 +23,7 @@
 
 /// Lookup tables for register names.
 #define DEFINE_REGISTER_NAME_LOOKUP_FUNCTION(name, bits)                                        \
-  static const char *name(RegisterDescriptor descriptor) {                                      \
+static const char *name(RegisterDescriptor descriptor) {                                        \
     static const char* register_names[] = { FOR_ALL_X86_64_REGISTERS(REGISTER_NAME_##bits) };   \
     if (descriptor < 0 || descriptor >= REG_COUNT) {                                            \
       panic("ERROR::" #name "(): Could not find register with descriptor of %d\n", descriptor); \
@@ -940,7 +940,7 @@ void codegen_cleanup_call_x86_64(CodegenContext *cg_context) {
     // Pop arguments off the stack.
     case FUNCTION_CALL_TYPE_EXTERNAL:
       femit_x86_64(cg_context, I_ADD, IMMEDIATE_TO_REGISTER,
-                   arch_data->call_arg_count * 8, REG_RSP);
+                   (int64_t)(arch_data->call_arg_count) * 8, REG_RSP);
       break;
     case FUNCTION_CALL_TYPE_INTERNAL: break;
     default: panic("No call to clean up");
@@ -1020,7 +1020,7 @@ void codegen_store_x86_64
 (CodegenContext *cg_context,
  RegisterDescriptor source,
  RegisterDescriptor address) {
-  femit_x86_64(cg_context, I_MOV, REGISTER_TO_MEMORY, source, address, 0);
+  femit_x86_64(cg_context, I_MOV, REGISTER_TO_MEMORY, source, address, (int64_t)0);
 }
 
 /// Add an immediate value to a register.
@@ -1155,7 +1155,7 @@ void codegen_alloca_x86_64(CodegenContext *cg_context, long long int size) {
 void codegen_prologue_x86_64(CodegenContext *cg_context) {
   femit_x86_64(cg_context, I_PUSH, REGISTER, REG_RBP);
   femit_x86_64(cg_context, I_MOV, REGISTER_TO_REGISTER, REG_RSP, REG_RBP);
-  femit_x86_64(cg_context, I_SUB, IMMEDIATE_TO_REGISTER, -cg_context->locals_offset, REG_RSP);
+  femit_x86_64(cg_context, I_SUB, IMMEDIATE_TO_REGISTER, (int64_t)-cg_context->locals_offset, REG_RSP);
 }
 
 /// Emit the function epilogue.

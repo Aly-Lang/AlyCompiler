@@ -566,6 +566,7 @@ Error codegen_expression
     if (err.type) { break; }
 
     if (expression->children->type == NODE_TYPE_VARIABLE_ACCESS) {
+      // TODO: Something wicked this way comes.
       symbol_address address = symbol_to_address(cg_context, expression->children);
       switch (address.mode) {
         case SYMBOL_ADDRESS_MODE_ERROR: return address.error;
