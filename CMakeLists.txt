@@ -43,6 +43,12 @@ target_compile_options(alyc PRIVATE
     # $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
 )
 
+target_compile_definitions(
+    alyc
+    PRIVATE
+    _FORTIFY_SOURCE=3
+)
+
 # Ensure C standard is set based on compiler
 if (CMAKE_C_COMPILER_ID MATCHES "MSVC")
     target_compile_features(alyc PRIVATE c_std_11)
