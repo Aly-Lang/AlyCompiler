@@ -180,7 +180,13 @@ void parse_context_print(ParsingContext* top, size_t indent);
 /// PARENT is modified, CHILD is used verbatim.
 void parse_context_add_child(ParsingContext* parent, ParsingContext* child);
 
-Error define_binary_operator(ParsingContext* context, char* operator, int precedence, char* return_type, char* lhs_type, char* rhs_type);
+Error define_binary_operator(
+	ParsingContext* context, 
+	char* operator, 
+	int precedence, 
+	char* return_type, 
+	char* lhs_type, 
+	char* rhs_type);
 
 Error parse_type(ParsingContext* context, ParsingState* state, Node* type);
 
