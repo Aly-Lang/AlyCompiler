@@ -681,7 +681,6 @@ Error parse_binary_infix_operator(ParsingContext* context, ParsingStack* stack, 
     // This is needed to catch binary operators like "<<" made up of
     // multiple delimiters.
     // https://en.cppreference.com/w/c/string/byte/strchr
-    Token single_lex_operator = current_copy;
     while (*state_copy.current->end != '\0'
         && strchr(whitespace, *state_copy.current->end) == NULL
         && strchr(delimiters, *state_copy.current->end) != NULL)
@@ -1068,7 +1067,9 @@ Error parse_type(ParsingContext* context, ParsingState* state, Node* type) {
                 ERROR_PREP(err, ERROR_SYNTAX, "I hope we never see this error");
                 return err;
             }
-            Node* parameter_name = node_symbol_from_buffer(state->current->beginning, state->current->end - state->current->beginning);
+            
+            //Node* parameter_name = node_symbol_from_buffer(state->current->beginning, 
+            //                                               state->current->end - state->current->beginning);
 
             EXPECT(expected, ":", state);
             if (!expected.found) {
