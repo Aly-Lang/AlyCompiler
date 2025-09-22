@@ -14,12 +14,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Source files
 set(SOURCE_FILES
-    src/main.c
-    src/error.c
-    src/file_io.c
-    src/parser.c
-    src/environment.c
     src/codegen.c
+    src/error.c
+    src/environment.c
+    src/file_io.c
+    src/main.c
+    src/parser.c
     src/typechecker.c
     src/codegen/codegen_platforms.c
     src/codegen/x86_64/arch_x86_64.c
