@@ -49,12 +49,10 @@ Error codegen
  ParsingContext *context,
  Node *program);
 
-
 char register_descriptor_is_valid(CodegenContext *cg_ctx, RegisterDescriptor descriptor);
 
 RegisterDescriptor register_allocate(CodegenContext *cg_ctx);
 
-void register_deallocate
-(CodegenContext *cg_ctx, RegisterDescriptor descriptor);
+void register_deallocate(CodegenContext *cg_ctx, RegisterDescriptor descriptor);
 
 #endif /* ALY_COMPILER_CODEGEN_H */
