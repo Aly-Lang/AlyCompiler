@@ -1,7 +1,7 @@
 ﻿#ifndef ALY_COMPILER_CODEGEN_H
 #define ALY_COMPILER_CODEGEN_H
 
-#include "codegen/codegen_forward.h"
+#include <codegen/codegen_forward.h>
 
 #include <environment.h>
 #include <error.h>
