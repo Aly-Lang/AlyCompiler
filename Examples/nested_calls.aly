@@ -1,7 +1,5 @@
-;; I didn't realize at first, this is literally Peano succession function.
-
-S : integer(n : integer) = integer(n : integer) {
+a : integer(n : integer) = integer(n : integer) {
   n + 1
 }
 
-S(S(0))
+a(a(0))

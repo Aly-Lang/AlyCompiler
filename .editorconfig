@@ -2,15 +2,26 @@
 root = true
 
 # General settings
+[*]
 charset = utf-8
+end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
-end_of_line = lf
 
 # C source files
 [*.c]
 indent_style = space
 indent_size = 4
+
+# Header files
+[*.h]
+indent_style = space
+indent_size = 4
+
+# Assembly files
+[*.asm]
+indent_style = tab
+indent_size = 8
 
 # Custom .aly files
 [*.aly]
