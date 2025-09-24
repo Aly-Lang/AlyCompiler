@@ -1,5 +1,16 @@
-[integer] 5
+;; Type casting that *should* work
 
-a : integer = 69
+a : byte = 69
 
-[@integer] &a
+;; Sign Extend
+b : integer = [integer]a
+
+;; Truncation
+c : byte = [byte]b
+
+;; Same size cast (no operation)
+d : integer = [integer]69
+
+;; Reinterpret cast (pointer to pointer)
+prt_b : @integer = &byte
+prt_b_byte : @byte = [@byte]prt_b
