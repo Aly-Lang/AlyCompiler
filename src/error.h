@@ -63,7 +63,7 @@ void assert_impl(const char* file, const char* func, int line, const char* condi
          "!" __VA_ARGS__   \
          );                \
     }                      \
-  } while (0)
+  } while (0)              \
 
 #define TODO(...)     ASSERT(0, "TODO: "__VA_ARGS__)
 #define PANIC(...)    ASSERT(0, "PANIC: "__VA_ARGS__)

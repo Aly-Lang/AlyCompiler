@@ -1,0 +1,5 @@
+[integer] 5
+
+a : integer = 69
+
+[@integer] &a

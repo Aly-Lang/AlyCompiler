@@ -15,9 +15,13 @@ char* type_node_text(Node* type) {
     static size_t offset = 0;
     char* outstring = type_node_text_buffer + offset;
     for (unsigned i = 0; i < type->pointer_indirection; ++i) {
-        offset += snprintf(type_node_text_buffer + offset, TYPE_NODE_TEXT_BUFFER_SIZE - offset, "@");
+        offset += snprintf(type_node_text_buffer + offset,
+                           TYPE_NODE_TEXT_BUFFER_SIZE - offset,
+                           "@");
     }
-    offset += snprintf(type_node_text_buffer + offset, TYPE_NODE_TEXT_BUFFER_SIZE - offset, "%s", type->value.symbol);
+    offset += snprintf(type_node_text_buffer + offset,
+                       TYPE_NODE_TEXT_BUFFER_SIZE - offset,
+                       "%s", type->value.symbol);
     offset += 1;
     if (offset >= TYPE_NODE_TEXT_BUFFER_SIZE) {
         offset = 0;
@@ -34,7 +38,8 @@ void print_type_node(Node* type, size_t indent) {
 }
 
 int type_compare(Node* a, Node* b) {
-    if (a->type != b->type || a->pointer_indirection != b->pointer_indirection) {
+    if (a->type != b->type
+        || a->pointer_indirection != b->pointer_indirection) {
         return 0;
     }
     Node* child_it_a = a->children;
@@ -80,7 +85,14 @@ char type_compare_symbol(Node* a, Node* b) {
     return 1;
 }
 
-Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_enter, Node* expression, Node* result_type) {
+
+Error typecheck_expression
+(ParsingContext* context,
+ ParsingContext** context_to_enter,
+ Node* expression,
+ Node* result_type
+)
+{
     Error err = ok;
     if (!context || !expression) {
         ERROR_PREP(err, ERROR_ARGUMENTS, "typecheck_expression(): Arguments must not be NULL!");
@@ -129,7 +141,8 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
         if (!context_it) {
             printf("Variable: \"%s\"\n", expression->value.symbol);
-            ERROR_PREP(err, ERROR_GENERIC, "Could not get variable within context for variable access return type");
+            ERROR_PREP(err, ERROR_GENERIC,
+                       "Could not get variable within context for variable access return type");
             break;
         }
         break;
@@ -159,10 +172,13 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         // TODO: Addressof a Dereference should cancel out. Maybe do this during parsing?
         // Or just remove this pattern nodes during optimization.
         if (!expression->children || expression->children->type != NODE_TYPE_VARIABLE_ACCESS) {
-            ERROR_PREP(err, ERROR_TYPE, "Addressof operator requires valid variable access following it.");
+            ERROR_PREP(err, ERROR_TYPE,
+                       "Addressof operator requires valid variable access following it.");
             return err;
         }
-        err = typecheck_expression(context, context_to_enter, expression->children, result_type);
+        err = typecheck_expression(context, context_to_enter,
+                                   expression->children,
+                                   result_type);
         if (err.type) { return err; }
         result_type->pointer_indirection += 1;
         break;
@@ -243,6 +259,7 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
                 ERROR_PREP(err, ERROR_TYPE, "Return type of last expression in function does not match function return type.");
                 return err;
             }
+
             free(expr_return_type);
         }
 
@@ -275,10 +292,12 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         }
 
         *context_to_enter = (*context_to_enter)->next_child;
+
         break;
     case NODE_TYPE_VARIABLE_REASSIGNMENT:
-        // Get return type of LHS variable, dereference adjusted.
-        err = typecheck_expression(context, context_to_enter, expression->children, result_type);
+        // Get return type of left hand side variable, dereference adjusted.
+        err = typecheck_expression(context, context_to_enter,
+                                   expression->children, result_type);
         if (err.type) { return err; }
 
         //printf("\n");
@@ -287,9 +306,11 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         //printf("LHS return type (dereference adjusted pointer type)\n");
         //print_node(result_type,0);
 
-        // Get return type of RHS expression.
+        // Get return type of right hand side expression.
         Node* rhs_return_value = node_allocate();
-        err = typecheck_expression(context, context_to_enter, expression->children->next_child, rhs_return_value);
+        err = typecheck_expression(context, context_to_enter,
+                                   expression->children->next_child,
+                                   rhs_return_value);
         if (err.type) { return err; }
 
         //printf("RHS\n");
@@ -315,14 +336,17 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         // Get global context.
         while (context_it->parent) { context_it = context_it->parent; }
         // Get binary operator definition from global context into `value`.
-        environment_get_by_symbol(*context_it->binary_operators, expression->value.symbol, value);
+        environment_get_by_symbol(*context_it->binary_operators,
+                                  expression->value.symbol,
+                                  value);
         // Get return type of LHS into `type`.
         err = typecheck_expression(context, context_to_enter, expression->children, type);
         if (err.type) { return err; }
         // Expected return type of LHS is third child of binary operator definition.
         if (type_compare_symbol(type, value->children->next_child->next_child) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of LHS expression of binary operator does not match declared LHS return type");
+            ERROR_PREP(err, ERROR_TYPE,
+                       "Return type of left hand side expression of binary operator does not match declared left hand side return type");
             return err;
         }
         // Get return type of RHS into `type`.
@@ -331,12 +355,14 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
         // Expected return type of RHS is fourth child of binary operator definition.
         if (type_compare_symbol(type, value->children->next_child->next_child->next_child) == 0) {
             print_node(expression, 0);
-            ERROR_PREP(err, ERROR_TYPE, "Return type of RHS expression of binary operator does not match declared RHS return type");
+            ERROR_PREP(err, ERROR_TYPE,
+                       "Return type of right hand side expression of binary operator does not match declared right hand side return type");
             return err;
         }
         *result_type = *value->children->next_child;
         break;
     case NODE_TYPE_FUNCTION_CALL:
+
         // Ensure function call arguments are of correct type.
         // Get function info from functions environment.
         while (context_it) {
@@ -371,7 +397,9 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
                     printf("Function:%s\n", expression->children->value.symbol);
                     printf("Invalid argument:\n");
                     print_node(iterator, 2);
-                    printf("Argument return type is `%s` but was expected to be `%s`\n", type_node_text(type), type_node_text(expected_parameter->children->next_child));
+                    printf("Argument return type is `%s` but was expected to be `%s`\n",
+                           type_node_text(type),
+                           type_node_text(expected_parameter->children->next_child));
                     ERROR_PREP(err, ERROR_TYPE, "Argument type does not match declared parameter type");
                     return err;
                 }
@@ -393,6 +421,105 @@ Error typecheck_expression(ParsingContext* context, ParsingContext** context_to_
             }
         }
         *result_type = *value->children;
+        break;
+    case NODE_TYPE_CAST:
+        if (0) {}
+
+        Node* cast_type = expression->children;
+
+        // Result of a cast expression will always be the casted-to type.
+        *result_type = *cast_type;
+
+        Node* expression_type = node_allocate();
+        err = typecheck_expression(context, context_to_enter, expression->children->next_child, expression_type);
+        if (err.type) { return err; }
+
+        // We could/should remove this cast node if the cast type and
+        // return type of expression are the same. Turns out removing nodes
+        // is actually impossible without a parent node pointer member.
+        // So, for now, this type of cast is just passed through.
+        if (type_compare(cast_type, expression_type)) {
+            break;
+        }
+
+        // TODO: We should probably have some way to assert the amount of
+        // base types or something. Otherwise we'll have silent errors when
+        // adding new base types.
+
+        // Check for reinterpret kind of typecast (pointer to pointer)
+        if (cast_type->pointer_indirection > 0) {
+            if (cast_type->pointer_indirection != expression_type->pointer_indirection) {
+                ERROR_PREP(err, ERROR_TYPE,
+                           "Pointer to pointer cast must maintain pointer indirection level.");
+                return err;
+            }
+
+            // Get size of cast_type and expression_type to determine kind of
+            // typecast.
+            size_t cast_type_size;
+            size_t expression_type_size;
+            Node* cast_type_info = node_allocate();
+            Node* expression_type_info = node_allocate();
+
+            // Use type copy without pointer indirection to get size of base
+            // type!
+            Node* cast_type_no_pointer = node_allocate();
+            *cast_type_no_pointer = *cast_type;
+            cast_type_no_pointer->pointer_indirection = 0;
+
+            Node* expression_type_no_pointer = node_allocate();
+            *expression_type_no_pointer = *expression_type;
+            expression_type_no_pointer->pointer_indirection = 0;
+
+            err = parse_get_type(context, cast_type_no_pointer, cast_type_info);
+            if (err.type) { return err; }
+            err = parse_get_type(context, expression_type_no_pointer, expression_type_info);
+            if (err.type) { return err; }
+            cast_type_size = cast_type_info->children->value.integer;
+            expression_type_size = expression_type_info->children->value.integer;
+            free(cast_type_info);
+            free(expression_type_info);
+
+            // a : integer = 69
+            // ;; a is an 8 byte integer
+            // b : byte = 42
+            // ;; b is a one byte integer
+            // ptr_a : @integer = &a
+            // ptr_b : @byte    = &b
+            // ;; The following should trigger a type error, as ptr_b does
+            // ;; not contain enough memory to store an 8 byte integer.
+            // ptr_a := [@integer]ptr_b
+            if (cast_type_size > expression_type_size) {
+                ERROR_PREP(err, ERROR_TYPE,
+                           "Invalid Reinterpret Typecast: Base type of cast type must be smaller or equal to expression_type");
+            }
+            break;
+        }
+        else if (expression_type->pointer_indirection > 0) {
+            ERROR_PREP(err, ERROR_TYPE, "Invalid Typecast: Can not cast pointer to non-pointer type.");
+            break;
+        }
+        // If it's not a pointer reinterpret, ensure both expression and
+        // cast type are base types.
+        static Node int_type = (Node) {
+            .type = NODE_TYPE_SYMBOL,
+            .value.symbol = "integer",
+        };
+
+        static Node byte_type = (Node) {
+            .type = NODE_TYPE_SYMBOL,
+            .value.symbol = "byte",
+        };
+
+        // TODO: Extract is_base_type() helper function.
+        if (!(type_compare(cast_type, &int_type) || type_compare(cast_type, &byte_type))) {
+            ERROR_PREP(err, ERROR_TYPE, "Invalid typecast: Cast type must be a base type.");
+            break;
+        }
+        if (!(type_compare(expression_type, &int_type) || type_compare(expression_type, &byte_type))) {
+            ERROR_PREP(err, ERROR_TYPE, "Invalid typecast: Expression type must be a base type.");
+            break;
+        }
         break;
     }
     free(result);
