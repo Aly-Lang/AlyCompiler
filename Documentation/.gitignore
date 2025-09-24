@@ -2,7 +2,7 @@
 **/*.aux
 **/*.log
 **/*.out
-**/*.pdf
+# **/*.pdf
 
 # HTML Output
 **/*.html
