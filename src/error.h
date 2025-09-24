@@ -65,4 +65,8 @@ void assert_impl(const char* file, const char* func, int line, const char* condi
     }                      \
   } while (0)
 
+#define TODO(...)     ASSERT(0, "TODO: "__VA_ARGS__)
+#define PANIC(...)    ASSERT(0, "PANIC: "__VA_ARGS__)
+#define UNREACHABLE() ASSERT(0, "Unreachable")
+
 #endif /* ALY_COMPILER_ERROR_H */
