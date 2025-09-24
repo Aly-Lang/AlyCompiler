@@ -8,6 +8,7 @@ void print_type_node(Node* type, size_t indent);
 
 /// If types are equal, return 1, otherwise 0.
 int type_compare(Node* a, Node* b);
+
 /// If type symbols are equivalent, return 1, otherwise 0.
 char type_compare_symbol(Node* a, Node* b);
 

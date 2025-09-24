@@ -1,10 +1,10 @@
 ﻿#include <environment.h>
 
-#include <error.h>
-#include <parser.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <parser.h>
 
 void environment_print(Environment env, long long indent) {
     Binding* binding_it = env.bind;
@@ -28,7 +28,7 @@ void environment_print(Environment env, long long indent) {
 
 Environment* environment_create(Environment* parent) {
     Environment* env = malloc(sizeof(Environment));
-    ASSERT(env, "Could not allocate memory to new environment");
+    ASSERT(env, "Could not allocate memory for new environment");
     env->parent = parent;
     env->bind = NULL;
     return env;
@@ -36,8 +36,9 @@ Environment* environment_create(Environment* parent) {
 
 int environment_set(Environment* env, Node* id, Node* value) {
     // Over-write existing value if ID is already bound in environment.
-    if (!env || !id || !value) { return 0; }
-
+    if (!env || !id || !value) {
+        return 0;
+    }
     Binding* binding_it = env->bind;
     while (binding_it) {
         if (node_compare(binding_it->id, id)) {
@@ -58,8 +59,9 @@ int environment_set(Environment* env, Node* id, Node* value) {
 
 int environment_set_end(Environment* env, Node* id, Node* value) {
     // Over-write existing value if ID is already bound in environment.
-    if (!env || !id || !value) { return 0; }
-
+    if (!env || !id || !value) {
+        return 0;
+    }
     if (!env->bind) {
         return environment_set(env, id, value);
     }
@@ -82,7 +84,6 @@ int environment_set_end(Environment* env, Node* id, Node* value) {
     return 1;
 }
 
-/// @return Boolean-like value; 1 for success, 0 for failure.
 int environment_get(Environment env, Node* id, Node* result) {
     Binding* binding_it = env.bind;
     while (binding_it) {

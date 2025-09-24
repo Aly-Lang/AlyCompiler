@@ -743,7 +743,7 @@ void codegen_context_x86_64_mswin_free(CodegenContext* ctx) {
         free(ctx->register_pool.scratch_registers);
         free(ctx->arch_data);
     }
-    // TODO(sirraide): Free environment.
+    // TODO: Free environment.
     free(ctx);
 }
 

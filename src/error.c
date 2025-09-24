@@ -40,7 +40,8 @@ void print_error(Error err) {
     }
 }
 
-NORETURN static void vpanic(int code, const char* fmt, va_list args) {
+NORETURN
+static void vpanic(int code, const char* fmt, va_list args) {
     fprintf(stderr, "Panic: ");
     vfprintf(stderr, fmt, args);
     fputc('\n', stderr);
@@ -61,7 +62,14 @@ void panic_with_code(int code, const char* fmt, ...) {
     exit(1); // unreachable
 }
 
-void assert_impl(const char* file, const char* func, int line, const char* condition, const char* fmt, ...) {
+void assert_impl(
+    const char* file,
+    const char* func,
+    int line,
+    const char* condition,
+    const char* fmt,
+    ...
+) {
     /// Prettier file name
 #ifndef _MSC_VER
     const char path_separator = '/';

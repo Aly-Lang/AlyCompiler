@@ -2,8 +2,10 @@
 
 #include <error.h>
 #include <errno.h>
-#include <stdlib.h>
+
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 size_t file_size(FILE* file) {
     if (!file) { return 0; }
@@ -35,7 +37,7 @@ char* file_contents(char* path) {
     while (bytes_read < size) {
         size_t bytes_read_this_iteration = fread(write_it, 1, size - bytes_read, file);
         if (ferror(file)) {
-            printf("Error when reading: %i\n", errno);
+            printf("Error while reading: %i\n", errno);
             free(contents);
             return NULL;
         }
@@ -43,7 +45,9 @@ char* file_contents(char* path) {
         bytes_read += bytes_read_this_iteration;
         write_it += bytes_read_this_iteration;
 
-        if (feof(file)) { break; }
+        if (feof(file)) {
+            break;
+        }
     }
     contents[bytes_read] = '\0';
     return contents;
