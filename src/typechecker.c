@@ -1,4 +1,4 @@
-﻿#include <typechecker.h>
+#include <typechecker.h>
 
 #include <error.h>
 #include <environment.h>
@@ -505,7 +505,6 @@ Error typecheck_expression
             .type = NODE_TYPE_SYMBOL,
             .value.symbol = "integer",
         };
-
         static Node byte_type = (Node) {
             .type = NODE_TYPE_SYMBOL,
             .value.symbol = "byte",

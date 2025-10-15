@@ -161,7 +161,7 @@ IRInstruction* ir_comparison
 
 IRInstruction* ir_load_local_address
 (CodegenContext* context,
- int64_t offset) {
+ IRInstruction* local) {
     TODO();
 }
 

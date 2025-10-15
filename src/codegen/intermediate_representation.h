@@ -125,7 +125,7 @@ IRInstruction* ir_load
 
 IRInstruction* ir_load_local_address
 (CodegenContext* context,
- int64_t offset);
+ IRInstruction* local);
 
 void ir_load_global_address_into
 (CodegenContext* context,

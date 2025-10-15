@@ -106,7 +106,7 @@ typedef struct SymbolAddress {
   union {
     Error error;
     const char *global;
-    int64_t local;
+    IRInstruction* local;
   };
 } SymbolAddress;
 
@@ -126,6 +126,8 @@ SymbolAddress symbol_to_address(CodegenContext *cg_ctx, Node *symbol) {
   }
 
   // Local variable access.
+  // TODO: Make a custom symbol to local instruction hash map/table.
+  // That way, we can get rid of IR node type in the AST.
   Node *stack_offset = node_allocate();
   if (!environment_get(*cg_ctx->locals, symbol, stack_offset)) {
     putchar('\n');
@@ -139,14 +141,14 @@ SymbolAddress symbol_to_address(CodegenContext *cg_ctx, Node *symbol) {
     //   memory since we're probably going to terminate anyway if there
     //   was an error.
     static char err_buf[1024];
-    snprintf(err_buf, sizeof err_buf, "symbol_to_address(): Could not find symbol '%s' in environment.", symbol->value.symbol);
+    snprintf(err_buf, sizeof(err_buf), "symbol_to_address(): Could not find symbol '%s' in environment.", symbol->value.symbol);
     ERROR_CREATE(err, ERROR_GENERIC, err_buf);
     out.mode = SYMBOL_ADDRESS_MODE_ERROR;
     out.error = err;
     return out;
   }
 
-  int64_t address = stack_offset->value.integer;
+  IRInstruction* address = stack_offset->value.ir_instruction;
   free(stack_offset);
   out.mode = SYMBOL_ADDRESS_MODE_LOCAL;
   out.local = address;
@@ -181,7 +183,7 @@ Error codegen_expression
   default:
     break;
   case NODE_TYPE_INTEGER:
-    expression->result = ir_load_immediate(cg_context, expression->value.integer);
+    expression->result = ir_immediate(cg_context, expression->value.integer);
     break;
   case NODE_TYPE_FUNCTION_CALL:
     if (0) {}
@@ -522,10 +524,9 @@ Error codegen_expression
     size_in_bytes = tmpnode->children->value.integer;
 
     IRInstruction *local = ir_stack_allocate(cg_context, size_in_bytes);
-    // TODO: Store local stack allocation instruction in codegen
-    // context's locals environment.
-
-    environment_set(cg_context->locals, expression->children, node_integer(cg_context->locals_offset));
+    Node* local_reference = node_allocate();
+    local_reference->value.ir_instruction = local;
+    environment_set(cg_context->locals, expression->children, local_reference);
     break;
   case NODE_TYPE_VARIABLE_REASSIGNMENT:
     // Recurse LHS into children until LHS is a var. access.
