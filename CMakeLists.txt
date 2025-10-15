@@ -21,7 +21,7 @@ set(SOURCE_FILES
     src/main.c
     src/parser.c
     src/typechecker.c
-    src/codegen/codegen_platforms.c
+    src/codegen/intermediate_representation.c
     src/codegen/x86_64/arch_x86_64.c
 )
 
@@ -34,7 +34,7 @@ target_include_directories(alyc PUBLIC src)
 # Compiler flags - warnings on
 target_compile_options(alyc PRIVATE
     # MSVC: enable all warnings
-    $<$<C_COMPILER_ID:MSVC>:/W4 /permissive->
+    # $<$<C_COMPILER_ID:MSVC>:/W4 /permissive->
 
     # GCC / MinGW: enable common warnings and treat warnings as errors optionally
     # $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
