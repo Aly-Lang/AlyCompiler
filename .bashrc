@@ -14,7 +14,7 @@ alybuild() {
 
   # Require an argument (example path)
   if [ $# -lt 1 ]; then
-    echo "Error: Missing example path (e.g., ../Examples/foo.al)" >&2
+    echo "Error: Missing example path (e.g., ../Examples/foo.aly)" >&2
     return 1
   fi
 
