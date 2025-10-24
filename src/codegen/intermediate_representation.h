@@ -10,14 +10,24 @@
   ASSERT((name), "Could not allocate new IRInstruction.");  \
   (name)->type = (given_type);
 
+typedef struct Use {
+  IRInstruction* user;
+  struct Use* next;
+} Use;
+
+void mark_used(IRInstruction* usee, IRInstruction* user);
+
 typedef enum IRType {
   IR_IMMEDIATE,
   IR_CALL,
-  IR_RETURN,
   IR_LOAD,
+
+  IR_RETURN,
   IR_BRANCH,
   IR_BRANCH_CONDITIONAL,
+
   IR_PHI,
+  IR_COPY,
 
   IR_ADD,
   IR_SUBTRACT,
@@ -117,6 +127,12 @@ typedef struct IRInstruction {
 
   // Register allocation.
   size_t index;
+
+  Register result;
+
+  // List of uses---instructions that use this instruction should go in
+  // this list.
+  Use* uses;
 
   // Doubly linked list.
   struct IRInstruction *previous;
@@ -259,6 +275,11 @@ IRInstruction *ir_branch
 
 IRInstruction *ir_return
 (CodegenContext *context);
+
+IRInstruction* ir_copy
+(CodegenContext* context,
+    IRInstruction* source
+);
 
 IRInstruction *ir_comparison
 (CodegenContext *context,

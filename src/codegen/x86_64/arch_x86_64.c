@@ -2,6 +2,7 @@
 
 #include <codegen.h>
 #include <codegen/intermediate_representation.h>
+#include <codegen/register_allocation.h>
 #include <error.h>
 #include <inttypes.h>
 #include <parser.h>
@@ -19,23 +20,20 @@
 #define REGISTER_NAME_16(ident, name, name_32, name_16, ...) name_16,
 #define REGISTER_NAME_8(ident, name, name_32, name_16, name_8, ...) name_8,
 
-/// Used when initializing Register arrays for RegisterPool.
-#define INIT_REGISTER(ident, ...)  \
-  ((registers)[REG_##ident] = (Register){.in_use = 0, .descriptor = (REG_##ident)});
-
 /// Lookup tables for register names.
-#define DEFINE_REGISTER_NAME_LOOKUP_FUNCTION(name, bits)                                        \
-  static const char *name(RegisterDescriptor descriptor) {                                             \
-    static const char* register_names[] = { FOR_ALL_X86_64_REGISTERS(REGISTER_NAME_##bits) };   \
-    if (descriptor < 0 || descriptor >= REG_COUNT) {                                     \
-      panic("ERROR::" #name "(): Could not find register with descriptor of %d\n", descriptor); \
-    }                                                                                           \
-    return register_names[descriptor];                                                          \
+#define DEFINE_REGISTER_NAME_LOOKUP_FUNCTION(name, bits)                                       \
+  static const char *name(RegisterDescriptor descriptor) {                                      \
+    static const char* register_names[] = { FOR_ALL_X86_64_REGISTERS(REGISTER_NAME_##bits) };    \
+    if (descriptor < 0 || descriptor >= REG_COUNT) {                                              \
+      panic("ERROR::" #name "(): Could not find register with descriptor of %d\n", descriptor);    \
+    }                                                                                               \
+    return register_names[descriptor];                                                               \
   }
 
 enum Registers_x86_64 {
+  REG_NONE,
   FOR_ALL_X86_64_REGISTERS(DEFINE_REGISTER_ENUM)
-      REG_COUNT
+  REG_COUNT
 };
 
 /// Define register_name and friends.
@@ -51,6 +49,8 @@ DEFINE_REGISTER_NAME_LOOKUP_FUNCTION(register_name_8, 8)
 
 #undef DEFINE_REGISTER_ENUM
 #undef DEFINE_REGISTER_NAME_LOOKUP_FUNCTION
+
+#define GENERAL_REGISTER_COUNT 14
 
 /// Types of conditional jump instructions (Jcc).
 /// Do NOT reorder these.
@@ -685,7 +685,6 @@ CodegenContext *codegen_context_x86_64_mswin_create(CodegenContext *parent) {
   // Otherwise, shallow copy register pool to child context.
   if (!parent) {
     Register *registers = calloc(REG_COUNT, sizeof(Register));
-    FOR_ALL_X86_64_REGISTERS(INIT_REGISTER)
 
     // Link to MSDN documentation (surely will fall away, but it's been Internet Archive'd).
     // https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=msvc-170#callercallee-saved-registers
@@ -693,7 +692,7 @@ CodegenContext *codegen_context_x86_64_mswin_create(CodegenContext *parent) {
     // "The x64 ABI considers the registers RAX, RCX, RDX, R8, R9, R10, R11, and XMM0-XMM5 volatile."
     // "The x64 ABI considers registers RBX, RBP, RDI, RSI, RSP, R12, R13, R14, R15, and XMM6-XMM15 nonvolatile."
     size_t number_of_scratch_registers = 7;
-    Register **scratch_registers = calloc(number_of_scratch_registers, sizeof(Register *));
+    Register **scratch_registers = calloc(number_of_scratch_registers, sizeof(Register*));
     scratch_registers[0] = registers + REG_RAX;
     scratch_registers[1] = registers + REG_RCX;
     scratch_registers[2] = registers + REG_RDX;
@@ -755,7 +754,7 @@ void codegen_prepare_call_x86_64(CodegenContext *cg_context) {
   frame->parent = parent;
   arch_data->current_call = frame;
 
-  arch_data->current_call->rax_in_use = cg_context->register_pool.registers[REG_RAX].in_use;
+  //arch_data->current_call->rax_in_use = cg_context->register_pool.registers[REG_RAX].in_use;
   if (arch_data->current_call->rax_in_use) femit_x86_64(cg_context, I_PUSH, REGISTER, REG_RAX);
 }
 
@@ -1040,6 +1039,54 @@ void codegen_emit_x86_64(CodegenContext *context) {
 
   // TODO: Setup register allocation strucutres and allocate registers
   // to each temporary within the program.
+
+  Register general[GENERAL_REGISTER_COUNT] = {
+    REG_RAX,
+    REG_RBX,
+    REG_RCX,
+    REG_RDX,
+    REG_RSI,
+    REG_RDI,
+    REG_R8,
+    REG_R9,
+    REG_R10,
+    REG_R11,
+    REG_R12,
+    REG_R13,
+    REG_R14,
+    REG_R15,
+  };
+
+  Register* argument_registers = NULL;
+  size_t argument_register_count = 0;
+
+#define LINUX_ARGUMENT_REGISTERS_COUNT 6
+  Register linux_argument_registers[LINUX_ARGUMENT_REGISTERS_COUNT] = {
+      REG_RDI, REG_RSI, REG_RDX, REG_RCX, REG_R8, REG_R9
+  };
+
+#define MSWIN_ARGUMENT_REGISTERS_COUNT 4
+  Register mswin_argument_registers[MSWIN_ARGUMENT_REGISTERS_COUNT] = {
+      REG_RCX, REG_RDX, REG_R8, REG_R9
+  };
+
+  switch (context->call_convention) {
+    case CG_CALL_CONV_LINUX:
+      argument_register_count = LINUX_ARGUMENT_REGISTERS_COUNT;
+      argument_registers = linux_argument_registers;
+      break;
+    case CG_CALL_CONV_MSWIN:
+      argument_register_count = MSWIN_ARGUMENT_REGISTERS_COUNT;
+      argument_registers = mswin_argument_registers;
+      break;
+    case CG_CALL_CONV_COUNT:
+    default:
+      PANIC("Invalid call convention");
+      break;
+  }
+
+  RegisterAllocationInfo *info = ra_allocate_info(context, REG_RAX, GENERAL_REGISTER_COUNT, general, argument_register_count, argument_registers);
+  ra(info);
 
   TODO("Emit code based on intermediate representation in context.");
 }

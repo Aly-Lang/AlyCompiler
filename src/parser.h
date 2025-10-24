@@ -219,4 +219,3 @@ Error parse_expr(ParsingContext *context,
                  Node *result);
 
 #endif /* ALY_COMPILER_PARSER_H */
-

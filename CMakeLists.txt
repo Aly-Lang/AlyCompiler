@@ -22,6 +22,7 @@ set(SOURCE_FILES
     src/parser.c
     src/typechecker.c
     src/codegen/intermediate_representation.c
+    src/codegen/register_allocation.c
     src/codegen/x86_64/arch_x86_64.c
 )
 
